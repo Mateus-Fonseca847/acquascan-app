@@ -1,0 +1,31 @@
+{
+  "name": "acquascan-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aplicativo AcquaScan: API, banco de dados e app mobile para monitoramento dos rios de Petrópolis",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @acquascan/api db:migrate",
+    "db:seed": "pnpm --filter @acquascan/api db:seed",
+    "db:studio": "pnpm --filter @acquascan/api db:studio",
+    "dev:api": "pnpm --filter @acquascan/api dev",
+    "dev:mobile": "pnpm --filter @acquascan/mobile start",
+    "simulador": "pnpm --filter @acquascan/simulador start",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "husky": "9.1.7",
+    "prettier": "3.9.9",
+    "typescript": "~6.0.3"
+  }
+}
