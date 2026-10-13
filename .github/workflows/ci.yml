@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    name: Formatação, tipos e testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Instala a versão do pnpm definida em "packageManager" no package.json
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Também gera o Prisma Client (postinstall da API)
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test
