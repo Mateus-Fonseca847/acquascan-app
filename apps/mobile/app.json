@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "AcquaScan",
+    "slug": "acquascan",
+    "scheme": "acquascan",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "br.acquascan.app"
+    },
+    "android": {
+      "package": "br.acquascan.app"
+    }
+  }
+}
