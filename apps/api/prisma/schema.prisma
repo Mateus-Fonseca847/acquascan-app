@@ -1,0 +1,129 @@
+// Modelo de dados do AcquaScan. Documentação: docs/banco-de-dados.md
+//
+// Convenção: campos em camelCase no código, tabelas e colunas em snake_case
+// no banco (@map). Consultas SQL diretas ($queryRaw) usam os nomes do banco.
+//
+// Coordenadas ficam em latitude/longitude (graus, WGS 84). As consultas por
+// distância usam funções do PostGIS montando o ponto na hora (decisão 002).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Estado {
+  ESTAVEL
+  ATENCAO
+  CRITICO
+}
+
+model Rio {
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique
+  estacoes Estacao[]
+
+  @@map("rios")
+}
+
+model Estacao {
+  id                     Int      @id @default(autoincrement())
+  nome                   String
+  rioId                  Int      @map("rio_id")
+  latitude               Float
+  longitude              Float
+  /// Distância entre o sensor e o fundo do rio, medida na instalação
+  alturaInstalacaoCm     Float    @map("altura_instalacao_cm")
+  /// Nível (a partir do fundo) em que o rio transborda
+  nivelTransbordamentoCm Float    @map("nivel_transbordamento_cm")
+  limiteAtencaoPct       Float    @default(50) @map("limite_atencao_pct")
+  limiteCriticoPct       Float    @default(80) @map("limite_critico_pct")
+  /// SHA-256 do token da estação. O token em si nunca é salvo.
+  tokenHash              String   @unique @map("token_hash")
+  ativa                  Boolean  @default(true)
+  criadoEm               DateTime @default(now()) @map("criado_em")
+
+  rio      Rio       @relation(fields: [rioId], references: [id])
+  leituras Leitura[]
+  alertas  Alerta[]
+
+  @@map("estacoes")
+}
+
+model Leitura {
+  id          Int      @id @default(autoincrement())
+  estacaoId   Int      @map("estacao_id")
+  distanciaCm Float    @map("distancia_cm")
+  nivelCm     Float    @map("nivel_cm")
+  nivelPct    Float    @map("nivel_pct")
+  vazaoLpm    Float?   @map("vazao_lpm")
+  estado      Estado
+  /// Hora da medição (do ESP32, se tiver relógio) ou hora de chegada
+  medidoEm    DateTime @map("medido_em")
+  recebidoEm  DateTime @default(now()) @map("recebido_em")
+
+  estacao Estacao @relation(fields: [estacaoId], references: [id], onDelete: Cascade)
+
+  @@index([estacaoId, medidoEm])
+  @@map("leituras")
+}
+
+model Alerta {
+  id             Int       @id @default(autoincrement())
+  estacaoId      Int       @map("estacao_id")
+  estadoAnterior Estado    @map("estado_anterior")
+  estadoNovo     Estado    @map("estado_novo")
+  criadoEm       DateTime  @default(now()) @map("criado_em")
+  /// Preenchido quando as notificações push forem enviadas
+  enviadoEm      DateTime? @map("enviado_em")
+
+  estacao Estacao @relation(fields: [estacaoId], references: [id], onDelete: Cascade)
+
+  @@index([criadoEm])
+  @@map("alertas")
+}
+
+model PontoApoio {
+  id         Int     @id @default(autoincrement())
+  nome       String
+  endereco   String
+  capacidade Int
+  contato    String?
+  latitude   Float
+  longitude  Float
+  ativo      Boolean @default(true)
+
+  @@map("pontos_apoio")
+}
+
+model Usuario {
+  id             Int         @id @default(autoincrement())
+  nome           String
+  email          String      @unique
+  telefone       String
+  cep            String
+  /// Obtidas a partir do CEP; definem a região dos alertas
+  latitude       Float?
+  longitude      Float?
+  senhaHash      String      @map("senha_hash")
+  /// LGPD: momento em que o usuário aceitou os termos de uso de dados
+  consentimentoEm DateTime   @map("consentimento_em")
+  criadoEm       DateTime    @default(now()) @map("criado_em")
+  pushTokens     PushToken[]
+
+  @@map("usuarios")
+}
+
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("usuario_id")
+  token     String   @unique
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("push_tokens")
+}
