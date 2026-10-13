@@ -1,0 +1,10 @@
+// Esse arquivo serve apenas para sugerir extensões ao seu VSCode para abrir esse projeto.
+
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "prisma.prisma",
+    "editorconfig.editorconfig",
+    "expo.vscode-expo-tools"
+  ]
+}

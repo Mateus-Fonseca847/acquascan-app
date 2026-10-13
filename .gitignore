@@ -1,0 +1,34 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente (NUNCA commitar: contêm senhas e tokens)
+.env
+.env.*
+!.env.example
+
+# Prisma Client gerado (recriado com "pnpm --filter @acquascan/api db:generate")
+apps/api/src/generated/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+/apps/mobile/ios/
+/apps/mobile/android/
+
+# Logs e sistema
+*.log
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
