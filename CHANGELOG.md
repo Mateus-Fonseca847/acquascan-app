@@ -38,6 +38,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Esqueletos que respondem 501 para cadastro, login e pesquisa por rua
 - Seed com dados fictícios de desenvolvimento
 - `lib/senha.ts`: hash de senha com scrypt assíncrono (`node:crypto`), com os parâmetros gravados no próprio hash
+- `lib/cep.ts`: consulta de CEP na BrasilAPI v2 para obter as coordenadas do usuário, com timeout de 5 s e sem registrar dados em log
 
 **Mobile**
 

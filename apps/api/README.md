@@ -182,6 +182,18 @@ O hash é uma string única: `scrypt$N$r$p$salt_base64$hash_base64`. Os parâmet
 
 `verificarSenha` compara com `timingSafeEqual` e retorna `false` para um hash malformado, sem lançar exceção e sem registrar a senha nem o hash. Os schemas de cadastro e login limitam a senha a 128 caracteres, para que ninguém abuse da CPU com senhas enormes.
 
+### `lib/cep.ts`
+
+`consultarCep(cep)` busca o CEP na [BrasilAPI v2](https://brasilapi.com.br/docs) para obter as coordenadas do usuário, que definem a região dos alertas. Aceita o CEP com ou sem hífen e devolve sempre um resultado, nunca lança exceção:
+
+| Resultado                               | Quando                                                                             |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `{ status: 'ok', latitude, longitude }` | O CEP existe. Se a BrasilAPI não trouxer coordenadas válidas, os dois vêm `null`.  |
+| `{ status: 'nao_encontrado' }`          | A BrasilAPI respondeu 404, ou o CEP não tem 8 dígitos (nesse caso não usa a rede). |
+| `{ status: 'indisponivel' }`            | Timeout (5 s), falha de rede, erro 5xx ou resposta que não é JSON.                 |
+
+As coordenadas chegam como texto e podem faltar ou vir vazias; só valores finitos dentro de -90..90 (latitude) e -180..180 (longitude) são aceitos, e latitude e longitude valem como um par. CEP, endereço e coordenadas **não são registrados em log**.
+
 ### `lib/erros.ts`
 
 Erros previstos, que viram respostas HTTP com o código certo:
