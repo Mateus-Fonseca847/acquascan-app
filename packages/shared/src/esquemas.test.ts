@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cadastroEntradaSchema, leituraEntradaSchema } from './esquemas';
+import { cadastroEntradaSchema, leituraEntradaSchema, loginEntradaSchema } from './esquemas';
 
 describe('leituraEntradaSchema', () => {
   it('aceita uma leitura válida do ESP32', () => {
@@ -40,5 +40,22 @@ describe('cadastroEntradaSchema', () => {
 
   it('exige CEP com 8 dígitos', () => {
     expect(cadastroEntradaSchema.safeParse({ ...valido, cep: '25600-000' }).success).toBe(false);
+  });
+
+  it('recusa senha com mais de 128 caracteres', () => {
+    expect(cadastroEntradaSchema.safeParse({ ...valido, senha: 'a'.repeat(128) }).success).toBe(
+      true,
+    );
+    expect(cadastroEntradaSchema.safeParse({ ...valido, senha: 'a'.repeat(129) }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe('loginEntradaSchema', () => {
+  it('recusa senha com mais de 128 caracteres', () => {
+    const base = { email: 'maria@exemplo.com' };
+    expect(loginEntradaSchema.safeParse({ ...base, senha: 'a'.repeat(128) }).success).toBe(true);
+    expect(loginEntradaSchema.safeParse({ ...base, senha: 'a'.repeat(129) }).success).toBe(false);
   });
 });

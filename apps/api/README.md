@@ -174,6 +174,14 @@ Cria a conexão com o banco, usada por todos os módulos. Importe sempre daqui (
 
 `gerarToken` cria um token aleatório para uma estação nova. `hashToken` calcula o hash SHA-256 de um token. O banco guarda **só o hash**: se alguém copiar o banco, continua sem saber os tokens das estações.
 
+### `lib/senha.ts`
+
+`hashSenha` gera o hash de uma senha e `verificarSenha` confere uma senha contra o hash salvo. Usam o `scrypt` do `node:crypto`, na versão assíncrona, para não bloquear o event loop do Fastify. Nunca use `scryptSync`.
+
+O hash é uma string única: `scrypt$N$r$p$salt_base64$hash_base64`. Os parâmetros atuais são N=32768, r=8, p=3, hash de 64 bytes e salt aleatório de 16 bytes. Como N, r e p ficam dentro do hash, `verificarSenha` usa os valores gravados nele: dá para aumentar os parâmetros no futuro sem invalidar as senhas antigas.
+
+`verificarSenha` compara com `timingSafeEqual` e retorna `false` para um hash malformado, sem lançar exceção e sem registrar a senha nem o hash. Os schemas de cadastro e login limitam a senha a 128 caracteres, para que ninguém abuse da CPU com senhas enormes.
+
 ### `lib/erros.ts`
 
 Erros previstos, que viram respostas HTTP com o código certo:

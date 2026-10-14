@@ -16,11 +16,18 @@ export const leituraEntradaSchema = z.object({
 });
 export type LeituraEntrada = z.infer<typeof leituraEntradaSchema>;
 
+/** Tamanho máximo da senha aceito na API. */
+export const SENHA_MAX = 128;
+
 export const cadastroEntradaSchema = z.object({
   nome: z.string().trim().min(2, 'Informe seu nome'),
   email: z.email('E-mail inválido'),
   cep: z.string().regex(/^\d{8}$/, 'Use os 8 dígitos do CEP'),
-  senha: z.string().min(8, 'A senha precisa de pelo menos 8 caracteres'),
+  /** O máximo evita abuso de CPU: o hash da senha é lento de propósito. */
+  senha: z
+    .string()
+    .min(8, 'A senha precisa de pelo menos 8 caracteres')
+    .max(SENHA_MAX, `A senha pode ter no máximo ${SENHA_MAX} caracteres`),
   /** LGPD: o cadastro só é aceito com consentimento explícito. */
   consentimento: z.literal(true, 'É preciso aceitar os termos de uso de dados'),
 });
@@ -28,7 +35,7 @@ export type CadastroEntrada = z.infer<typeof cadastroEntradaSchema>;
 
 export const loginEntradaSchema = z.object({
   email: z.email(),
-  senha: z.string().min(1),
+  senha: z.string().min(1).max(SENHA_MAX),
 });
 export type LoginEntrada = z.infer<typeof loginEntradaSchema>;
 

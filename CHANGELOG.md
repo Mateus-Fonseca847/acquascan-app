@@ -24,6 +24,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Cálculo do nível (cm e %), classificação do estado e estimativa até o transbordamento
 - Classificação provisória do risco de chuva
 - Validações da leitura do ESP32, do cadastro e do login
+- Limite de 128 caracteres para a senha no cadastro e no login
 - 31 testes unitários
 
 **API**
@@ -36,6 +37,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - `GET /saude` e `GET /saude/banco`
 - Esqueletos que respondem 501 para cadastro, login e pesquisa por rua
 - Seed com dados fictícios de desenvolvimento
+- `lib/senha.ts`: hash de senha com scrypt assíncrono (`node:crypto`), com os parâmetros gravados no próprio hash
 
 **Mobile**
 
