@@ -35,14 +35,14 @@ Authorization: Bearer dev-token-estacao-1
 { "distanciaCm": 150 }
 ```
 
-| Etapa | O que acontece | Arquivo |
-|---|---|---|
-| 1. Servidor | O servidor, iniciado por `pnpm dev:api`, recebe a requisição | `src/server.ts` |
-| 2. Roteamento | O Fastify procura qual módulo responde a `POST /leituras` | `src/app.ts` |
-| 3. Autenticação | O token é conferido; sem token válido, a resposta é 401 | `src/plugins/autenticar-estacao.ts` |
-| 4. Validação | O corpo é conferido com o Zod; se `distanciaCm` estiver errado, a resposta é 400 | `src/modules/leituras/leituras.routes.ts` |
-| 5. Regra | Nível, percentual e estado são calculados e a leitura é salva; se o estado piorou, um alerta é registrado | `src/modules/leituras/leituras.service.ts` |
-| 6. Resposta | A API devolve o resultado em JSON com o código 201 | `src/modules/leituras/leituras.routes.ts` |
+| Etapa           | O que acontece                                                                                            | Arquivo                                    |
+| --------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| 1. Servidor     | O servidor, iniciado por `pnpm dev:api`, recebe a requisição                                              | `src/server.ts`                            |
+| 2. Roteamento   | O Fastify procura qual módulo responde a `POST /leituras`                                                 | `src/app.ts`                               |
+| 3. Autenticação | O token é conferido; sem token válido, a resposta é 401                                                   | `src/plugins/autenticar-estacao.ts`        |
+| 4. Validação    | O corpo é conferido com o Zod; se `distanciaCm` estiver errado, a resposta é 400                          | `src/modules/leituras/leituras.routes.ts`  |
+| 5. Regra        | Nível, percentual e estado são calculados e a leitura é salva; se o estado piorou, um alerta é registrado | `src/modules/leituras/leituras.service.ts` |
+| 6. Resposta     | A API devolve o resultado em JSON com o código 201                                                        | `src/modules/leituras/leituras.routes.ts`  |
 
 Se algo der errado em qualquer etapa, o tratador de erros em `src/app.ts` transforma o problema numa resposta padronizada: `{ "erro": "mensagem" }`.
 
@@ -151,10 +151,10 @@ O ponto da previsão (centro de Petrópolis) vem das variáveis `PREVISAO_LATITU
 
 Já existem, mas respondem **501** com uma mensagem indicando a versão prevista. O cadastro e o login já validam os dados recebidos com os mesmos esquemas usados pelo app. Os comentários `TODO` nos arquivos descrevem o que falta fazer.
 
-| Funcionalidade | Versão | Requisito |
-|---|---|---|
+| Funcionalidade   | Versão | Requisito  |
+| ---------------- | ------ | ---------- |
 | Cadastro e login | v0.2.0 | RF01, RF02 |
-| Pesquisa por rua | v0.3.0 | RF04 |
+| Pesquisa por rua | v0.3.0 | RF04       |
 
 ---
 
@@ -179,7 +179,7 @@ Cria a conexão com o banco, usada por todos os módulos. Importe sempre daqui (
 Erros previstos, que viram respostas HTTP com o código certo:
 
 ```ts
-throw naoEncontrado('Estação');            // 404
+throw naoEncontrado('Estação'); // 404
 throw naoImplementado('O login', 'v0.2.0'); // 501
 throw new ErroHttp(409, 'E-mail já cadastrado'); // qualquer outro código
 ```
@@ -224,15 +224,15 @@ pnpm test
 
 Rode da raiz do repositório com `pnpm --filter @acquascan/api <comando>`, ou de dentro desta pasta com `pnpm <comando>`.
 
-| Comando | O que faz |
-|---|---|
-| `dev` | Inicia com recarga automática a cada alteração |
-| `test` | Roda os testes |
-| `typecheck` | Verifica os tipos |
-| `db:migrate` | Cria e aplica uma migração a partir do `schema.prisma` |
-| `db:seed` | Recria os dados fictícios de desenvolvimento |
+| Comando       | O que faz                                               |
+| ------------- | ------------------------------------------------------- |
+| `dev`         | Inicia com recarga automática a cada alteração          |
+| `test`        | Roda os testes                                          |
+| `typecheck`   | Verifica os tipos                                       |
+| `db:migrate`  | Cria e aplica uma migração a partir do `schema.prisma`  |
+| `db:seed`     | Recria os dados fictícios de desenvolvimento            |
 | `db:generate` | Regera o Prisma Client (roda sozinho no `pnpm install`) |
-| `db:studio` | Abre o Prisma Studio para ver os dados no navegador |
-| `db:deploy` | Aplica migrações existentes (para produção) |
+| `db:studio`   | Abre o Prisma Studio para ver os dados no navegador     |
+| `db:deploy`   | Aplica migrações existentes (para produção)             |
 
 Algo deu errado? Veja [docs/solucao-de-problemas.md](../../docs/solucao-de-problemas.md).
