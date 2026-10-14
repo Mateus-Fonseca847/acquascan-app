@@ -35,10 +35,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - `GET /pontos-apoio`, com ordenação por distância via PostGIS quando recebe `lat` e `lng`
 - `GET /previsao` com os próximos 7 dias via Open-Meteo e cache de 30 minutos
 - `GET /saude` e `GET /saude/banco`
-- Esqueletos que respondem 501 para cadastro, login e pesquisa por rua
+- Esqueleto que responde 501 para a pesquisa por rua
 - Seed com dados fictícios de desenvolvimento
 - `lib/senha.ts`: hash de senha com scrypt assíncrono (`node:crypto`), com os parâmetros gravados no próprio hash
 - `POST /auth/cadastro`: valida, normaliza e-mail e CEP, recusa e-mail repetido (409) e CEP inexistente (400), obtém as coordenadas pelo CEP (o cadastro segue sem elas se a BrasilAPI estiver fora do ar), grava só o hash da senha e responde 201 com `id`, `nome` e `email`
+- `POST /auth/login`: confere e-mail e senha (com hash fictício quando o e-mail não existe, para o tempo de resposta não revelar quais e-mails têm conta) e responde 200 com um JWT e `{ id, nome, email }`; e-mail inexistente e senha errada dão o mesmo 401
+- JWT com `@fastify/jwt` (HS256, `sub` com o id do usuário e validade em `JWT_EXPIRA_EM`, padrão 7 dias), com as variáveis `JWT_SECRET` e `JWT_EXPIRA_EM`
+- Plugin `autenticar-usuario`: valida o token, busca o usuário no banco e o disponibiliza em `request.usuario`
 - `lib/cep.ts`: consulta de CEP na BrasilAPI v2 para obter as coordenadas do usuário, com timeout de 5 s e sem registrar dados em log
 
 **Mobile**

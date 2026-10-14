@@ -2,8 +2,10 @@
  * Monta a aplicação Fastify (sem iniciar o servidor).
  * Separado de server.ts para que os testes possam criar a app sem abrir porta.
  */
+import fastifyJwt from '@fastify/jwt';
 import Fastify from 'fastify';
 import { ZodError } from 'zod';
+import { env } from './config/env';
 import { ErroHttp } from './lib/erros';
 import { alertasRoutes } from './modules/alertas/alertas.routes';
 import { authRoutes } from './modules/auth/auth.routes';
@@ -27,6 +29,12 @@ export function construirApp(opcoes: { logger?: boolean } = {}) {
     }
     app.log.error(erro);
     return reply.code(500).send({ erro: 'Erro interno do servidor' });
+  });
+
+  app.register(fastifyJwt, {
+    secret: env.JWT_SECRET,
+    sign: { algorithm: 'HS256', expiresIn: env.JWT_EXPIRA_EM },
+    verify: { algorithms: ['HS256'] },
   });
 
   app.register(saudeRoutes);

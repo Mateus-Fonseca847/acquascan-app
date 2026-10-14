@@ -72,7 +72,7 @@ apps/api/
 │   ├── app.test.ts          ← testes
 │   ├── config/env.ts        ← variáveis de ambiente validadas
 │   ├── lib/                 ← peças usadas por vários módulos
-│   ├── plugins/             ← autenticação das estações
+│   ├── plugins/             ← autenticação das estações e dos usuários
 │   ├── modules/             ← um módulo por assunto (explicados abaixo)
 │   └── generated/           ← Prisma Client gerado automaticamente (fora do Git)
 └── .env.example             ← modelo das variáveis de ambiente
@@ -145,11 +145,13 @@ O ponto da previsão (centro de Petrópolis) vem das variáveis `PREVISAO_LATITU
 
 `/saude` responde "ok" sempre que a API está no ar. `/saude/banco` faz uma consulta mínima ao banco e responde 503 se não conseguir. São os primeiros endereços para testar quando algo não funciona: se `/saude` responde e `/saude/banco` não, o problema está no banco.
 
-### `auth`: cadastro (e login, ainda não)
+### `auth`: cadastro e login
 
-**Endpoints:** `POST /auth/cadastro` (pronto) e `POST /auth/login` (responde **501**, previsto para a v0.2.0)
+**Endpoints:** `POST /auth/cadastro` e `POST /auth/login`
 
-O cadastro (`auth.service.ts`) segue estes passos:
+A regra fica em `auth.service.ts`; `auth.routes.ts` só cuida do HTTP.
+
+**Cadastro** (`cadastrarUsuario`) segue estes passos:
 
 1. A rota valida o corpo com `cadastroEntradaSchema`, de `@acquascan/shared`.
 2. O e-mail é normalizado (sem espaços nas pontas, em minúsculas) e o CEP fica só com os 8 dígitos.
@@ -157,9 +159,22 @@ O cadastro (`auth.service.ts`) segue estes passos:
 4. Consulta o CEP com `lib/cep.ts`: `nao_encontrado` responde **400** `CEP não encontrado`; `indisponivel` segue o cadastro com latitude e longitude `null`; `ok` usa as coordenadas (que também podem ser `null`).
 5. Gera o hash da senha (`lib/senha.ts`) e cria o usuário, com `consentimentoEm` na hora do cadastro.
 6. Se outro cadastro com o mesmo e-mail entrar entre os passos 3 e 5, o banco recusa (erro `P2002`) e a resposta é o mesmo **409**.
-7. Responde **201** com `{ id, nome, email }`. Nunca devolve senha, CEP nem coordenadas, e ainda não gera token: isso é do login.
+7. Responde **201** com `{ id, nome, email }`. Nunca devolve senha, CEP nem coordenadas, e não gera token: quem entra com e-mail e senha é o login.
 
 **Privacidade:** o serviço não registra e-mail, CEP, nome, coordenadas nem senha, e o Fastify não registra o corpo das requisições (o log de cada requisição traz só método, URL e status). Um erro inesperado do banco é trocado por uma mensagem genérica antes de chegar ao log, porque a mensagem do Prisma pode incluir os dados enviados.
+
+**Login** (`autenticarCredenciais`, mais o token na rota):
+
+1. A rota valida o corpo com `loginEntradaSchema`; o e-mail é normalizado (sem espaços nas pontas, em minúsculas).
+2. Busca o usuário pelo e-mail. Se ele não existir, a senha é conferida contra um **hash fictício** (`HASH_FICTICIO`), para que o tempo de resposta não revele quais e-mails têm conta.
+3. E-mail inexistente e senha errada dão a mesma resposta: **401** `E-mail ou senha incorretos`.
+4. Se confere, a rota assina um JWT e responde **200** com `{ token, usuario: { id, nome, email } }`.
+
+O token (`@fastify/jwt`, HS256) leva **só o `sub`**, o id do usuário como texto, mais as datas padrão `iat` e `exp`. Nada de e-mail, nome ou CEP. A validade vem de `JWT_EXPIRA_EM` (padrão `7d`) e a assinatura, de `JWT_SECRET`.
+
+Se os parâmetros do scrypt em `lib/senha.ts` mudarem, gere outro `HASH_FICTICIO` com os mesmos parâmetros (o teste `auth.login.test.ts` avisa).
+
+**Ainda falta:** limitar tentativas de login (rate limit) e `DELETE /auth/conta`.
 
 ### `ruas`: reservado para a próxima versão
 
@@ -167,7 +182,6 @@ O cadastro (`auth.service.ts`) segue estes passos:
 
 | Funcionalidade   | Versão | Requisito |
 | ---------------- | ------ | --------- |
-| Login            | v0.2.0 | RF02      |
 | Pesquisa por rua | v0.3.0 | RF04      |
 
 ---
@@ -177,6 +191,8 @@ O cadastro (`auth.service.ts`) segue estes passos:
 ### `config/env.ts`
 
 Lê o arquivo `.env` e confere cada variável com o Zod. Se faltar alguma, como `DATABASE_URL`, a API **para logo ao iniciar** e diz qual é o problema. É melhor do que subir aparentemente normal e falhar na primeira requisição.
+
+Duas variáveis cuidam do login: `JWT_SECRET` (obrigatória, mínimo de 32 caracteres) e `JWT_EXPIRA_EM` (padrão `7d`; número + `s`, `m`, `h` ou `d`). O `.env.example` traz um segredo só para desenvolvimento, e a API se recusa a iniciar com ele em produção. Para gerar um segredo de verdade: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
 
 Para criar uma variável nova: adicione-a ao esquema neste arquivo, ao `.env.example` (com um comentário explicando) e use `env.NOME_DA_VARIAVEL` no código.
 
@@ -218,6 +234,10 @@ throw naoImplementado('O login', 'v0.2.0'); // 501
 throw new ErroHttp(409, 'E-mail já cadastrado'); // qualquer outro código
 ```
 
+### `plugins/autenticar-usuario.ts`
+
+Protege as rotas do app. Lê `Authorization: Bearer <token>`, confere o JWT (assinatura e validade), busca o usuário no banco pelo `sub` e o disponibiliza em `request.usuario` (`id`, `nome` e `email`, nunca o hash da senha). Responde **401** se o token faltar, for inválido ou expirado, ou se o usuário não existir mais (a busca é feita a cada requisição, então uma conta apagada perde o acesso na hora). Para proteger uma rota: `{ preHandler: autenticarUsuario }`. Nem o token nem os dados do usuário vão para o log.
+
 ### `plugins/autenticar-estacao.ts`
 
 Confere o cabeçalho `Authorization: Bearer <token>`, encontra a estação pelo hash do token e a disponibiliza em `request.estacao` para a rota. Para proteger outra rota de estação, adicione `{ preHandler: autenticarEstacao }`, como em `leituras.routes.ts`.
@@ -239,7 +259,7 @@ O seed (`pnpm db:seed`) **apaga** estações, leituras, alertas e pontos de apoi
 
 ## Testes
 
-`src/app.test.ts` testa a API sem precisar do banco:
+Os testes não precisam do banco nem de segredos reais: `vitest.config.ts` define `DATABASE_URL` e `JWT_SECRET` de teste, e os módulos que usam o Prisma o substituem por um dublê. `src/app.test.ts` testa a API sem o banco:
 
 - `GET /saude` responde ok;
 - `POST /leituras` sem token responde 401;

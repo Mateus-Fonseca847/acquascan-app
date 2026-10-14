@@ -1,15 +1,24 @@
-import type { CadastroEntrada } from '@acquascan/shared';
+import type { CadastroEntrada, LoginEntrada } from '@acquascan/shared';
 import { Prisma } from '../../generated/prisma/client';
 import { consultarCep } from '../../lib/cep';
 import { ErroHttp } from '../../lib/erros';
 import { prisma } from '../../lib/prisma';
-import { hashSenha } from '../../lib/senha';
+import { hashSenha, verificarSenha } from '../../lib/senha';
 
 export interface UsuarioCriado {
   id: number;
   nome: string;
   email: string;
 }
+
+/**
+ * Hash fictício (mesmos parâmetros do hash real) para gastar o mesmo tempo quando o e-mail
+ * não existe. Se os parâmetros de lib/senha.ts mudarem, gere outro (o teste avisa).
+ */
+export const HASH_FICTICIO =
+  'scrypt$32768$8$3$sdZuD1hI1qYDloEqdcScxA==$yOXJPcASwiRJFy4KjOAiYql2awDqTAfL4X63XfXEseQTj4KFxSYOTlLi6cLoX9DFGBuo1qRhJ2Y8OgGYfdeE+g==';
+
+const credenciaisInvalidas = () => new ErroHttp(401, 'E-mail ou senha incorretos');
 
 const emailJaCadastrado = () => new ErroHttp(409, 'E-mail já cadastrado');
 
@@ -54,4 +63,23 @@ export async function cadastrarUsuario(entrada: CadastroEntrada): Promise<Usuari
     }
     throw new Error('Falha ao salvar o usuário');
   }
+}
+
+/**
+ * Login (RF02). Confere e-mail e senha e devolve o usuário; quem assina o token é a rota.
+ * E-mail inexistente e senha errada dão exatamente a mesma resposta, e o tempo também é parecido:
+ * sem usuário, a senha é conferida contra um hash fictício.
+ */
+export async function autenticarCredenciais(entrada: LoginEntrada): Promise<UsuarioCriado> {
+  const email = entrada.email.trim().toLowerCase();
+
+  const usuario = await prisma.usuario.findUnique({
+    where: { email },
+    select: { id: true, nome: true, email: true, senhaHash: true },
+  });
+
+  const senhaConfere = await verificarSenha(entrada.senha, usuario?.senhaHash ?? HASH_FICTICIO);
+  if (!usuario || !senhaConfere) throw credenciaisInvalidas();
+
+  return { id: usuario.id, nome: usuario.nome, email: usuario.email };
 }

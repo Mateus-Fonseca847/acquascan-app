@@ -1,13 +1,11 @@
 import { cadastroEntradaSchema, loginEntradaSchema } from '@acquascan/shared';
 import type { FastifyInstance } from 'fastify';
-import { naoImplementado } from '../../lib/erros';
-import { cadastrarUsuario } from './auth.service';
+import { autenticarCredenciais, cadastrarUsuario } from './auth.service';
 
 /**
  * Cadastro e login.
  *
  * TODO(v0.2.0):
- * - login: conferir senha e devolver um token de sessão (JWT)
  * - DELETE /auth/conta: excluir a conta e os dados (direito previsto na LGPD)
  * Ver docs/requisitos.md, RF01 e RF02, e docs/privacidade.md.
  */
@@ -19,7 +17,10 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post('/auth/login', async (request) => {
-    loginEntradaSchema.parse(request.body);
-    throw naoImplementado('O login', 'v0.2.0');
+    const entrada = loginEntradaSchema.parse(request.body);
+    const usuario = await autenticarCredenciais(entrada);
+    // O token leva só o id (sub): nada de e-mail, nome ou CEP.
+    const token = app.jwt.sign({ sub: String(usuario.id) });
+    return { token, usuario };
   });
 }

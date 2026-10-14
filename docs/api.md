@@ -17,7 +17,7 @@ Base em desenvolvimento: `http://localhost:3333`. Respostas em JSON, datas em IS
 | GET    | `/pontos-apoio?lat=&lng=&limite=10` | Pontos de apoio; com `lat`/`lng`, ordenados por distância    | Pronto       |
 | GET    | `/previsao`                         | Próximos 7 dias (Open-Meteo, cache de 30 min)                | Pronto       |
 | POST   | `/auth/cadastro`                    | Cadastro de usuário (responde 201 com `id`, `nome`, `email`) | Pronto       |
-| POST   | `/auth/login`                       | Login                                                        | 501 (v0.2.0) |
+| POST   | `/auth/login`                       | Login (responde 200 com `token` e `usuario`)                 | Pronto       |
 | GET    | `/ruas/busca?q=`                    | Pesquisa por rua                                             | 501 (v0.3.0) |
 
 ## Leitura enviada pela estação (ESP32)
@@ -55,16 +55,28 @@ curl -X POST http://localhost:3333/leituras \
   -d '{"distanciaCm": 150}'
 ```
 
+## Login e token do usuário
+
+```bash
+curl -X POST http://localhost:3333/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "maria@example.com", "senha": "a-senha-dela" }'
+```
+
+Resposta 200: `{ "token": "<jwt>", "usuario": { "id": 1, "nome": "Maria", "email": "maria@example.com" } }`. E-mail inexistente e senha errada dão o mesmo 401, `{ "erro": "E-mail ou senha incorretos" }`.
+
+O app guarda o token e o envia nas rotas protegidas: `Authorization: Bearer <token>`. O token vale por `JWT_EXPIRA_EM` (padrão 7 dias); depois disso, ou se a conta for apagada, as rotas protegidas respondem 401 e o usuário precisa entrar de novo. Nenhuma rota usa o token ainda; a primeira será `DELETE /auth/conta`.
+
 ## Erros
 
 Todos os erros seguem o formato `{ "erro": "mensagem", "detalhes": ... }`.
 
-| Código | Quando                                                                   |
-| ------ | ------------------------------------------------------------------------ |
-| 400    | Dados inválidos (`detalhes` lista os campos com problema)                |
-| 401    | Token de estação ausente, inválido ou estação desativada                 |
-| 404    | Recurso não encontrado                                                   |
-| 409    | E-mail já cadastrado                                                     |
-| 501    | Funcionalidade ainda não implementada (a mensagem diz a versão prevista) |
-| 502    | Serviço externo (previsão do tempo) indisponível                         |
-| 500    | Erro inesperado (detalhes no log da API)                                 |
+| Código | Quando                                                                     |
+| ------ | -------------------------------------------------------------------------- |
+| 400    | Dados inválidos (`detalhes` lista os campos com problema)                  |
+| 401    | Token de estação ou de usuário ausente, inválido ou expirado; login errado |
+| 404    | Recurso não encontrado                                                     |
+| 409    | E-mail já cadastrado                                                       |
+| 501    | Funcionalidade ainda não implementada (a mensagem diz a versão prevista)   |
+| 502    | Serviço externo (previsão do tempo) indisponível                           |
+| 500    | Erro inesperado (detalhes no log da API)                                   |
