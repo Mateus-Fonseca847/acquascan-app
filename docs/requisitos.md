@@ -6,7 +6,7 @@ Derivados do mapa mental do aplicativo (repositório acquascan-supernova, `docs/
 
 | Código | Requisito                                                             | Versão          | Status                                                      |
 | ------ | --------------------------------------------------------------------- | --------------- | ----------------------------------------------------------- |
-| RF01   | Cadastro com nome, e-mail, número de contato e CEP                    | v0.2.0          | Tela e validação prontas; API responde 501                  |
+| RF01   | Cadastro com nome, e-mail e CEP                                       | v0.2.0          | Tela e validação prontas; API responde 501                  |
 | RF02   | Login                                                                 | v0.2.0          | Tela pronta; API responde 501                               |
 | RF03   | Mapa de Petrópolis com as estações coloridas pelo estado              | v0.1.0          | Feito                                                       |
 | RF04   | Pesquisa do estado do rio por rua                                     | v0.3.0          | Endpoint reservado (501)                                    |

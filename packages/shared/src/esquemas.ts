@@ -19,7 +19,6 @@ export type LeituraEntrada = z.infer<typeof leituraEntradaSchema>;
 export const cadastroEntradaSchema = z.object({
   nome: z.string().trim().min(2, 'Informe seu nome'),
   email: z.email('E-mail inválido'),
-  telefone: z.string().regex(/^\d{10,11}$/, 'Use DDD + número, só dígitos'),
   cep: z.string().regex(/^\d{8}$/, 'Use os 8 dígitos do CEP'),
   senha: z.string().min(8, 'A senha precisa de pelo menos 8 caracteres'),
   /** LGPD: o cadastro só é aceito com consentimento explícito. */

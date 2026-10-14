@@ -103,7 +103,6 @@ model Usuario {
   id             Int         @id @default(autoincrement())
   nome           String
   email          String      @unique
-  telefone       String
   cep            String
   /// Obtidas a partir do CEP; definem a região dos alertas
   latitude       Float?

@@ -6,16 +6,14 @@ import { Campo } from '@/components/Campo';
 import { api } from '@/services/api';
 import { cores, espaco, fonte } from '@/theme';
 
-type Erros = Partial<
-  Record<'nome' | 'email' | 'telefone' | 'cep' | 'senha' | 'consentimento', string>
->;
+type Erros = Partial<Record<'nome' | 'email' | 'cep' | 'senha' | 'consentimento', string>>;
 
 /**
  * Cadastro (RF01). A validação usa o mesmo esquema da API (@acquascan/shared).
  * Enquanto a API não implementa o cadastro, ela responde 501 e a mensagem aparece aqui.
  */
 export default function TelaCadastro() {
-  const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cep: '', senha: '' });
+  const [dados, setDados] = useState({ nome: '', email: '', cep: '', senha: '' });
   const [consentimento, setConsentimento] = useState(false);
   const [erros, setErros] = useState<Erros>({});
   const [enviando, setEnviando] = useState(false);
@@ -26,7 +24,6 @@ export default function TelaCadastro() {
   async function criarConta() {
     const resultado = cadastroEntradaSchema.safeParse({
       ...dados,
-      telefone: dados.telefone.replace(/\D/g, ''),
       cep: dados.cep.replace(/\D/g, ''),
       consentimento,
     });
@@ -69,14 +66,6 @@ export default function TelaCadastro() {
         autoCapitalize="none"
         autoComplete="email"
         erro={erros.email}
-      />
-      <Campo
-        rotulo="Celular com DDD"
-        value={dados.telefone}
-        onChangeText={alterar('telefone')}
-        keyboardType="phone-pad"
-        autoComplete="tel"
-        erro={erros.telefone}
       />
       <Campo
         rotulo="CEP"

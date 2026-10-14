@@ -61,7 +61,6 @@ erDiagram
         int id PK
         text nome
         text email UK
-        text telefone
         text cep
         float latitude
         float longitude

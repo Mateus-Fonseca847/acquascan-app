@@ -23,7 +23,6 @@ describe('cadastroEntradaSchema', () => {
   const valido = {
     nome: 'Maria',
     email: 'maria@exemplo.com',
-    telefone: '24999990000',
     cep: '25600000',
     senha: '12345678',
     consentimento: true,
