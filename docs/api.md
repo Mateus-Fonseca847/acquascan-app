@@ -4,21 +4,21 @@ Base em desenvolvimento: `http://localhost:3333`. Respostas em JSON, datas em IS
 
 ## Endpoints
 
-| Método | Rota                                | Descrição                                                 | Status       |
-| ------ | ----------------------------------- | --------------------------------------------------------- | ------------ |
-| GET    | `/saude`                            | A API está no ar?                                         | Pronto       |
-| GET    | `/saude/banco`                      | A API alcança o banco?                                    | Pronto       |
-| POST   | `/leituras`                         | Recebe uma leitura de estação (autenticado)               | Pronto       |
-| GET    | `/estacoes`                         | Estações ativas com a última leitura                      | Pronto       |
-| GET    | `/estacoes/:id`                     | Detalhe com limites e estimativa                          | Pronto       |
-| GET    | `/estacoes/:id/leituras?horas=24`   | Histórico (1 a 168 horas)                                 | Pronto       |
-| GET    | `/rios`                             | Rios com suas estações                                    | Pronto       |
-| GET    | `/alertas?horas=24`                 | Alertas recentes                                          | Pronto       |
-| GET    | `/pontos-apoio?lat=&lng=&limite=10` | Pontos de apoio; com `lat`/`lng`, ordenados por distância | Pronto       |
-| GET    | `/previsao`                         | Próximos 7 dias (Open-Meteo, cache de 30 min)             | Pronto       |
-| POST   | `/auth/cadastro`                    | Cadastro de usuário                                       | 501 (v0.2.0) |
-| POST   | `/auth/login`                       | Login                                                     | 501 (v0.2.0) |
-| GET    | `/ruas/busca?q=`                    | Pesquisa por rua                                          | 501 (v0.3.0) |
+| Método | Rota                                | Descrição                                                    | Status       |
+| ------ | ----------------------------------- | ------------------------------------------------------------ | ------------ |
+| GET    | `/saude`                            | A API está no ar?                                            | Pronto       |
+| GET    | `/saude/banco`                      | A API alcança o banco?                                       | Pronto       |
+| POST   | `/leituras`                         | Recebe uma leitura de estação (autenticado)                  | Pronto       |
+| GET    | `/estacoes`                         | Estações ativas com a última leitura                         | Pronto       |
+| GET    | `/estacoes/:id`                     | Detalhe com limites e estimativa                             | Pronto       |
+| GET    | `/estacoes/:id/leituras?horas=24`   | Histórico (1 a 168 horas)                                    | Pronto       |
+| GET    | `/rios`                             | Rios com suas estações                                       | Pronto       |
+| GET    | `/alertas?horas=24`                 | Alertas recentes                                             | Pronto       |
+| GET    | `/pontos-apoio?lat=&lng=&limite=10` | Pontos de apoio; com `lat`/`lng`, ordenados por distância    | Pronto       |
+| GET    | `/previsao`                         | Próximos 7 dias (Open-Meteo, cache de 30 min)                | Pronto       |
+| POST   | `/auth/cadastro`                    | Cadastro de usuário (responde 201 com `id`, `nome`, `email`) | Pronto       |
+| POST   | `/auth/login`                       | Login                                                        | 501 (v0.2.0) |
+| GET    | `/ruas/busca?q=`                    | Pesquisa por rua                                             | 501 (v0.3.0) |
 
 ## Leitura enviada pela estação (ESP32)
 
@@ -64,6 +64,7 @@ Todos os erros seguem o formato `{ "erro": "mensagem", "detalhes": ... }`.
 | 400    | Dados inválidos (`detalhes` lista os campos com problema)                |
 | 401    | Token de estação ausente, inválido ou estação desativada                 |
 | 404    | Recurso não encontrado                                                   |
+| 409    | E-mail já cadastrado                                                     |
 | 501    | Funcionalidade ainda não implementada (a mensagem diz a versão prevista) |
 | 502    | Serviço externo (previsão do tempo) indisponível                         |
 | 500    | Erro inesperado (detalhes no log da API)                                 |

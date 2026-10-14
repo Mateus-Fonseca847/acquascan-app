@@ -38,6 +38,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Esqueletos que respondem 501 para cadastro, login e pesquisa por rua
 - Seed com dados fictícios de desenvolvimento
 - `lib/senha.ts`: hash de senha com scrypt assíncrono (`node:crypto`), com os parâmetros gravados no próprio hash
+- `POST /auth/cadastro`: valida, normaliza e-mail e CEP, recusa e-mail repetido (409) e CEP inexistente (400), obtém as coordenadas pelo CEP (o cadastro segue sem elas se a BrasilAPI estiver fora do ar), grava só o hash da senha e responde 201 com `id`, `nome` e `email`
 - `lib/cep.ts`: consulta de CEP na BrasilAPI v2 para obter as coordenadas do usuário, com timeout de 5 s e sem registrar dados em log
 
 **Mobile**

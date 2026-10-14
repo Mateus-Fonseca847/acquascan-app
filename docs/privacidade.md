@@ -13,12 +13,16 @@ O AcquaScan coleta dados pessoais no cadastro. A Lei Geral de Proteção de Dado
 | Senha                       | Login                                                  | Sim                   | Só o hash, em `usuarios.senha_hash` |
 | Token de push               | Enviar notificações                                    | Se o usuário permitir | `push_tokens.token`                 |
 
+## Compartilhamento com terceiros
+
+No cadastro, o CEP é enviado à [BrasilAPI](https://brasilapi.com.br) para obter a latitude e a longitude. Nenhum outro dado do usuário sai da API nessa consulta. Se a BrasilAPI estiver fora do ar, o cadastro continua e as coordenadas ficam vazias.
+
 ## Regras de implementação
 
 - **Consentimento:** o cadastro só é aceito com `consentimento: true` (validado em `@acquascan/shared`) e a data é salva em `consentimento_em`.
 - **Senhas:** sempre com hash lento (scrypt ou argon2). Nunca em texto, nunca em log.
 - **Exclusão:** o usuário pode excluir a conta no app; a exclusão apaga também os tokens de push (`onDelete: Cascade`).
-- **Logs:** não registrar e-mail ou CEP nos logs da API.
+- **Logs:** não registrar e-mail, nome, CEP, coordenadas, senha nem o corpo das requisições nos logs da API.
 - **Desenvolvimento:** usar apenas dados fictícios. Nunca copiar dados reais de produção para o computador.
 
 ## Pendências

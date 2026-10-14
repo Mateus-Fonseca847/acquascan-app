@@ -145,16 +145,30 @@ O ponto da previsão (centro de Petrópolis) vem das variáveis `PREVISAO_LATITU
 
 `/saude` responde "ok" sempre que a API está no ar. `/saude/banco` faz uma consulta mínima ao banco e responde 503 se não conseguir. São os primeiros endereços para testar quando algo não funciona: se `/saude` responde e `/saude/banco` não, o problema está no banco.
 
-### `auth` e `ruas`: reservados para as próximas versões
+### `auth`: cadastro (e login, ainda não)
 
-**Endpoints:** `POST /auth/cadastro`, `POST /auth/login` e `GET /ruas/busca`
+**Endpoints:** `POST /auth/cadastro` (pronto) e `POST /auth/login` (responde **501**, previsto para a v0.2.0)
 
-Já existem, mas respondem **501** com uma mensagem indicando a versão prevista. O cadastro e o login já validam os dados recebidos com os mesmos esquemas usados pelo app. Os comentários `TODO` nos arquivos descrevem o que falta fazer.
+O cadastro (`auth.service.ts`) segue estes passos:
 
-| Funcionalidade   | Versão | Requisito  |
-| ---------------- | ------ | ---------- |
-| Cadastro e login | v0.2.0 | RF01, RF02 |
-| Pesquisa por rua | v0.3.0 | RF04       |
+1. A rota valida o corpo com `cadastroEntradaSchema`, de `@acquascan/shared`.
+2. O e-mail é normalizado (sem espaços nas pontas, em minúsculas) e o CEP fica só com os 8 dígitos.
+3. Se o e-mail já existe, responde **409** `E-mail já cadastrado`, antes de qualquer consulta à rede.
+4. Consulta o CEP com `lib/cep.ts`: `nao_encontrado` responde **400** `CEP não encontrado`; `indisponivel` segue o cadastro com latitude e longitude `null`; `ok` usa as coordenadas (que também podem ser `null`).
+5. Gera o hash da senha (`lib/senha.ts`) e cria o usuário, com `consentimentoEm` na hora do cadastro.
+6. Se outro cadastro com o mesmo e-mail entrar entre os passos 3 e 5, o banco recusa (erro `P2002`) e a resposta é o mesmo **409**.
+7. Responde **201** com `{ id, nome, email }`. Nunca devolve senha, CEP nem coordenadas, e ainda não gera token: isso é do login.
+
+**Privacidade:** o serviço não registra e-mail, CEP, nome, coordenadas nem senha, e o Fastify não registra o corpo das requisições (o log de cada requisição traz só método, URL e status). Um erro inesperado do banco é trocado por uma mensagem genérica antes de chegar ao log, porque a mensagem do Prisma pode incluir os dados enviados.
+
+### `ruas`: reservado para a próxima versão
+
+**Endpoint:** `GET /ruas/busca` responde **501**. Os comentários `TODO` no arquivo descrevem o que falta fazer.
+
+| Funcionalidade   | Versão | Requisito |
+| ---------------- | ------ | --------- |
+| Login            | v0.2.0 | RF02      |
+| Pesquisa por rua | v0.3.0 | RF04      |
 
 ---
 
