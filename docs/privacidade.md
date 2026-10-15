@@ -24,6 +24,10 @@ O token de push identifica o **aparelho** do usuário, e por isso é tratado com
 
 O app só consegue gerar o token em aparelho físico com development build (não no Expo Go).
 
+### O que a notificação contém
+
+As mensagens enviadas ao Expo Push Service levam só o nome do **rio**, o nome da **estação**, o **novo estado** e três números de identificação (`alertaId`, `estacaoId`, `estado`). Elas **não têm nome, e-mail, cidade do usuário nem qualquer outro dado pessoal**: a mesma mensagem vai a todos os aparelhos da cidade. O token de push é o único dado do usuário que chega ao Expo, porque é ele que identifica o aparelho. Apenas usuários da cidade da estação recebem o alerta, e só alertas das últimas 1 hora são enviados. O Expo (e, por trás dele, a Apple e o Google) trata a entrega; verifique os termos deles ao escrever a política de privacidade.
+
 ## Minimização
 
 O AcquaScan não guarda telefone, CEP, endereço nem a localização exata do usuário: só a cidade, que basta para escolher os alertas. A cidade vem de uma lista da própria API, então nenhum dado do usuário é enviado a serviços de terceiros no cadastro.
@@ -42,7 +46,7 @@ Não são apagados os dados que não pertencem ao usuário: a cidade, as estaç�
 - **Consentimento:** o cadastro só é aceito com `consentimento: true` (validado em `@acquascan/shared`) e a data é salva em `consentimento_em`.
 - **Senhas:** sempre com hash lento (scrypt ou argon2). Nunca em texto, nunca em log.
 - **Exclusão:** `DELETE /auth/conta` apaga a conta do usuário logado (ver abaixo). O app ainda não tem o botão: a exclusão já funciona na API.
-- **Logs:** não registrar e-mail, nome, senha, token de push, IP, query string nem o corpo das requisições nos logs da API (o log traz só método e caminho). O IP e o e-mail usados no limite de tentativas ficam apenas na memória da API, como chave do contador, e somem quando ela reinicia.
+- **Logs:** não registrar e-mail, nome, senha, token de push, IP, query string nem o corpo das requisições nos logs da API (o log traz só método e caminho). Nem o envio de notificações registra tokens ou mensagens: só contagens. O IP e o e-mail usados no limite de tentativas ficam apenas na memória da API, como chave do contador, e somem quando ela reinicia.
 - **Desenvolvimento:** usar apenas dados fictícios. Nunca copiar dados reais de produção para o computador.
 
 ## Pendências

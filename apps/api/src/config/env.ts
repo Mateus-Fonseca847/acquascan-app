@@ -34,6 +34,24 @@ const envSchema = z.object({
       if (texto === 'false' || texto === '') return false;
       return /^\d+$/.test(texto) ? Number(texto) : texto;
     }),
+  /**
+   * Liga o envio de notificações push. Desligado (padrão), nada é enviado e os alertas ficam
+   * pendentes no banco; ao ligar, os alertas das últimas 1 hora ainda não enviados saem.
+   */
+  PUSH_ENVIO_ATIVO: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((valor) => valor === 'true'),
+  /** Endereço do Expo Push Service. Os testes e a verificação manual apontam para um servidor falso. */
+  EXPO_PUSH_URL: z.url().default('https://exp.host/--/api/v2/push/send'),
+  /**
+   * Token de acesso do Expo (opcional). Só é obrigatório se o "enhanced push security" estiver
+   * ligado no projeto, no painel do EAS. Nunca vai para log.
+   */
+  EXPO_ACCESS_TOKEN: z
+    .string()
+    .optional()
+    .transform((valor) => valor?.trim() || undefined),
   PREVISAO_LATITUDE: z.coerce.number().default(-22.505),
   PREVISAO_LONGITUDE: z.coerce.number().default(-43.178),
 });

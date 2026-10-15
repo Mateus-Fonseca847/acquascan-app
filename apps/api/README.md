@@ -110,7 +110,7 @@ O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que
 
 `registrarAlerta` é chamado pelo módulo `leituras` e grava a mudança de estado no banco. `GET /alertas` lista os alertas recentes (até 100), do mais novo para o mais antigo.
 
-**Ainda falta:** enviar a notificação push para o celular dos usuários da região (v0.4.0). Por enquanto, o alerta é só registrado no banco e aparece no log da API.
+Depois de gravar o alerta, `registrarAlerta` dispara o envio das notificações push (módulo `push`, abaixo) **sem esperar por ele**. O alerta com `enviadoEm` vazio é a caixa de saída do envio.
 
 ### `cidades`: onde o AcquaScan atende
 
@@ -139,6 +139,35 @@ Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notifi
 **Endpoint:** `GET /usuarios/me` (exige o token do usuário)
 
 `usuarios.service.ts` busca o usuário do token e devolve `{ id, nome, email, consentimentoEm, criadoEm, cidade }`, com as datas em ISO e a cidade completa (`id`, `nome`, `uf`, `latitude`, `longitude`). A resposta é montada campo a campo e a senha nunca é lida do banco, então `senhaHash` não aparece de jeito nenhum. Sem token ou com token inválido, 401. Nada disso vai para o log.
+
+### `push`: envia a notificação quando o rio piora
+
+`push.service.ts` tem `processarAlertasPendentes()`, que manda a notificação para os celulares dos usuários **da cidade da estação** (`usuarios.cidadeId` = `estacoes.cidadeId`). Cada rodada:
+
+1. Pega os alertas com `enviadoEm` vazio criados na **última 1 hora**. Os mais velhos são ignorados (avisar tarde de uma cheia confunde), e só a contagem vai para o log.
+2. Busca os tokens de push dos usuários da cidade. Sem tokens, marca `enviadoEm` e segue.
+3. Monta uma mensagem por token, em português, com o rio, a estação e o novo estado (rótulos de `ROTULO_ESTADO`, em `@acquascan/shared`). `data` leva só `alertaId`, `estacaoId` e `estado`; `priority: 'high'`, `ttl: 1800`, `sound: 'default'`. **Nada de dado pessoal na mensagem.**
+4. Envia ao Expo em **lotes de 100**, um de cada vez, com `fetch` e tempo limite de 10 s. Em 429, 5xx ou falha de rede, até 3 tentativas com espera crescente (1 s, 2 s; usa o `Retry-After` se vier, com teto de 30 s). Depois, desiste do lote. Outro 4xx não é tentado de novo.
+5. Ticket com erro `DeviceNotRegistered`: apaga aquele token do banco. Outros erros de ticket só são contados, e só o código vai para o log.
+6. Preenche `enviadoEm` **somente** se todos os lotes foram aceitos pelo Expo.
+
+**Por que duplicar em vez de perder:** se um lote falha de vez, o alerta continua pendente e a próxima rodada reenvia tudo, inclusive para quem já tinha recebido. Preferimos esse incômodo a um alerta de cheia que nunca chegou. Isso também cobre a API reiniciar no meio do envio.
+
+**Quando roda:** (a) logo depois de `registrarAlerta`, sem `await` e com `.catch` de mensagem fixa: nunca atrasa nem derruba o `POST /leituras`; (b) a cada 30 s, por um temporizador em `src/server.ts` (e não em `construirApp`, para os testes não criarem timers), que pega o que ficou pendente. O temporizador é limpo quando o servidor fecha. Uma flag em memória impede duas rodadas ao mesmo tempo; o que chegar durante uma rodada sai na próxima (no máximo 30 s depois).
+
+**Variáveis** (`.env.example`):
+
+| Variável            | Padrão                                 | Para quê                                                                                                             |
+| ------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `PUSH_ENVIO_ATIVO`  | `false`                                | Liga o envio. Desligado, nada é enviado e os alertas ficam pendentes (saem, se tiverem menos de 1 h, ao ligar).      |
+| `EXPO_PUSH_URL`     | `https://exp.host/--/api/v2/push/send` | Endereço do Expo Push Service. Aponte para um servidor falso para testar sem enviar nada de verdade.                 |
+| `EXPO_ACCESS_TOKEN` | vazio                                  | Opcional: só é exigido se o "enhanced push security" estiver ligado no projeto, no EAS. Segredo; nunca vai para log. |
+
+**Segundo a documentação do Expo Push** (confirmada ao implementar): até 100 mensagens por requisição; limite de 600 notificações por segundo por projeto (a API manda um lote por vez, bem abaixo disso); a resposta é um ticket por mensagem, na mesma ordem; o `Retry-After` não é documentado pelo Expo (usamos se vier); o `sound` só vale no iOS.
+
+**Ainda falta:** tratar os _receipts_ (a confirmação de entrega, que o Expo só fornece depois) e o app com _development build_, que é quem gera o token de push (não funciona no Expo Go).
+
+**Privacidade:** o log traz só contagens (alertas enviados, mensagens, tokens removidos, lotes com falha) e códigos de erro. Nunca o token de push, o token de acesso, o texto das mensagens ou dados de usuário.
 
 ### `rios`: estações agrupadas por rio
 

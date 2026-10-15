@@ -43,7 +43,8 @@ O mesmo vale para os esquemas de validação: o app valida o cadastro com o mesm
 3. O esquema `leituraEntradaSchema` valida o corpo; se inválido, a API responde 400.
 4. `avaliarLeitura` calcula nível em cm, nível em % e estado com os parâmetros da estação.
 5. A leitura é salva. Se o estado piorou em relação à leitura anterior, um alerta é registrado.
-6. O app, que consulta a API a cada minuto, mostra o novo estado.
+6. Em segundo plano (sem atrasar a resposta ao ESP32), a API envia a notificação push, pelo Expo Push Service, aos usuários **da mesma cidade da estação**. O alerta só é marcado como enviado quando o Expo aceita todos os lotes; se falhar, a rodada seguinte (a cada 30 s) tenta de novo.
+7. O app, que consulta a API a cada minuto, mostra o novo estado.
 
 ## Regras de cálculo
 

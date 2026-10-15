@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ROTULO_ESTADO,
   avaliarLeitura,
   calcularNivelCm,
   calcularNivelPct,
@@ -117,5 +118,11 @@ describe('estimarMinutosAteTransbordar', () => {
 describe('lpmParaLps', () => {
   it('converte L/min para L/s', () => {
     expect(lpmParaLps(9.73)).toBe(0.16);
+  });
+});
+
+describe('ROTULO_ESTADO', () => {
+  it('tem um nome em português para cada estado', () => {
+    expect(ROTULO_ESTADO).toEqual({ ESTAVEL: 'Estável', ATENCAO: 'Atenção', CRITICO: 'Crítico' });
   });
 });

@@ -53,6 +53,13 @@ export function avaliarLeitura(distanciaCm: number, config: ConfigEstacao) {
   return { nivelCm, nivelPct, estado };
 }
 
+/** Nome do estado para o usuário (notificações, telas). */
+export const ROTULO_ESTADO: Record<Estado, string> = {
+  ESTAVEL: 'Estável',
+  ATENCAO: 'Atenção',
+  CRITICO: 'Crítico',
+};
+
 const GRAVIDADE: Record<Estado, number> = { ESTAVEL: 0, ATENCAO: 1, CRITICO: 2 };
 
 /** true quando o estado novo é mais grave que o anterior (dispara alerta). */

@@ -1,12 +1,15 @@
 import type { Alerta, Estado } from '@acquascan/shared';
 import type { Estacao } from '../../generated/prisma/client';
 import { prisma } from '../../lib/prisma';
+import { processarAlertasPendentes } from '../push/push.service';
 
 /**
  * Registra um alerta quando o estado de uma estação piora.
  *
- * TODO(v0.4.0): enviar notificação push aos usuários da região da estação
- * (Expo Push Service) e preencher "enviadoEm". Ver docs/requisitos.md, RF08.
+ * O alerta é gravado com enviadoEm vazio (é a "caixa de saída"). Em seguida o envio das
+ * notificações push é disparado SEM esperar: ele nunca pode atrasar nem derrubar quem chamou
+ * (o POST /leituras). Se falhar, o alerta continua pendente e a próxima rodada tenta de novo.
+ * Ver docs/requisitos.md, RF08.
  */
 export async function registrarAlerta(
   estacao: Estacao,
@@ -16,9 +19,12 @@ export async function registrarAlerta(
   const alerta = await prisma.alerta.create({
     data: { estacaoId: estacao.id, estadoAnterior, estadoNovo },
   });
-  console.info(
-    `[alerta] ${estacao.nome}: ${estadoAnterior} → ${estadoNovo} (push ainda não implementado)`,
-  );
+  console.info(`[alerta] ${estacao.nome}: ${estadoAnterior} → ${estadoNovo}`);
+
+  // Sem await de propósito. A mensagem do erro é fixa: nada de dados do envio no log.
+  processarAlertasPendentes().catch(() => {
+    console.error('[push] falha ao processar os alertas pendentes');
+  });
   return alerta;
 }
 
