@@ -173,7 +173,7 @@ A regra fica em `auth.service.ts`; `auth.routes.ts` só cuida do HTTP.
 6. Se o banco recusar o `create`, o erro `P2002` (e-mail repetido por corrida) vira o mesmo **409**, e o `P2003` (cidade apagada no meio do caminho) vira o mesmo **400** `Cidade inválida`. Qualquer outro erro vira `Falha ao salvar o usuário`.
 7. Responde **201** com `{ id, nome, email }`. Nunca devolve a senha nem outros dados, e não gera token: quem entra com e-mail e senha é o login.
 
-**Privacidade:** o serviço não registra e-mail, nome nem senha, e o Fastify não registra o corpo das requisições (o log de cada requisição traz só método, URL e status). Um erro inesperado do banco é trocado por uma mensagem genérica antes de chegar ao log, porque a mensagem do Prisma pode incluir os dados enviados.
+**Privacidade:** o serviço não registra e-mail, nome nem senha, e o Fastify não registra o corpo das requisições (o log de cada requisição traz só método e caminho, sem IP, host nem query string: ver `lib/log.ts`). Um erro inesperado do banco é trocado por uma mensagem genérica antes de chegar ao log, porque a mensagem do Prisma pode incluir os dados enviados.
 
 **Login** (`autenticarCredenciais`, mais o token na rota):
 
@@ -196,7 +196,7 @@ Se os parâmetros do scrypt em `lib/senha.ts` mudarem, gere outro `HASH_FICTICIO
 
 Depois da exclusão, o mesmo token passa a dar 401, porque o plugin busca o usuário a cada requisição. Um `DELETE` aceita corpo JSON no Fastify, no `curl` e no `fetch` do Node; um corpo ausente ou malformado responde **400**.
 
-**Ainda falta:** limitar tentativas de login (rate limit).
+O login, o cadastro e a exclusão de conta têm limite de tentativas (429); veja [Limite de tentativas](#limite-de-tentativas).
 
 ### `ruas`: reservado para a próxima versão
 
@@ -215,6 +215,8 @@ Depois da exclusão, o mesmo token passa a dar 401, porque o plugin busca o usu�
 Lê o arquivo `.env` e confere cada variável com o Zod. Se faltar alguma, como `DATABASE_URL`, a API **para logo ao iniciar** e diz qual é o problema. É melhor do que subir aparentemente normal e falhar na primeira requisição.
 
 Duas variáveis cuidam do login: `JWT_SECRET` (obrigatória, mínimo de 32 caracteres) e `JWT_EXPIRA_EM` (padrão `7d`; número + `s`, `m`, `h` ou `d`). O `.env.example` traz um segredo só para desenvolvimento, e a API se recusa a iniciar com ele em produção. Para gerar um segredo de verdade: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`.
+
+`TRUST_PROXY` (padrão `false`) é repassada à opção `trustProxy` do Fastify e decide de onde vem o IP de quem chamou. **Atrás de um proxy** (nginx, Render, Railway...) ela precisa ser ligada (`true`, ou melhor, o número de proxies à frente da API, como `1`); senão todos os usuários aparecem com o IP do proxy e **dividem o mesmo limite de tentativas**. Com a API exposta direto, deixe `false`: ligada sem proxy, qualquer um forja o IP pelo cabeçalho `X-Forwarded-For` e escapa do limite.
 
 Para criar uma variável nova: adicione-a ao esquema neste arquivo, ao `.env.example` (com um comentário explicando) e use `env.NOME_DA_VARIAVEL` no código.
 
@@ -248,6 +250,26 @@ throw new ErroHttp(409, 'E-mail já cadastrado'); // qualquer outro código
 
 Protege as rotas do app. Lê `Authorization: Bearer <token>`, confere o JWT (assinatura e validade), busca o usuário no banco pelo `sub` e o disponibiliza em `request.usuario` (`id`, `nome` e `email`, nunca o hash da senha). Responde **401** se o token faltar, for inválido ou expirado, ou se o usuário não existir mais (a busca é feita a cada requisição, então uma conta apagada perde o acesso na hora). Para proteger uma rota: `{ preHandler: autenticarUsuario }`. Nem o token nem os dados do usuário vão para o log.
 
+### Limite de tentativas
+
+`plugins/limitar-tentativas.ts` (com `@fastify/rate-limit`) segura quem tenta adivinhar senhas ou lotar o cadastro. Os números ficam em `config/limites.ts`, cada um com um comentário explicando o porquê:
+
+| Rota                  | Regra                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /auth/login`    | **10 por 15 min** por IP + e-mail (e-mail com `trim` e minúsculas, lido do corpo; sem e-mail válido a chave é só o IP) **e** 40 por 15 min por IP |
+| `POST /auth/cadastro` | 20 por hora por IP (folga de propósito: no evento da Supernova várias pessoas podem usar o mesmo Wi-Fi)                                           |
+| `DELETE /auth/conta`  | 5 por 15 min por IP, conferido **antes** da autenticação                                                                                          |
+
+Todas as tentativas contam, inclusive as bem-sucedidas. Ao passar do limite a resposta é **429** com `{ "erro": "Muitas tentativas. Tente de novo em alguns minutos." }` e o cabeçalho `Retry-After` (segundos). As respostas também trazem `x-ratelimit-limit`, `x-ratelimit-remaining` e `x-ratelimit-reset`. Nenhuma outra rota é limitada: o `POST /leituras` fica de fora porque a estação tem autenticação própria (o endurecimento é do v0.5.0).
+
+**Como funciona:** o plugin é registrado com `global: false` e cada rota monta um `preHandler` com `app.createRateLimit` (a API manual do pacote). Foi preciso porque o login tem duas regras na mesma rota e porque o `preHandler` já tem o corpo lido, o que permite usar o e-mail na chave. O erro 429 é um `ErroHttp`, então o tratamento de erros 4xx do Fastify em `app.ts` não troca a mensagem por "Requisição inválida".
+
+**Memória e instância única:** os contadores ficam na memória da API. Eles somem quando a API reinicia (quem estava bloqueado volta a poder tentar) e não são compartilhados entre instâncias: com duas ou mais cópias da API, cada uma conta por conta própria e o limite efetivo vira o dobro (ou mais). Para rodar várias instâncias, será preciso um contador compartilhado (o pacote suporta Redis).
+
+**Privacidade:** IP, e-mail e corpo existem só na chave do contador, na memória, e nunca vão para o log.
+
+**Proxy:** veja `TRUST_PROXY` em [`config/env.ts`](#configenvts).
+
 ### `plugins/autenticar-estacao.ts`
 
 Confere o cabeçalho `Authorization: Bearer <token>`, encontra a estação pelo hash do token e a disponibiliza em `request.estacao` para a rota. Para proteger outra rota de estação, adicione `{ preHandler: autenticarEstacao }`, como em `leituras.routes.ts`.
@@ -269,7 +291,7 @@ O seed (`pnpm db:seed`) **apaga** estações, leituras, alertas e pontos de apoi
 
 ## Testes
 
-Os testes não precisam do banco nem de segredos reais: `vitest.config.ts` define `DATABASE_URL` e `JWT_SECRET` de teste, e os módulos que usam o Prisma o substituem por um dublê. `src/app.test.ts` testa a API sem o banco:
+Os testes não precisam do banco nem de segredos reais: `vitest.config.ts` define `NODE_ENV=test`, `DATABASE_URL` e `JWT_SECRET` de teste (e, com `NODE_ENV=test`, o limite de tentativas fica desligado, porque os testes fazem muitas requisições do mesmo IP; `src/modules/auth/limites.routes.test.ts` o liga com `construirApp({ limitarTentativas: true })` e usa os números reais), e os módulos que usam o Prisma o substituem por um dublê. `src/app.test.ts` testa a API sem o banco:
 
 - `GET /saude` responde ok;
 - `POST /leituras` sem token responde 401;

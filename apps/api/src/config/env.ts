@@ -20,6 +20,20 @@ const envSchema = z.object({
     .string()
     .regex(/^\d+[smhd]$/, 'Use um número seguido de s, m, h ou d (ex.: 7d)')
     .default('7d'),
+  /**
+   * Atrás de um proxy (nginx, Render, Railway...) ligue esta variável: sem ela todos os usuários
+   * parecem ter o IP do proxy e compartilham o mesmo limite de tentativas. Aceita true, false,
+   * um número de proxies à frente da API (ex.: 1) ou uma lista de IPs/CIDR confiáveis.
+   */
+  TRUST_PROXY: z
+    .string()
+    .default('false')
+    .transform((valor): boolean | number | string => {
+      const texto = valor.trim();
+      if (texto === 'true') return true;
+      if (texto === 'false' || texto === '') return false;
+      return /^\d+$/.test(texto) ? Number(texto) : texto;
+    }),
   PREVISAO_LATITUDE: z.coerce.number().default(-22.505),
   PREVISAO_LONGITUDE: z.coerce.number().default(-43.178),
 });

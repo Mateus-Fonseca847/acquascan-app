@@ -10,6 +10,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 - Cadastro (RF01): o usuário escolhe a **cidade** (`cidadeId`, lista de `GET /cidades`) no lugar do CEP, no esquema de `@acquascan/shared`, na API e na tela do app. A tela ainda não envia o cadastro à API
 - `usuarios.cidade_id` passou a ser obrigatório (migração `cadastro_por_cidade`)
+- O log de cada requisição passa a trazer só método e caminho, sem host, IP nem query string (`lib/log.ts`). Antes o Fastify registrava `remoteAddress`, `remotePort` e a URL completa
 - Erros de requisição causados pelo cliente que o próprio Fastify detecta (como JSON malformado) passam a responder 400 `Requisição inválida`, em vez de 500 com registro no log
 
 ### Removido
@@ -49,6 +50,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - `POST /auth/login`: confere e-mail e senha (com hash fictício quando o e-mail não existe, para o tempo de resposta não revelar quais e-mails têm conta) e responde 200 com um JWT e `{ id, nome, email }`; e-mail inexistente e senha errada dão o mesmo 401
 - JWT com `@fastify/jwt` (HS256, `sub` com o id do usuário e validade em `JWT_EXPIRA_EM`, padrão 7 dias), com as variáveis `JWT_SECRET` e `JWT_EXPIRA_EM`
 - Plugin `autenticar-usuario`: valida o token, busca o usuário no banco e o disponibiliza em `request.usuario`
+- Limite de tentativas (`@fastify/rate-limit`, contadores em memória): login 10 por 15 min por IP + e-mail e 40 por 15 min por IP, cadastro 20 por hora por IP e exclusão de conta 5 por 15 min por IP; ao passar, 429 com `Retry-After` e cabeçalhos `x-ratelimit-*`. Números em `config/limites.ts`. Nova variável `TRUST_PROXY` (padrão `false`), necessária atrás de um proxy
 - `GET /usuarios/me`: perfil de quem está logado (`id`, `nome`, `email`, `consentimentoEm`, `criadoEm` e `cidade`), sem a senha; tipo `Perfil` em `@acquascan/shared`
 - `DELETE /auth/conta` (LGPD): exclui a conta de quem está logado, confirmada pela senha (403 se estiver errada), e apaga também os tokens de push; responde 204, inclusive se a conta já tiver sido apagada. Esquema `excluirContaEntradaSchema` em `@acquascan/shared`
 - Cidades: tabela `cidades` (nome, UF, centro), `cidadeId` obrigatório nas estações e nos usuários (migrações `adiciona_cidades` e `cadastro_por_cidade`, que criam Petrópolis/RJ e ligam a ela as estações e os usuários existentes), tipo `Cidade` em `@acquascan/shared` e `GET /cidades`, público e em ordem alfabética

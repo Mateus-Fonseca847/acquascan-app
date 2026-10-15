@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     env: {
+      NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://teste:teste@localhost:5432/teste',
       JWT_SECRET: 'segredo-somente-para-testes-0123456789abcdef',
     },

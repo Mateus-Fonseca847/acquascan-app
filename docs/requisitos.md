@@ -21,14 +21,15 @@ Derivados do mapa mental do aplicativo (repositório acquascan-supernova, `docs/
 
 ## Não funcionais
 
-| Código | Requisito                      | Como atendemos                                                                                                                                      |
-| ------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RNF01  | Acessibilidade                 | Estado sempre com cor, ícone e texto; contraste AA; fonte mínima de 16 px; alvos de toque de 44 px                                                  |
-| RNF02  | Privacidade (LGPD)             | Consentimento obrigatório no cadastro, dados mínimos, exclusão de conta (API pronta; app ainda não integrado). Ver [privacidade.md](privacidade.md) |
-| RNF03  | Segurança das estações         | Token por estação, só o hash no banco                                                                                                               |
-| RNF04  | Atualização                    | App atualiza os dados a cada minuto, no mesmo ritmo das estações                                                                                    |
-| RNF05  | Honestidade da informação      | Estimativa apresentada como estimativa; estação sem dados aparece como "Sem dados", nunca com valor antigo como se fosse atual                      |
-| RNF06  | Funcionar sem a estação física | Simulador em `tools/simulador`                                                                                                                      |
+| Código | Requisito                      | Como atendemos                                                                                                                                                            |
+| ------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RNF01  | Acessibilidade                 | Estado sempre com cor, ícone e texto; contraste AA; fonte mínima de 16 px; alvos de toque de 44 px                                                                        |
+| RNF02  | Privacidade (LGPD)             | Consentimento obrigatório no cadastro, dados mínimos, exclusão de conta (API pronta; app ainda não integrado). Ver [privacidade.md](privacidade.md)                       |
+| RNF03  | Segurança das estações         | Token por estação, só o hash no banco                                                                                                                                     |
+| RNF04  | Atualização                    | App atualiza os dados a cada minuto, no mesmo ritmo das estações                                                                                                          |
+| RNF05  | Honestidade da informação      | Estimativa apresentada como estimativa; estação sem dados aparece como "Sem dados", nunca com valor antigo como se fosse atual                                            |
+| RNF06  | Funcionar sem a estação física | Simulador em `tools/simulador`                                                                                                                                            |
+| RNF07  | Segurança das contas           | Senha com hash lento (scrypt), login com mensagem única para e-mail ou senha errados, limite de tentativas em login, cadastro e exclusão de conta (429), JWT com validade |
 
 ## Pendências de definição
 

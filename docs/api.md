@@ -130,6 +130,18 @@ curl -X DELETE http://localhost:3333/auth/conta \
 
 Resposta 204, sem corpo. A conta e os tokens de push são apagados, e o mesmo token passa a dar 401. Chamar de novo com um usuário que já foi apagado também responde 204. Senha incorreta responde **403** `Senha incorreta` (e não 401, para o app não confundir com sessão expirada); corpo sem `senha` ou com JSON malformado, 400.
 
+## Limite de tentativas
+
+Para segurar tentativas de adivinhar senhas, três rotas têm limite. Todas as tentativas contam, inclusive as que dão certo:
+
+| Rota                  | Limite                                                        |
+| --------------------- | ------------------------------------------------------------- |
+| `POST /auth/login`    | 10 por 15 minutos por IP + e-mail, e 40 por 15 minutos por IP |
+| `POST /auth/cadastro` | 20 por hora por IP                                            |
+| `DELETE /auth/conta`  | 5 por 15 minutos por IP                                       |
+
+Ao passar do limite: **429** com `{ "erro": "Muitas tentativas. Tente de novo em alguns minutos." }` e o cabeçalho `Retry-After` (segundos até poder tentar de novo). As respostas dessas rotas trazem `x-ratelimit-limit`, `x-ratelimit-remaining` e `x-ratelimit-reset`. O app deve mostrar a mensagem e esperar o tempo de `Retry-After`. Os contadores ficam na memória da API (somem ao reiniciar). Atrás de um proxy, a variável `TRUST_PROXY` precisa estar ligada, senão todos dividem o mesmo IP (veja o README da API).
+
 ## Erros
 
 Todos os erros seguem o formato `{ "erro": "mensagem", "detalhes": ... }`.
@@ -141,6 +153,7 @@ Todos os erros seguem o formato `{ "erro": "mensagem", "detalhes": ... }`.
 | 403    | Senha incorreta ao excluir a conta                                           |
 | 404    | Recurso não encontrado                                                       |
 | 409    | E-mail já cadastrado                                                         |
+| 429    | Muitas tentativas (login, cadastro ou exclusão de conta); veja `Retry-After` |
 | 501    | Funcionalidade ainda não implementada (a mensagem diz a versão prevista)     |
 | 502    | Serviço externo (previsão do tempo) indisponível                             |
 | 500    | Erro inesperado (detalhes no log da API)                                     |

@@ -3,10 +3,12 @@
  * Separado de server.ts para que os testes possam criar a app sem abrir porta.
  */
 import fastifyJwt from '@fastify/jwt';
+import fastifyRateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 import { ZodError } from 'zod';
 import { env } from './config/env';
 import { ErroHttp } from './lib/erros';
+import { serializarRequisicao } from './lib/log';
 import { alertasRoutes } from './modules/alertas/alertas.routes';
 import { authRoutes } from './modules/auth/auth.routes';
 import { cidadesRoutes } from './modules/cidades/cidades.routes';
@@ -19,8 +21,24 @@ import { ruasRoutes } from './modules/ruas/ruas.routes';
 import { saudeRoutes } from './modules/saude/saude.routes';
 import { usuariosRoutes } from './modules/usuarios/usuarios.routes';
 
-export function construirApp(opcoes: { logger?: boolean } = {}) {
-  const app = Fastify({ logger: opcoes.logger ?? true });
+export interface OpcoesApp {
+  logger?: boolean;
+  /**
+   * Liga o limite de tentativas das rotas de conta. Por padrão fica ligado, menos quando
+   * NODE_ENV=test: os testes fazem muitas requisições do mesmo IP. Os testes do limite
+   * passam `true` de propósito.
+   */
+  limitarTentativas?: boolean;
+}
+
+export function construirApp(opcoes: OpcoesApp = {}) {
+  const app = Fastify({
+    // Log sem IP, host nem query string (ver lib/log.ts).
+    logger: (opcoes.logger ?? true) ? { serializers: { req: serializarRequisicao } } : false,
+    // O Fastify aceita também um número (de proxies confiáveis), mas os tipos dele não o listam.
+    trustProxy: env.TRUST_PROXY as boolean | string,
+  });
+  const limitar = opcoes.limitarTentativas ?? env.NODE_ENV !== 'test';
 
   app.setErrorHandler((erro, _request, reply) => {
     if (erro instanceof ZodError) {
@@ -50,8 +68,11 @@ export function construirApp(opcoes: { logger?: boolean } = {}) {
     verify: { algorithms: ['HS256'] },
   });
 
+  // global: false = nada é limitado automaticamente; cada rota escolhe suas regras.
+  app.register(fastifyRateLimit, { global: false });
+
   app.register(saudeRoutes);
-  app.register(authRoutes);
+  app.register(authRoutes, { limitar });
   app.register(usuariosRoutes);
   app.register(cidadesRoutes);
   app.register(riosRoutes);
