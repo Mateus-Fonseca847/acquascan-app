@@ -26,7 +26,7 @@ O app só consegue gerar o token em aparelho físico com development build (não
 
 ### O que a notificação contém
 
-As mensagens enviadas ao Expo Push Service levam só o nome do **rio**, o nome da **estação**, o **novo estado** e três números de identificação (`alertaId`, `estacaoId`, `estado`). Elas **não têm nome, e-mail, cidade do usuário nem qualquer outro dado pessoal**: a mesma mensagem vai a todos os aparelhos da cidade. O token de push é o único dado do usuário que chega ao Expo, porque é ele que identifica o aparelho. Apenas usuários da cidade da estação recebem o alerta, e só alertas das últimas 1 hora são enviados. O Expo (e, por trás dele, a Apple e o Google) trata a entrega; verifique os termos deles ao escrever a política de privacidade.
+As mensagens enviadas ao Expo Push Service levam só o nome do **rio**, o nome da **estação**, o **novo estado** e três números de identificação (`alertaId`, `estacaoId`, `estado`). Elas **não têm nome, e-mail, cidade do usuário nem qualquer outro dado pessoal**: a mesma mensagem vai a todos os aparelhos da cidade. O token de push é o único dado do usuário que chega ao Expo, porque é ele que identifica o aparelho. Apenas usuários da cidade da estação recebem o alerta, e só alertas das últimas 1 hora são enviados. Para conferir a entrega, a API guarda por no máximo 24 horas o _ticket_ que o Expo devolve (tabela `push_tickets`): é só um código aleatório do Expo ligado ao token e ao alerta, **sem dado pessoal**, e ele é apagado junto com o token ou com a conta do usuário. Se o recibo disser que o aparelho não existe mais, o token é apagado. O Expo (e, por trás dele, a Apple e o Google) trata a entrega; verifique os termos deles ao escrever a política de privacidade.
 
 ## Minimização
 

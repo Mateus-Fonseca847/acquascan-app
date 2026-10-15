@@ -44,6 +44,8 @@ const envSchema = z.object({
     .transform((valor) => valor === 'true'),
   /** Endereço do Expo Push Service. Os testes e a verificação manual apontam para um servidor falso. */
   EXPO_PUSH_URL: z.url().default('https://exp.host/--/api/v2/push/send'),
+  /** Endereço de consulta dos recibos (receipts) do Expo Push Service. */
+  EXPO_RECIBOS_URL: z.url().default('https://exp.host/--/api/v2/push/getReceipts'),
   /**
    * Token de acesso do Expo (opcional). Só é obrigatório se o "enhanced push security" estiver
    * ligado no projeto, no painel do EAS. Nunca vai para log.

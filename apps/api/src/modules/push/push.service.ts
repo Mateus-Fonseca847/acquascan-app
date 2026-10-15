@@ -1,5 +1,6 @@
 import { ROTULO_ESTADO, type Estado } from '@acquascan/shared';
 import { env } from '../../config/env';
+import { ESPERA_RECIBO_MS, MAX_IDS_POR_CONSULTA, RETENCAO_RECIBO_MS } from '../../config/push';
 import { dormir } from '../../lib/dormir';
 import { prisma } from '../../lib/prisma';
 
@@ -20,6 +21,10 @@ import { prisma } from '../../lib/prisma';
  *
  * Privacidade: NUNCA registrar token de push, token de acesso, corpo das mensagens nem dados de
  * usuário. O log tem só contagens e códigos de erro.
+ *
+ * Recibos (receipts): ao aceitar uma mensagem o Expo devolve um ticket. Guardamos o ticket e,
+ * 15 minutos depois, perguntamos o recibo (`processarRecibos`) para descobrir falhas de entrega
+ * (aparelho que saiu, credenciais inválidas...). Veja config/push.ts.
  *
  * Reenvio sem duplicar: quando um lote falha de vez, os lotes já aceitos são lembrados (em memória,
  * por alerta) e as rodadas seguintes mandam só os tokens que faltam. Cada alerta tem no máximo
@@ -73,6 +78,7 @@ export function montarMensagem(alerta: AlertaComEstacao, token: string): Mensage
 
 interface Ticket {
   status?: string;
+  id?: string;
   details?: { error?: string };
 }
 
@@ -87,8 +93,13 @@ function esperaAntesDeTentarDeNovo(tentativa: number, retryAfter: string | null)
   return Math.min(ESPERA_BASE_MS * 2 ** (tentativa - 1), ESPERA_MAXIMA_MS);
 }
 
-/** Envia um lote (até 100 mensagens). Em 429 ou 5xx tenta até 3 vezes; depois desiste do lote. */
-async function enviarLote(mensagens: MensagemPush[]): Promise<ResultadoLote> {
+type RespostaDoExpo = { aceito: true; corpo: unknown } | { aceito: false };
+
+/**
+ * POST em JSON ao Expo (envio e consulta de recibos). Em 429, 5xx ou falha de rede tenta até
+ * 3 vezes, com espera crescente; depois desiste. Outro 4xx não é tentado de novo.
+ */
+async function postarNoExpo(url: string, corpo: unknown): Promise<RespostaDoExpo> {
   const cabecalhos: Record<string, string> = {
     'content-type': 'application/json',
     accept: 'application/json',
@@ -98,21 +109,14 @@ async function enviarLote(mensagens: MensagemPush[]): Promise<ResultadoLote> {
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     let retryAfter: string | null = null;
     try {
-      const resposta = await fetch(env.EXPO_PUSH_URL, {
+      const resposta = await fetch(url, {
         method: 'POST',
         headers: cabecalhos,
-        body: JSON.stringify(mensagens),
+        body: JSON.stringify(corpo),
         signal: AbortSignal.timeout(TIMEOUT_ENVIO_MS),
       });
 
-      if (resposta.ok) {
-        const corpo = (await resposta.json()) as { data?: unknown };
-        // Sem um ticket por mensagem não dá para saber o que o Expo aceitou: conta como falha.
-        if (!Array.isArray(corpo.data) || corpo.data.length !== mensagens.length) {
-          return { aceito: false };
-        }
-        return { aceito: true, tickets: corpo.data as Ticket[] };
-      }
+      if (resposta.ok) return { aceito: true, corpo: await resposta.json() };
       // Outro 4xx é erro da requisição: tentar de novo não adianta.
       if (resposta.status !== 429 && resposta.status < 500) return { aceito: false };
       retryAfter = resposta.headers.get('retry-after');
@@ -122,6 +126,17 @@ async function enviarLote(mensagens: MensagemPush[]): Promise<ResultadoLote> {
     if (tentativa < TENTATIVAS) await dormir(esperaAntesDeTentarDeNovo(tentativa, retryAfter));
   }
   return { aceito: false };
+}
+
+/** Envia um lote (até 100 mensagens) e devolve um ticket por mensagem. */
+async function enviarLote(mensagens: MensagemPush[]): Promise<ResultadoLote> {
+  const resposta = await postarNoExpo(env.EXPO_PUSH_URL, mensagens);
+  if (!resposta.aceito) return { aceito: false };
+
+  const data = (resposta.corpo as { data?: unknown } | null)?.data;
+  // Sem um ticket por mensagem não dá para saber o que o Expo aceitou: conta como falha.
+  if (!Array.isArray(data) || data.length !== mensagens.length) return { aceito: false };
+  return { aceito: true, tickets: data as Ticket[] };
 }
 
 interface Contagens {
@@ -189,6 +204,23 @@ async function enviarAlerta(alerta: AlertaComEstacao, contagens: Contagens): Pro
 
     contagens.mensagens += lote.length;
     for (const t of lote) progresso.enviados.add(t.id);
+
+    // Guarda os tickets para conferir os recibos depois. Se não der para gravar, o alerta
+    // continua concluído (a notificação já foi aceita); só não conferimos o recibo.
+    const novosTickets = resultado.tickets.flatMap((ticket, i) =>
+      ticket?.status === 'ok' && typeof ticket.id === 'string'
+        ? [{ ticketId: ticket.id, pushTokenId: lote[i]!.id, alertaId: alerta.id }]
+        : [],
+    );
+    if (novosTickets.length > 0) {
+      try {
+        await prisma.pushTicket.createMany({ data: novosTickets, skipDuplicates: true });
+      } catch {
+        console.error(
+          '[push] falha ao guardar os tickets; os recibos deste lote não serão conferidos',
+        );
+      }
+    }
 
     const naoRegistrados: number[] = [];
     resultado.tickets.forEach((ticket, i) => {
@@ -285,5 +317,122 @@ async function rodada(): Promise<void> {
       `mensagens: ${contagens.mensagens}, tokens removidos: ${contagens.tokensRemovidos}, ` +
       `lotes com falha: ${contagens.lotesComFalha}` +
       (erros ? `, erros de ticket: ${erros}` : ''),
+  );
+}
+
+let recibosEmExecucao = false;
+let avisouCredenciaisInvalidas = false;
+
+/** Esquece o aviso de credenciais, como se o processo tivesse reiniciado (para os testes). */
+export function reiniciarEstadoDosRecibos() {
+  avisouCredenciaisInvalidas = false;
+}
+
+interface Receipt {
+  status?: string;
+  details?: { error?: string };
+}
+
+/**
+ * Confere os recibos dos tickets guardados (RF08, segunda etapa). Roda a cada 5 minutos.
+ * Uma flag em memória impede duas execuções ao mesmo tempo. O parâmetro `agora` existe para
+ * os testes; ele decide quais tickets já têm idade para ser consultados e quais expiraram.
+ *
+ * - com mais de 24 h: apagados e contados como "sem recibo" (o Expo já descartou o recibo);
+ * - com 15 min ou mais: consulta em lotes de até 1000 ids;
+ * - recibo ausente: o ticket fica para a próxima rodada;
+ * - ok: apaga o ticket; DeviceNotRegistered: apaga o PUSH TOKEN (o ticket sai junto, em cascata);
+ * - InvalidCredentials: um único aviso por execução do processo, e apaga o ticket;
+ * - outros erros: contados por código e o ticket apagado. A notificação NÃO é reenviada, porque a
+ *   janela do alerta já passou;
+ * - falha de rede ou 5xx: os tickets ficam como estão para a próxima rodada.
+ *
+ * Privacidade: o log traz só contagens e códigos de erro, nunca token, ticketId ou resposta.
+ */
+export async function processarRecibos(agora = new Date()): Promise<void> {
+  if (!env.PUSH_ENVIO_ATIVO || recibosEmExecucao) return;
+  recibosEmExecucao = true;
+  try {
+    await rodadaDeRecibos(agora);
+  } finally {
+    recibosEmExecucao = false;
+  }
+}
+
+async function rodadaDeRecibos(agora: Date): Promise<void> {
+  const expirados = await prisma.pushTicket.deleteMany({
+    where: { criadoEm: { lt: new Date(agora.getTime() - RETENCAO_RECIBO_MS) } },
+  });
+
+  const prontos = await prisma.pushTicket.findMany({
+    where: { criadoEm: { lte: new Date(agora.getTime() - ESPERA_RECIBO_MS) } },
+    orderBy: { id: 'asc' },
+    select: { id: true, ticketId: true, pushTokenId: true },
+  });
+
+  let verificados = 0;
+  let entregues = 0;
+  let aguardando = 0;
+  let tokensRemovidos = 0;
+  let consultasComFalha = 0;
+  const erros = new Map<string, number>();
+
+  for (let inicio = 0; inicio < prontos.length; inicio += MAX_IDS_POR_CONSULTA) {
+    const lote = prontos.slice(inicio, inicio + MAX_IDS_POR_CONSULTA);
+    const resposta = await postarNoExpo(env.EXPO_RECIBOS_URL, { ids: lote.map((t) => t.ticketId) });
+
+    const data = resposta.aceito ? (resposta.corpo as { data?: unknown } | null)?.data : undefined;
+    if (!resposta.aceito || typeof data !== 'object' || data === null || Array.isArray(data)) {
+      // Consulta que falhou: os tickets ficam como estão para a próxima rodada.
+      consultasComFalha++;
+      continue;
+    }
+    const recibos = data as Record<string, Receipt | undefined>;
+    verificados += lote.length;
+
+    const ticketsParaApagar: number[] = [];
+    const tokensParaApagar = new Set<number>();
+
+    for (const ticket of lote) {
+      const recibo = Object.hasOwn(recibos, ticket.ticketId) ? recibos[ticket.ticketId] : undefined;
+
+      if (recibo?.status === 'ok') {
+        entregues++;
+        ticketsParaApagar.push(ticket.id);
+      } else if (recibo?.status === 'error') {
+        const codigo = recibo.details?.error ?? 'desconhecido';
+        if (codigo === 'DeviceNotRegistered') {
+          // O ticket sai junto com o token (ON DELETE CASCADE).
+          tokensParaApagar.add(ticket.pushTokenId);
+          continue;
+        }
+        if (codigo === 'InvalidCredentials' && !avisouCredenciaisInvalidas) {
+          avisouCredenciaisInvalidas = true;
+          console.warn('[push] credenciais de push inválidas: confira APNs/FCM no Expo');
+        }
+        erros.set(codigo, (erros.get(codigo) ?? 0) + 1);
+        ticketsParaApagar.push(ticket.id);
+      } else {
+        // Recibo ausente (ainda não existe): mantém o ticket para a próxima rodada.
+        aguardando++;
+      }
+    }
+
+    if (ticketsParaApagar.length > 0) {
+      await prisma.pushTicket.deleteMany({ where: { id: { in: ticketsParaApagar } } });
+    }
+    if (tokensParaApagar.size > 0) {
+      await prisma.pushToken.deleteMany({ where: { id: { in: [...tokensParaApagar] } } });
+      tokensRemovidos += tokensParaApagar.size;
+    }
+  }
+
+  if (prontos.length === 0 && expirados.count === 0) return;
+  const porCodigo = [...erros].map(([codigo, n]) => `${codigo}=${n}`).join(' ');
+  console.info(
+    `[push] recibos verificados: ${verificados}, entregues: ${entregues}, ` +
+      `tokens removidos: ${tokensRemovidos}, aguardando recibo: ${aguardando}, ` +
+      `sem recibo (expirados): ${expirados.count}, consultas com falha: ${consultasComFalha}` +
+      (porCodigo ? `, erros: ${porCodigo}` : ''),
   );
 }

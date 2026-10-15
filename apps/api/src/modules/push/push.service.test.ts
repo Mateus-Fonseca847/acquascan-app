@@ -40,6 +40,9 @@ const { banco, prismaFalso, envFalso, dormirFalso } = vi.hoisted(() => {
         return alerta;
       }),
     },
+    pushTicket: {
+      createMany: vi.fn(async (args: { data: unknown[] }) => ({ count: args.data.length })),
+    },
     pushToken: {
       findMany: vi.fn(async (args: { where: { usuario: { cidadeId: number } } }) =>
         banco.tokens

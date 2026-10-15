@@ -12,6 +12,8 @@ erDiagram
     estacoes ||--o{ leituras : registra
     estacoes ||--o{ alertas : gera
     usuarios ||--o{ push_tokens : possui
+    push_tokens ||--o{ push_tickets : gera
+    alertas ||--o{ push_tickets : origina
 
     cidades {
         int id PK
@@ -82,6 +84,13 @@ erDiagram
         timestamp criado_em
         timestamp atualizado_em
     }
+    push_tickets {
+        int id PK
+        text ticket_id UK
+        int push_token_id FK
+        int alerta_id FK
+        timestamp criado_em
+    }
 ```
 
 ## Convenções
@@ -103,6 +112,10 @@ A tabela `cidades` guarda nome, UF (2 letras) e o centro da cidade (latitude e l
 ## Tokens de push
 
 `push_tokens` guarda um token do Expo por aparelho (`token` é único). `atualizado_em` é a última vez que o app registrou o token; serve para apagar os mais antigos quando um usuário passa de 10. Se o mesmo token for registrado por outro usuário, a linha é reatribuída (`usuario_id` muda) em vez de duplicada. Os tokens saem junto com o usuário (`ON DELETE CASCADE`).
+
+## Tickets de push
+
+`push_tickets` guarda o ticket que o Expo devolve ao aceitar uma notificação (`ticket_id` é único), ligado ao token (`push_token_id`) e ao alerta (`alerta_id`). Serve só para conferir o recibo de entrega 15 minutos depois (veja o README da API). Os dois vínculos usam `ON DELETE CASCADE`: apagar o token, o alerta ou a conta do usuário apaga também os tickets. Um ticket vive no máximo 24 horas.
 
 ## Coordenadas e PostGIS
 

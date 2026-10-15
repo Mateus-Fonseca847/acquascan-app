@@ -161,15 +161,38 @@ Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notifi
 
 **Variáveis** (`.env.example`):
 
-| Variável            | Padrão                                 | Para quê                                                                                                             |
-| ------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `PUSH_ENVIO_ATIVO`  | `false`                                | Liga o envio. Desligado, nada é enviado e os alertas ficam pendentes (saem, se tiverem menos de 1 h, ao ligar).      |
-| `EXPO_PUSH_URL`     | `https://exp.host/--/api/v2/push/send` | Endereço do Expo Push Service. Aponte para um servidor falso para testar sem enviar nada de verdade.                 |
-| `EXPO_ACCESS_TOKEN` | vazio                                  | Opcional: só é exigido se o "enhanced push security" estiver ligado no projeto, no EAS. Segredo; nunca vai para log. |
+| Variável            | Padrão                                        | Para quê                                                                                                             |
+| ------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `PUSH_ENVIO_ATIVO`  | `false`                                       | Liga o envio. Desligado, nada é enviado e os alertas ficam pendentes (saem, se tiverem menos de 1 h, ao ligar).      |
+| `EXPO_PUSH_URL`     | `https://exp.host/--/api/v2/push/send`        | Endereço do Expo Push Service. Aponte para um servidor falso para testar sem enviar nada de verdade.                 |
+| `EXPO_RECIBOS_URL`  | `https://exp.host/--/api/v2/push/getReceipts` | Endereço de consulta dos recibos de entrega. Também pode apontar para um servidor falso.                             |
+| `EXPO_ACCESS_TOKEN` | vazio                                         | Opcional: só é exigido se o "enhanced push security" estiver ligado no projeto, no EAS. Segredo; nunca vai para log. |
 
 **Segundo a documentação do Expo Push** (confirmada ao implementar): até 100 mensagens por requisição; limite de 600 notificações por segundo por projeto (a API manda um lote por vez, bem abaixo disso); a resposta é um ticket por mensagem, na mesma ordem; o `Retry-After` não é documentado pelo Expo (usamos se vier); o `sound` só vale no iOS.
 
-**Ainda falta:** tratar os _receipts_ (a confirmação de entrega, que o Expo só fornece depois) e o app com _development build_, que é quem gera o token de push (não funciona no Expo Go).
+**Ainda falta:** o app com _development build_, que é quem gera o token de push (não funciona no Expo Go).
+
+#### Tickets e recibos (receipts)
+
+Quando o Expo **aceita** uma mensagem, ele devolve um _ticket_. Isso só diz que o Expo recebeu, não que o aparelho recebeu. A entrega (ou a falha) aparece depois, no _recibo_ (_receipt_). Por isso:
+
+1. **Guardar:** para cada ticket `ok`, o envio grava um `PushTicket` (tabela `push_tickets`: `ticketId` único, o token, o alerta e `criadoEm`) com `createMany`. Se a gravação falhar, o alerta continua concluído (a notificação já foi aceita); só se perde a conferência do recibo, e o log tem uma mensagem fixa.
+2. **Esperar 15 minutos:** a documentação do Expo recomenda consultar os recibos "15 minutes after sending". Antes disso o recibo costuma não existir.
+3. **Conferir:** `processarRecibos()` roda a cada **5 minutos** (temporizador em `src/server.ts`, registrado antes do `listen` e limpo no `onClose`, como o dos alertas) e consulta os tickets com 15 minutos ou mais, em lotes de até **1000 ids** (limite do Expo), com a mesma política de tentativas do envio.
+4. **Descartar em 24 horas:** o Expo apaga os recibos depois de 24 h ("cleared after 24 hours"). Um ticket mais velho que isso nunca terá recibo: é apagado e contado como "sem recibo".
+
+O que fazer com cada recibo:
+
+| Recibo                                                 | O que a API faz                                                                                                             |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| ausente (ainda não existe)                             | Mantém o ticket; ele é consultado de novo na rodada seguinte. A resposta do Expo simplesmente não traz esse id, sem erro.   |
+| `ok`                                                   | Apaga o ticket.                                                                                                             |
+| erro `DeviceNotRegistered`                             | Apaga o **push token** (o aparelho saiu); o ticket sai junto, por `ON DELETE CASCADE`.                                      |
+| erro `InvalidCredentials`                              | Um único aviso por execução do processo no log ("credenciais de push inválidas: confira APNs/FCM no Expo"); apaga o ticket. |
+| outro erro (`MessageTooBig`, `MessageRateExceeded`...) | Conta por código e apaga o ticket. **Não reenvia** a notificação: a janela do alerta já passou.                             |
+| falha de rede, 5xx ou resposta fora do formato         | Os tickets ficam como estão para a próxima rodada.                                                                          |
+
+As constantes (15 min, 24 h, 1000 ids) estão em `src/config/push.ts`, com a citação da documentação. Uma flag em memória impede duas conferências ao mesmo tempo, e `PUSH_ENVIO_ATIVO=false` desliga também esta etapa. O log traz só contagens: verificados, entregues, tokens removidos, aguardando recibo, sem recibo, consultas com falha e erros por código. Nunca o token, o `ticketId` ou o corpo da resposta.
 
 **Privacidade:** o log traz só contagens (alertas enviados, mensagens, tokens removidos, lotes com falha) e códigos de erro. Nunca o token de push, o token de acesso, o texto das mensagens ou dados de usuário.
 

@@ -1,6 +1,6 @@
 import { construirApp } from './app';
 import { env } from './config/env';
-import { processarAlertasPendentes } from './modules/push/push.service';
+import { processarAlertasPendentes, processarRecibos } from './modules/push/push.service';
 
 const app = construirApp();
 
@@ -10,8 +10,13 @@ const app = construirApp();
  * O temporizador é limpo quando o servidor fecha (o hook precisa ser registrado antes do listen).
  */
 const INTERVALO_PUSH_MS = 30_000;
+const INTERVALO_RECIBOS_MS = 300_000;
 let temporizadorPush: NodeJS.Timeout | undefined;
-app.addHook('onClose', async () => clearInterval(temporizadorPush));
+let temporizadorRecibos: NodeJS.Timeout | undefined;
+app.addHook('onClose', async () => {
+  clearInterval(temporizadorPush);
+  clearInterval(temporizadorRecibos);
+});
 
 try {
   await app.listen({ host: env.HOST, port: env.PORT });
@@ -25,6 +30,13 @@ temporizadorPush = setInterval(() => {
     console.error('[push] falha ao processar os alertas pendentes');
   });
 }, INTERVALO_PUSH_MS);
+
+/** A cada 5 minutos confere os recibos de entrega dos tickets com 15 minutos ou mais. */
+temporizadorRecibos = setInterval(() => {
+  processarRecibos().catch(() => {
+    console.error('[push] falha ao conferir os recibos');
+  });
+}, INTERVALO_RECIBOS_MS);
 
 console.info(`[push] envio de notificações ${env.PUSH_ENVIO_ATIVO ? 'ligado' : 'desligado'}`);
 

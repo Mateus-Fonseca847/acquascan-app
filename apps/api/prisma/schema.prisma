@@ -97,7 +97,8 @@ model Alerta {
   /// Preenchido quando as notificações push forem enviadas
   enviadoEm      DateTime? @map("enviado_em")
 
-  estacao Estacao @relation(fields: [estacaoId], references: [id], onDelete: Cascade)
+  estacao Estacao      @relation(fields: [estacaoId], references: [id], onDelete: Cascade)
+  tickets PushTicket[]
 
   @@index([criadoEm])
   @@map("alertas")
@@ -140,7 +141,25 @@ model PushToken {
   /// Última vez que o app registrou este token; os mais antigos saem primeiro
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em")
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tickets PushTicket[]
 
   @@map("push_tokens")
+}
+
+/// Ticket que o Expo devolve ao aceitar uma notificação. Serve para consultar o recibo
+/// (receipt) depois e descobrir se a entrega falhou. Sem dado pessoal; é apagado quando o
+/// recibo é conferido, quando passa de 24 h, ou junto com o token ou o alerta.
+model PushTicket {
+  id          Int      @id @default(autoincrement())
+  ticketId    String   @unique @map("ticket_id")
+  pushTokenId Int      @map("push_token_id")
+  alertaId    Int      @map("alerta_id")
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  pushToken PushToken @relation(fields: [pushTokenId], references: [id], onDelete: Cascade)
+  alerta    Alerta    @relation(fields: [alertaId], references: [id], onDelete: Cascade)
+
+  @@index([criadoEm])
+  @@map("push_tickets")
 }
