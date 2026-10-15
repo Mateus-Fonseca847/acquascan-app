@@ -79,6 +79,8 @@ erDiagram
         int id PK
         int usuario_id FK
         text token UK
+        timestamp criado_em
+        timestamp atualizado_em
     }
 ```
 
@@ -97,6 +99,10 @@ A tabela `cidades` guarda nome, UF (2 letras) e o centro da cidade (latitude e l
 - Apagar uma cidade é recusado enquanto houver estações ou usuários nela.
 - A migração `cadastro_por_cidade` tornou `usuarios.cidade_id` obrigatório (usuários antigos foram para Petrópolis) e apagou as colunas `cep`, `latitude` e `longitude` de `usuarios`, com os dados delas.
 - A migração `adiciona_cidades` criou Petrópolis/RJ e ligou a ela as estações que já existiam. Para criar a coluna obrigatória em uma tabela com dados, o SQL gerado pelo Prisma foi editado: a coluna entra opcional, é preenchida e só então vira `NOT NULL`.
+
+## Tokens de push
+
+`push_tokens` guarda um token do Expo por aparelho (`token` é único). `atualizado_em` é a última vez que o app registrou o token; serve para apagar os mais antigos quando um usuário passa de 10. Se o mesmo token for registrado por outro usuário, a linha é reatribuída (`usuario_id` muda) em vez de duplicada. Os tokens saem junto com o usuário (`ON DELETE CASCADE`).
 
 ## Coordenadas e PostGIS
 

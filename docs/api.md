@@ -4,24 +4,26 @@ Base em desenvolvimento: `http://localhost:3333`. Respostas em JSON, datas em IS
 
 ## Endpoints
 
-| Método | Rota                                | Descrição                                                 | Status       |
-| ------ | ----------------------------------- | --------------------------------------------------------- | ------------ |
-| GET    | `/saude`                            | A API está no ar?                                         | Pronto       |
-| GET    | `/saude/banco`                      | A API alcança o banco?                                    | Pronto       |
-| POST   | `/leituras`                         | Recebe uma leitura de estação (autenticado)               | Pronto       |
-| GET    | `/estacoes`                         | Estações ativas com a última leitura                      | Pronto       |
-| GET    | `/estacoes/:id`                     | Detalhe com limites e estimativa                          | Pronto       |
-| GET    | `/estacoes/:id/leituras?horas=24`   | Histórico (1 a 168 horas)                                 | Pronto       |
-| GET    | `/cidades`                          | Cidades atendidas, em ordem alfabética (público)          | Pronto       |
-| GET    | `/rios`                             | Rios com suas estações                                    | Pronto       |
-| GET    | `/alertas?horas=24`                 | Alertas recentes                                          | Pronto       |
-| GET    | `/pontos-apoio?lat=&lng=&limite=10` | Pontos de apoio; com `lat`/`lng`, ordenados por distância | Pronto       |
-| GET    | `/previsao`                         | Próximos 7 dias (Open-Meteo, cache de 30 min)             | Pronto       |
-| POST   | `/auth/cadastro`                    | Cadastro com nome, e-mail, senha e cidade (201)           | Pronto       |
-| POST   | `/auth/login`                       | Login (responde 200 com `token` e `usuario`)              | Pronto       |
-| GET    | `/usuarios/me`                      | Perfil de quem está logado (exige token)                  | Pronto       |
-| DELETE | `/auth/conta`                       | Exclui a conta; corpo `{ senha }` (exige token, 204)      | Pronto       |
-| GET    | `/ruas/busca?q=`                    | Pesquisa por rua                                          | 501 (v0.3.0) |
+| Método | Rota                                | Descrição                                                     | Status       |
+| ------ | ----------------------------------- | ------------------------------------------------------------- | ------------ |
+| GET    | `/saude`                            | A API está no ar?                                             | Pronto       |
+| GET    | `/saude/banco`                      | A API alcança o banco?                                        | Pronto       |
+| POST   | `/leituras`                         | Recebe uma leitura de estação (autenticado)                   | Pronto       |
+| GET    | `/estacoes`                         | Estações ativas com a última leitura                          | Pronto       |
+| GET    | `/estacoes/:id`                     | Detalhe com limites e estimativa                              | Pronto       |
+| GET    | `/estacoes/:id/leituras?horas=24`   | Histórico (1 a 168 horas)                                     | Pronto       |
+| GET    | `/cidades`                          | Cidades atendidas, em ordem alfabética (público)              | Pronto       |
+| GET    | `/rios`                             | Rios com suas estações                                        | Pronto       |
+| GET    | `/alertas?horas=24`                 | Alertas recentes                                              | Pronto       |
+| GET    | `/pontos-apoio?lat=&lng=&limite=10` | Pontos de apoio; com `lat`/`lng`, ordenados por distância     | Pronto       |
+| GET    | `/previsao`                         | Próximos 7 dias (Open-Meteo, cache de 30 min)                 | Pronto       |
+| POST   | `/auth/cadastro`                    | Cadastro com nome, e-mail, senha e cidade (201)               | Pronto       |
+| POST   | `/auth/login`                       | Login (responde 200 com `token` e `usuario`)                  | Pronto       |
+| GET    | `/usuarios/me`                      | Perfil de quem está logado (exige token)                      | Pronto       |
+| POST   | `/usuarios/me/push-token`           | Registra o token de push do aparelho; corpo `{ token }` (204) | Pronto       |
+| DELETE | `/usuarios/me/push-token`           | Remove o token de push; corpo `{ token }` (204)               | Pronto       |
+| DELETE | `/auth/conta`                       | Exclui a conta; corpo `{ senha }` (exige token, 204)          | Pronto       |
+| GET    | `/ruas/busca?q=`                    | Pesquisa por rua                                              | 501 (v0.3.0) |
 
 ## Leitura enviada pela estação (ESP32)
 
@@ -141,6 +143,22 @@ Para segurar tentativas de adivinhar senhas, três rotas têm limite. Todas as t
 | `DELETE /auth/conta`  | 5 por 15 minutos por IP                                       |
 
 Ao passar do limite: **429** com `{ "erro": "Muitas tentativas. Tente de novo em alguns minutos." }` e o cabeçalho `Retry-After` (segundos até poder tentar de novo). As respostas dessas rotas trazem `x-ratelimit-limit`, `x-ratelimit-remaining` e `x-ratelimit-reset`. O app deve mostrar a mensagem e esperar o tempo de `Retry-After`. Os contadores ficam na memória da API (somem ao reiniciar). Atrás de um proxy, a variável `TRUST_PROXY` precisa estar ligada, senão todos dividem o mesmo IP (veja o README da API).
+
+## Token de notificação (push)
+
+Os dois endpoints exigem `Authorization: Bearer <token>` e o corpo `{ "token": "ExponentPushToken[...]" }`. Respondem **204**, sem corpo.
+
+```bash
+curl -X POST http://localhost:3333/usuarios/me/push-token \
+  -H "Authorization: Bearer <sessão>" -H "Content-Type: application/json" \
+  -d '{ "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]" }'
+```
+
+- `POST` registra o token do aparelho. Se o token já existir (mesmo de outro usuário), passa a ser do usuário da sessão. Cada usuário guarda no máximo 10 tokens; ao passar disso, os mais antigos são apagados. Repetir o registro é seguro.
+- `DELETE` remove o token só se ele for do usuário da sessão. Token inexistente ou de outro usuário também responde 204.
+- O formato é `ExponentPushToken[...]` ou `ExpoPushToken[...]` (até 200 caracteres, sem espaços); outro formato responde 400. Sem sessão, 401.
+- O app deve chamar o `POST` só depois de o usuário permitir as notificações, e o `DELETE` ao sair da conta. **O token só é gerado em aparelho físico com development build, e não no Expo Go.**
+- Nesta etapa a API só guarda os tokens; ainda não envia notificações.
 
 ## Erros
 

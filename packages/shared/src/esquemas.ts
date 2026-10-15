@@ -46,6 +46,16 @@ export const excluirContaEntradaSchema = z.object({
 });
 export type ExcluirContaEntrada = z.infer<typeof excluirContaEntradaSchema>;
 
+/** Token de notificação push do Expo, enviado pelo app para receber alertas. */
+export const pushTokenEntradaSchema = z.object({
+  token: z
+    .string('Informe o token de notificação')
+    .trim()
+    .max(200, 'O token de notificação é grande demais')
+    .regex(/^Expo(nent)?PushToken\[[^\]\s]+\]$/, 'Token de notificação inválido'),
+});
+export type PushTokenEntrada = z.infer<typeof pushTokenEntradaSchema>;
+
 export const coordenadasSchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),

@@ -4,6 +4,7 @@ import {
   excluirContaEntradaSchema,
   leituraEntradaSchema,
   loginEntradaSchema,
+  pushTokenEntradaSchema,
 } from './esquemas';
 
 describe('leituraEntradaSchema', () => {
@@ -83,5 +84,39 @@ describe('excluirContaEntradaSchema', () => {
 
   it.each([{}, { senha: '' }, { senha: 'a'.repeat(129) }, { senha: 123 }])('recusa %j', (corpo) => {
     expect(excluirContaEntradaSchema.safeParse(corpo).success).toBe(false);
+  });
+});
+
+describe('pushTokenEntradaSchema', () => {
+  it.each(['ExponentPushToken[abc-123_XYZ]', 'ExpoPushToken[abc-123_XYZ]'])(
+    'aceita %s',
+    (token) => {
+      expect(pushTokenEntradaSchema.safeParse({ token }).success).toBe(true);
+    },
+  );
+
+  it('remove espaços nas pontas', () => {
+    const resultado = pushTokenEntradaSchema.safeParse({ token: '  ExpoPushToken[abc]  ' });
+    expect(resultado.data?.token).toBe('ExpoPushToken[abc]');
+  });
+
+  it.each([
+    ['vazio', ''],
+    ['só espaços', '   '],
+    ['sem colchetes', 'ExponentPushToken-abc'],
+    ['com colchete sem fechar', 'ExponentPushToken[abc'],
+    ['conteúdo vazio', 'ExponentPushToken[]'],
+    ['com espaço dentro', 'ExponentPushToken[abc def]'],
+    ['prefixo errado', 'FcmToken[abc]'],
+    ['acima de 200 caracteres', `ExponentPushToken[${'a'.repeat(200)}]`],
+  ])('recusa token %s', (_nome, token) => {
+    expect(pushTokenEntradaSchema.safeParse({ token }).success).toBe(false);
+  });
+
+  it('aceita exatamente 200 caracteres e recusa sem o campo', () => {
+    const token = `ExponentPushToken[${'a'.repeat(181)}]`;
+    expect(token).toHaveLength(200);
+    expect(pushTokenEntradaSchema.safeParse({ token }).success).toBe(true);
+    expect(pushTokenEntradaSchema.safeParse({}).success).toBe(false);
   });
 });

@@ -118,6 +118,22 @@ O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que
 
 Lista as cidades cadastradas, de A a Z, com `id`, `nome`, `uf` e o centro (`latitude`, `longitude`). O app usa essa lista para o usuário escolher a cidade no cadastro. A rota fala direto com o banco, sem service, e não registra nada em log. Cada estação e cada usuário pertencem a uma cidade. Mais detalhes em [docs/banco-de-dados.md](../../docs/banco-de-dados.md#cidades).
 
+### `push-tokens`: registro dos aparelhos para notificações
+
+**Endpoints:** `POST /usuarios/me/push-token` e `DELETE /usuarios/me/push-token`, ambos com o corpo `{ "token": "ExponentPushToken[...]" }` e o token de sessão do usuário. Respondem **204**.
+
+Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notificação é enviada ainda (v0.4.0).
+
+- **Registrar:** o token do Expo é único no banco. Se já existir, **de qualquer usuário**, ele passa a ser do usuário da sessão (o aparelho mudou de dono, por exemplo quando outra pessoa entra no mesmo celular) e `atualizadoEm` é atualizado. Registrar o mesmo token duas vezes é idempotente.
+- **Limite de 10 por usuário:** passou disso, saem os mais antigos por `atualizadoEm`. O `upsert` e a limpeza acontecem na mesma transação.
+- **Corrida:** se dois pedidos registrarem o mesmo token ao mesmo tempo, um deles leva `P2002` (token único). A API tenta de novo uma vez, já como atualização, em vez de devolver erro.
+- **Remover:** apaga só se o token for do usuário da sessão (`deleteMany` com `usuarioId` + `token`). Token inexistente ou de outro usuário também responde 204, sem revelar nada.
+- **Formato:** `pushTokenEntradaSchema` (de `@acquascan/shared`) exige `ExponentPushToken[...]` ou `ExpoPushToken[...]`, sem espaços, até 200 caracteres. Corpo inválido responde 400; sem sessão, 401.
+
+**Privacidade:** o token identifica o aparelho e **nunca** vai para log, resposta ou mensagem de erro (um teste captura a saída do logger para garantir). Erros inesperados do banco viram uma mensagem genérica.
+
+**Lembrete para o app:** o token do Expo só é gerado em **aparelho físico com development build**, e não no Expo Go nem em emulador. Só deve ser enviado depois que o usuário permitir as notificações.
+
 ### `usuarios`: o perfil de quem está logado
 
 **Endpoint:** `GET /usuarios/me` (exige o token do usuário)

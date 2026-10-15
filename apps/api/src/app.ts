@@ -15,6 +15,7 @@ import { cidadesRoutes } from './modules/cidades/cidades.routes';
 import { estacoesRoutes } from './modules/estacoes/estacoes.routes';
 import { leiturasRoutes } from './modules/leituras/leituras.routes';
 import { pontosApoioRoutes } from './modules/pontos-apoio/pontos-apoio.routes';
+import { pushTokensRoutes } from './modules/push-tokens/push-tokens.routes';
 import { previsaoRoutes } from './modules/previsao/previsao.routes';
 import { riosRoutes } from './modules/rios/rios.routes';
 import { ruasRoutes } from './modules/ruas/ruas.routes';
@@ -29,12 +30,20 @@ export interface OpcoesApp {
    * passam `true` de propósito.
    */
   limitarTentativas?: boolean;
+  /** Para onde vai o log. Só os testes usam, para conferir que nada sigiloso é registrado. */
+  saidaLog?: NodeJS.WritableStream;
 }
 
 export function construirApp(opcoes: OpcoesApp = {}) {
   const app = Fastify({
     // Log sem IP, host nem query string (ver lib/log.ts).
-    logger: (opcoes.logger ?? true) ? { serializers: { req: serializarRequisicao } } : false,
+    logger:
+      (opcoes.logger ?? true)
+        ? {
+            serializers: { req: serializarRequisicao },
+            ...(opcoes.saidaLog ? { stream: opcoes.saidaLog } : {}),
+          }
+        : false,
     // O Fastify aceita também um número (de proxies confiáveis), mas os tipos dele não o listam.
     trustProxy: env.TRUST_PROXY as boolean | string,
   });
@@ -74,6 +83,7 @@ export function construirApp(opcoes: OpcoesApp = {}) {
   app.register(saudeRoutes);
   app.register(authRoutes, { limitar });
   app.register(usuariosRoutes);
+  app.register(pushTokensRoutes);
   app.register(cidadesRoutes);
   app.register(riosRoutes);
   app.register(estacoesRoutes);

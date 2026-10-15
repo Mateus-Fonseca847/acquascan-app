@@ -13,7 +13,7 @@ Derivados do mapa mental do aplicativo (repositório acquascan-supernova, `docs/
 | RF05   | Nível do rio em %                                                     | v0.1.0          | Feito                                                       |
 | RF06   | Estado do rio (estável, atenção, crítico)                             | v0.1.0          | Feito                                                       |
 | RF07   | Histórico de medições                                                 | v0.1.0          | Feito (lista de 24 h; gráfico pendente)                     |
-| RF08   | Notificação quando o estado piora na região do usuário                | v0.4.0          | Alerta registrado no banco; push pendente                   |
+| RF08   | Notificação quando o estado piora na região do usuário                | v0.4.0          | Alerta registrado; registro do token na API; envio pendente |
 | RF09   | Estimativa de evolução do estado                                      | v0.1.0          | Feito (tempo até transbordar no ritmo atual)                |
 | RF10   | Previsão do tempo de 7 dias com cores de perigo                       | v0.1.0          | Feito (limites provisórios)                                 |
 | RF11   | Pontos de apoio próximos: nome, capacidade, contato, distância e rota | v0.1.0 / v0.3.0 | Lista, contato e rota feitos; proximidade pelo app pendente |
