@@ -42,6 +42,16 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((valor) => valor === 'true'),
+  /**
+   * Cooldown do push por estação (antiflapping), em minutos. Depois que uma notificação sai para
+   * uma estação, outro alerta dela dentro dessa janela NÃO gera push, a menos que seja mais grave
+   * (por exemplo, de atenção para crítico). 0 desliga o cooldown. O valor inicial (30) é uma
+   * ESTIMATIVA: ajuste com dados reais do sensor, vendo o quanto o nível oscila perto dos limites.
+   */
+  PUSH_COOLDOWN_MIN: z.preprocess(
+    (valor) => (valor === '' ? undefined : valor), // linha vazia no .env = padrão, nunca 0
+    z.coerce.number().int().min(0).default(30),
+  ),
   /** Endereço do Expo Push Service. Os testes e a verificação manual apontam para um servidor falso. */
   EXPO_PUSH_URL: z.url().default('https://exp.host/--/api/v2/push/send'),
   /** Endereço de consulta dos recibos (receipts) do Expo Push Service. */

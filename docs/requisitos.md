@@ -4,20 +4,20 @@ Derivados do mapa mental do aplicativo (repositório acquascan-supernova, `docs/
 
 ## Funcionais
 
-| Código | Requisito                                                             | Versão          | Status                                                          |
-| ------ | --------------------------------------------------------------------- | --------------- | --------------------------------------------------------------- |
-| RF01   | Cadastro com nome, e-mail, senha e cidade                             | v0.2.0          | API pronta; app ainda não integrado                             |
-| RF02   | Login                                                                 | v0.2.0          | API pronta; app ainda não integrado                             |
-| RF03   | Mapa de Petrópolis com as estações coloridas pelo estado              | v0.1.0          | Feito                                                           |
-| RF04   | Pesquisa do estado do rio por rua                                     | v0.3.0          | Endpoint reservado (501)                                        |
-| RF05   | Nível do rio em %                                                     | v0.1.0          | Feito                                                           |
-| RF06   | Estado do rio (estável, atenção, crítico)                             | v0.1.0          | Feito                                                           |
-| RF07   | Histórico de medições                                                 | v0.1.0          | Feito (lista de 24 h; gráfico pendente)                         |
-| RF08   | Notificação quando o estado piora na região do usuário                | v0.4.0          | Envio e recibos prontos na API; falta o app (development build) |
-| RF09   | Estimativa de evolução do estado                                      | v0.1.0          | Feito (tempo até transbordar no ritmo atual)                    |
-| RF10   | Previsão do tempo de 7 dias com cores de perigo                       | v0.1.0          | Feito (limites provisórios)                                     |
-| RF11   | Pontos de apoio próximos: nome, capacidade, contato, distância e rota | v0.1.0 / v0.3.0 | Lista, contato e rota feitos; proximidade pelo app pendente     |
-| RF12   | Vazão em L/s                                                          | v0.1.0          | Armazenada e convertida; exibição pendente                      |
+| Código | Requisito                                                             | Versão          | Status                                                                           |
+| ------ | --------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------- |
+| RF01   | Cadastro com nome, e-mail, senha e cidade                             | v0.2.0          | API pronta; app ainda não integrado                                              |
+| RF02   | Login                                                                 | v0.2.0          | API pronta; app ainda não integrado                                              |
+| RF03   | Mapa de Petrópolis com as estações coloridas pelo estado              | v0.1.0          | Feito                                                                            |
+| RF04   | Pesquisa do estado do rio por rua                                     | v0.3.0          | Endpoint reservado (501)                                                         |
+| RF05   | Nível do rio em %                                                     | v0.1.0          | Feito                                                                            |
+| RF06   | Estado do rio (estável, atenção, crítico)                             | v0.1.0          | Feito                                                                            |
+| RF07   | Histórico de medições                                                 | v0.1.0          | Feito (lista de 24 h; gráfico pendente)                                          |
+| RF08   | Notificação quando o estado piora na região do usuário                | v0.4.0          | Envio, recibos e antiflapping prontos na API; falta só o app (development build) |
+| RF09   | Estimativa de evolução do estado                                      | v0.1.0          | Feito (tempo até transbordar no ritmo atual)                                     |
+| RF10   | Previsão do tempo de 7 dias com cores de perigo                       | v0.1.0          | Feito (limites provisórios)                                                      |
+| RF11   | Pontos de apoio próximos: nome, capacidade, contato, distância e rota | v0.1.0 / v0.3.0 | Lista, contato e rota feitos; proximidade pelo app pendente                      |
+| RF12   | Vazão em L/s                                                          | v0.1.0          | Armazenada e convertida; exibição pendente                                       |
 
 ## Não funcionais
 

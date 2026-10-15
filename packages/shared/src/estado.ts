@@ -62,6 +62,15 @@ export const ROTULO_ESTADO: Record<Estado, string> = {
 
 const GRAVIDADE: Record<Estado, number> = { ESTAVEL: 0, ATENCAO: 1, CRITICO: 2 };
 
+/** O mais grave de uma lista de estados (ESTAVEL < ATENCAO < CRITICO), ou null se a lista é vazia. */
+export function estadoMaisGrave(estados: readonly Estado[]): Estado | null {
+  let maisGrave: Estado | null = null;
+  for (const estado of estados) {
+    if (maisGrave === null || estadoPiorou(maisGrave, estado)) maisGrave = estado;
+  }
+  return maisGrave;
+}
+
 /** true quando o estado novo é mais grave que o anterior (dispara alerta). */
 export function estadoPiorou(anterior: Estado, novo: Estado): boolean {
   return GRAVIDADE[novo] > GRAVIDADE[anterior];

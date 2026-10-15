@@ -1,4 +1,4 @@
-import { ROTULO_ESTADO, type Estado } from '@acquascan/shared';
+import { ROTULO_ESTADO, estadoMaisGrave, estadoPiorou, type Estado } from '@acquascan/shared';
 import { env } from '../../config/env';
 import { ESPERA_RECIBO_MS, MAX_IDS_POR_CONSULTA, RETENCAO_RECIBO_MS } from '../../config/push';
 import { dormir } from '../../lib/dormir';
@@ -25,6 +25,9 @@ import { prisma } from '../../lib/prisma';
  * Recibos (receipts): ao aceitar uma mensagem o Expo devolve um ticket. Guardamos o ticket e,
  * 15 minutos depois, perguntamos o recibo (`processarRecibos`) para descobrir falhas de entrega
  * (aparelho que saiu, credenciais inválidas...). Veja config/push.ts.
+ *
+ * Cooldown por estação (antiflapping): veja `deveSuprimirPush`. Só o envio do push é limitado;
+ * o alerta continua registrado no banco e aparecendo em GET /alertas.
  *
  * Reenvio sem duplicar: quando um lote falha de vez, os lotes já aceitos são lembrados (em memória,
  * por alerta) e as rodadas seguintes mandam só os tokens que faltam. Cada alerta tem no máximo
@@ -145,6 +148,7 @@ interface Contagens {
   tokensRemovidos: number;
   lotesComFalha: number;
   alertasEsgotados: number;
+  alertasSuprimidos: number;
   errosDeTicket: Map<string, number>;
 }
 
@@ -257,18 +261,46 @@ export async function processarAlertasPendentes(): Promise<void> {
   }
 }
 
+/**
+ * Cooldown por estação (antiflapping). Um rio que oscila em volta do limite gera vários alertas
+ * seguidos; notificar todos cansa as pessoas e as faz ignorar os avisos.
+ *
+ * Olha os alertas da MESMA estação com `enviadoEm` preenchido nos últimos PUSH_COOLDOWN_MIN
+ * minutos (inclusive os enviados nesta mesma rodada). Se não há nenhum, o envio segue normal.
+ * Se há, o alerta só é enviado se for MAIS GRAVE que o mais grave deles (escalada: ESTAVEL <
+ * ATENCAO < CRITICO). Igual ou menos grave é suprimido.
+ *
+ * Por que `enviadoEm` e não `criadoEm`: o cooldown conta a partir do último push que realmente
+ * saiu. Um alerta cujo envio falhou (enviadoEm nulo) não inicia cooldown, senão uma falha do
+ * Expo calaria a estação. Já um alerta concluído por não haver tokens na cidade (enviadoEm
+ * preenchido sem push nenhum) CONTA como enviado: para o cooldown ele é "o último aviso".
+ */
+async function deveSuprimirPush(alerta: AlertaComEstacao): Promise<boolean> {
+  if (!(env.PUSH_COOLDOWN_MIN > 0)) return false;
+
+  const desde = new Date(Date.now() - env.PUSH_COOLDOWN_MIN * 60_000);
+  const recentes = await prisma.alerta.findMany({
+    where: { estacaoId: alerta.estacaoId, enviadoEm: { gte: desde } },
+    select: { estadoNovo: true },
+  });
+  const maisGrave = estadoMaisGrave(recentes.map((r) => r.estadoNovo as Estado));
+  if (maisGrave === null) return false;
+
+  return !estadoPiorou(maisGrave, alerta.estadoNovo);
+}
+
 async function rodada(): Promise<void> {
   const limite = new Date(Date.now() - JANELA_ALERTA_MS);
 
   const pendentes = await prisma.alerta.findMany({
-    where: { enviadoEm: null, criadoEm: { gte: limite } },
+    where: { enviadoEm: null, pushSuprimidoEm: null, criadoEm: { gte: limite } },
     include: { estacao: { include: { rio: true } } },
     orderBy: { criadoEm: 'asc' },
   });
 
   // Os mais velhos que 1 hora ficam como estão; só a contagem vai para o log, e só quando muda.
   const ignorados = await prisma.alerta.count({
-    where: { enviadoEm: null, criadoEm: { lt: limite } },
+    where: { enviadoEm: null, pushSuprimidoEm: null, criadoEm: { lt: limite } },
   });
   if (ignorados !== ultimoTotalIgnorado) {
     ultimoTotalIgnorado = ignorados;
@@ -281,6 +313,7 @@ async function rodada(): Promise<void> {
     tokensRemovidos: 0,
     lotesComFalha: 0,
     alertasEsgotados: 0,
+    alertasSuprimidos: 0,
     errosDeTicket: new Map(),
   };
 
@@ -292,6 +325,17 @@ async function rodada(): Promise<void> {
 
   for (const alerta of pendentes) {
     try {
+      // Cooldown: um alerta que não é mais grave que o último push da estação não notifica.
+      if (await deveSuprimirPush(alerta)) {
+        await prisma.alerta.update({
+          where: { id: alerta.id },
+          data: { pushSuprimidoEm: new Date() },
+        });
+        progressoDosAlertas.delete(alerta.id);
+        contagens.alertasSuprimidos++;
+        continue;
+      }
+
       // Só marca como enviado se TODOS os lotes foram aceitos. Senão fica pendente.
       if (await enviarAlerta(alerta, contagens)) {
         await prisma.alerta.update({ where: { id: alerta.id }, data: { enviadoEm: new Date() } });
@@ -314,6 +358,7 @@ async function rodada(): Promise<void> {
   const erros = [...contagens.errosDeTicket].map(([codigo, n]) => `${codigo}=${n}`).join(' ');
   console.info(
     `[push] alertas enviados: ${contagens.alertas}/${pendentes.length}, ` +
+      `suprimidos pelo cooldown: ${contagens.alertasSuprimidos}, ` +
       `mensagens: ${contagens.mensagens}, tokens removidos: ${contagens.tokensRemovidos}, ` +
       `lotes com falha: ${contagens.lotesComFalha}` +
       (erros ? `, erros de ticket: ${erros}` : ''),

@@ -89,13 +89,16 @@ model Leitura {
 }
 
 model Alerta {
-  id             Int       @id @default(autoincrement())
-  estacaoId      Int       @map("estacao_id")
-  estadoAnterior Estado    @map("estado_anterior")
-  estadoNovo     Estado    @map("estado_novo")
-  criadoEm       DateTime  @default(now()) @map("criado_em")
+  id              Int       @id @default(autoincrement())
+  estacaoId       Int       @map("estacao_id")
+  estadoAnterior  Estado    @map("estado_anterior")
+  estadoNovo      Estado    @map("estado_novo")
+  criadoEm        DateTime  @default(now()) @map("criado_em")
   /// Preenchido quando as notificações push forem enviadas
-  enviadoEm      DateTime? @map("enviado_em")
+  enviadoEm       DateTime? @map("enviado_em")
+  /// Preenchido quando o push foi suprimido pelo cooldown da estação (antiflapping). O alerta
+  /// continua existindo e aparecendo em GET /alertas; só a notificação não é enviada.
+  pushSuprimidoEm DateTime? @map("push_suprimido_em")
 
   estacao Estacao      @relation(fields: [estacaoId], references: [id], onDelete: Cascade)
   tickets PushTicket[]

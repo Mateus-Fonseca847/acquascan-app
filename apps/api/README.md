@@ -144,7 +144,7 @@ Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notifi
 
 `push.service.ts` tem `processarAlertasPendentes()`, que manda a notificação para os celulares dos usuários **da cidade da estação** (`usuarios.cidadeId` = `estacoes.cidadeId`). Cada rodada:
 
-1. Pega os alertas com `enviadoEm` vazio criados na **última 1 hora**. Os mais velhos são ignorados (avisar tarde de uma cheia confunde), e só a contagem vai para o log.
+1. Pega os alertas com `enviadoEm` e `pushSuprimidoEm` vazios criados na **última 1 hora**, do mais antigo para o mais novo. Os mais velhos são ignorados (avisar tarde de uma cheia confunde), e só a contagem vai para o log.
 2. Busca os tokens de push dos usuários da cidade. Sem tokens, marca `enviadoEm` e segue.
 3. Monta uma mensagem por token, em português, com o rio, a estação e o novo estado (rótulos de `ROTULO_ESTADO`, em `@acquascan/shared`). `data` leva só `alertaId`, `estacaoId` e `estado`; `priority: 'high'`, `ttl: 1800`, `sound: 'default'`. **Nada de dado pessoal na mensagem.**
 4. Envia ao Expo em **lotes de 100**, um de cada vez, com `fetch` e tempo limite de 10 s. Em 429, 5xx ou falha de rede, até 3 tentativas com espera crescente (1 s, 2 s; usa o `Retry-After` se vier, com teto de 30 s). Depois, desiste do lote. Outro 4xx não é tentado de novo.
@@ -161,16 +161,34 @@ Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notifi
 
 **Variáveis** (`.env.example`):
 
-| Variável            | Padrão                                        | Para quê                                                                                                             |
-| ------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `PUSH_ENVIO_ATIVO`  | `false`                                       | Liga o envio. Desligado, nada é enviado e os alertas ficam pendentes (saem, se tiverem menos de 1 h, ao ligar).      |
-| `EXPO_PUSH_URL`     | `https://exp.host/--/api/v2/push/send`        | Endereço do Expo Push Service. Aponte para um servidor falso para testar sem enviar nada de verdade.                 |
-| `EXPO_RECIBOS_URL`  | `https://exp.host/--/api/v2/push/getReceipts` | Endereço de consulta dos recibos de entrega. Também pode apontar para um servidor falso.                             |
-| `EXPO_ACCESS_TOKEN` | vazio                                         | Opcional: só é exigido se o "enhanced push security" estiver ligado no projeto, no EAS. Segredo; nunca vai para log. |
+| Variável            | Padrão                                        | Para quê                                                                                                                                 |
+| ------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUSH_ENVIO_ATIVO`  | `false`                                       | Liga o envio. Desligado, nada é enviado e os alertas ficam pendentes (saem, se tiverem menos de 1 h, ao ligar).                          |
+| `PUSH_COOLDOWN_MIN` | `30`                                          | Cooldown do push por estação, em minutos (antiflapping). `0` desliga. 30 é uma **estimativa** inicial: ajuste com dados reais do sensor. |
+| `EXPO_PUSH_URL`     | `https://exp.host/--/api/v2/push/send`        | Endereço do Expo Push Service. Aponte para um servidor falso para testar sem enviar nada de verdade.                                     |
+| `EXPO_RECIBOS_URL`  | `https://exp.host/--/api/v2/push/getReceipts` | Endereço de consulta dos recibos de entrega. Também pode apontar para um servidor falso.                                                 |
+| `EXPO_ACCESS_TOKEN` | vazio                                         | Opcional: só é exigido se o "enhanced push security" estiver ligado no projeto, no EAS. Segredo; nunca vai para log.                     |
 
 **Segundo a documentação do Expo Push** (confirmada ao implementar): até 100 mensagens por requisição; limite de 600 notificações por segundo por projeto (a API manda um lote por vez, bem abaixo disso); a resposta é um ticket por mensagem, na mesma ordem; o `Retry-After` não é documentado pelo Expo (usamos se vier); o `sound` só vale no iOS.
 
 **Ainda falta:** o app com _development build_, que é quem gera o token de push (não funciona no Expo Go).
+
+#### Cooldown por estação (antiflapping)
+
+Um rio que oscila em volta de um limite gera vários alertas em sequência (atenção, estável, atenção...). Notificar todos cansa as pessoas, e elas passam a ignorar os avisos. Por isso o **envio do push** tem um cooldown por estação, **sem mudar mais nada**: todo alerta continua sendo registrado em `alertas` e aparece em `GET /alertas`, e o cálculo do estado não muda.
+
+A regra roda em `processarAlertasPendentes`, antes de montar as mensagens, para cada alerta pendente em ordem de `criadoEm`:
+
+1. Olha os alertas da **mesma estação** com `enviadoEm` preenchido nos últimos `PUSH_COOLDOWN_MIN` minutos (inclusive os enviados nesta mesma rodada). Sem nenhum, envia normalmente.
+2. Se há, compara o `estadoNovo` do alerta com o **mais grave** entre eles (`ESTAVEL` < `ATENCAO` < `CRITICO`, com `estadoMaisGrave` de `@acquascan/shared`). Se for **mais grave** (uma escalada, como atenção para crítico), envia normalmente.
+3. Se for **igual ou menos grave**, **não envia**: preenche `pushSuprimidoEm`, deixa `enviadoEm` nulo, limpa o progresso em memória do alerta e registra só a contagem no log. A consulta de pendentes ignora alertas com `pushSuprimidoEm`, então ele não é reprocessado.
+
+**Por que uma coluna própria (`pushSuprimidoEm`) em vez de usar `enviadoEm`:** `enviadoEm` significa "uma notificação saiu para este alerta" e é a base do próprio cooldown e dos tickets. Marcá-lo num alerta suprimido faria o cooldown se renovar sozinho a cada alerta suprimido (a estação ficaria calada para sempre enquanto oscilasse) e misturaria "enviado" com "decidimos não enviar". Com a coluna separada, cada situação é distinguível no banco.
+
+Duas escolhas que valem registrar:
+
+- Um alerta cujo **envio falhou** (`enviadoEm` nulo) **não inicia cooldown**: uma falha do Expo não pode calar a estação.
+- Um alerta concluído por **não haver tokens** na cidade (`enviadoEm` preenchido, sem push nenhum) **conta como enviado** para o cooldown. Para o cooldown, ele é "o último aviso" da estação.
 
 #### Tickets e recibos (receipts)
 

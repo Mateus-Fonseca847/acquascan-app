@@ -58,6 +58,7 @@ erDiagram
         enum estado_novo
         timestamp criado_em
         timestamp enviado_em
+        timestamp push_suprimido_em
     }
     pontos_apoio {
         int id PK
@@ -112,6 +113,10 @@ A tabela `cidades` guarda nome, UF (2 letras) e o centro da cidade (latitude e l
 ## Tokens de push
 
 `push_tokens` guarda um token do Expo por aparelho (`token` é único). `atualizado_em` é a última vez que o app registrou o token; serve para apagar os mais antigos quando um usuário passa de 10. Se o mesmo token for registrado por outro usuário, a linha é reatribuída (`usuario_id` muda) em vez de duplicada. Os tokens saem junto com o usuário (`ON DELETE CASCADE`).
+
+## Alertas e o cooldown do push
+
+`alertas.enviado_em` marca que a notificação push do alerta saiu. `alertas.push_suprimido_em` marca que o push foi **suprimido pelo cooldown da estação** (um alerta igual ou menos grave que o último push, dentro da janela de `PUSH_COOLDOWN_MIN`). Os dois são nulos até algo acontecer e nunca ficam preenchidos juntos. O alerta em si sempre existe e aparece em `GET /alertas`.
 
 ## Tickets de push
 

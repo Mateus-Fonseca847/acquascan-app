@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ROTULO_ESTADO,
   avaliarLeitura,
+  estadoMaisGrave,
   calcularNivelCm,
   calcularNivelPct,
   classificarEstado,
@@ -124,5 +125,18 @@ describe('lpmParaLps', () => {
 describe('ROTULO_ESTADO', () => {
   it('tem um nome em português para cada estado', () => {
     expect(ROTULO_ESTADO).toEqual({ ESTAVEL: 'Estável', ATENCAO: 'Atenção', CRITICO: 'Crítico' });
+  });
+});
+
+describe('estadoMaisGrave', () => {
+  it('devolve o estado mais grave da lista', () => {
+    expect(estadoMaisGrave(['ESTAVEL', 'CRITICO', 'ATENCAO'])).toBe('CRITICO');
+    expect(estadoMaisGrave(['ATENCAO', 'ESTAVEL'])).toBe('ATENCAO');
+    expect(estadoMaisGrave(['ESTAVEL'])).toBe('ESTAVEL');
+    expect(estadoMaisGrave(['ATENCAO', 'ATENCAO'])).toBe('ATENCAO');
+  });
+
+  it('devolve null para a lista vazia', () => {
+    expect(estadoMaisGrave([])).toBeNull();
   });
 });

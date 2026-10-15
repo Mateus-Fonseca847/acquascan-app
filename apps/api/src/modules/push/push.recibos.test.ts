@@ -94,6 +94,7 @@ const { banco, prismaFalso, envFalso, dormirFalso } = vi.hoisted(() => {
 
   const envFalso = {
     PUSH_ENVIO_ATIVO: true,
+    PUSH_COOLDOWN_MIN: 0,
     EXPO_PUSH_URL: 'https://expo.invalid/push/send',
     EXPO_RECIBOS_URL: 'https://expo.invalid/push/getReceipts',
     EXPO_ACCESS_TOKEN: undefined as string | undefined,
