@@ -13,6 +13,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - O log de cada requisição passa a trazer só método e caminho, sem host, IP nem query string (`lib/log.ts`). Antes o Fastify registrava `remoteAddress`, `remotePort` e a URL completa
 - Erros de requisição causados pelo cliente que o próprio Fastify detecta (como JSON malformado) passam a responder 400 `Requisição inválida`, em vez de 500 com registro no log
 
+### Corrigido
+
+- Envio de push: quando um lote falhava de vez, cada rodada (a cada 30 s) reenviava todos os lotes do alerta por até 1 hora, duplicando notificações. Agora a API lembra, em memória, quais tokens o Expo já aceitou e reenvia só os que faltam, com no máximo 3 rodadas por alerta (depois para de tentar e avisa uma vez no log). Limitação: essa memória some quando a API reinicia, e então um alerta pendente é reenviado por inteiro
+
 ### Removido
 
 - CEP, latitude e longitude do usuário: campos do cadastro, colunas `usuarios.cep`, `latitude` e `longitude` (apagadas na migração `cadastro_por_cidade`) e a consulta de CEP na BrasilAPI (`lib/cep.ts`), por minimização de dados (LGPD) e para o cadastro não depender de serviço externo

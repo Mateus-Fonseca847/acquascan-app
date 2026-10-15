@@ -149,9 +149,13 @@ Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notifi
 3. Monta uma mensagem por token, em português, com o rio, a estação e o novo estado (rótulos de `ROTULO_ESTADO`, em `@acquascan/shared`). `data` leva só `alertaId`, `estacaoId` e `estado`; `priority: 'high'`, `ttl: 1800`, `sound: 'default'`. **Nada de dado pessoal na mensagem.**
 4. Envia ao Expo em **lotes de 100**, um de cada vez, com `fetch` e tempo limite de 10 s. Em 429, 5xx ou falha de rede, até 3 tentativas com espera crescente (1 s, 2 s; usa o `Retry-After` se vier, com teto de 30 s). Depois, desiste do lote. Outro 4xx não é tentado de novo.
 5. Ticket com erro `DeviceNotRegistered`: apaga aquele token do banco. Outros erros de ticket só são contados, e só o código vai para o log.
-6. Preenche `enviadoEm` **somente** se todos os lotes foram aceitos pelo Expo.
+6. Preenche `enviadoEm` **somente** se todos os lotes foram aceitos pelo Expo (agora ou em rodadas anteriores).
 
-**Por que duplicar em vez de perder:** se um lote falha de vez, o alerta continua pendente e a próxima rodada reenvia tudo, inclusive para quem já tinha recebido. Preferimos esse incômodo a um alerta de cheia que nunca chegou. Isso também cobre a API reiniciar no meio do envio.
+**Por que duplicar em vez de perder:** quando algo falha, o alerta continua sem `enviadoEm` e é tentado de novo. Preferimos uma notificação repetida a um alerta de cheia que nunca chegou.
+
+**Reenvio sem duplicar (e seu limite):** se um lote falha de vez, os lotes que o Expo já aceitou são lembrados, em memória, por alerta (`alertaId` → ids dos push tokens aceitos + número de rodadas). As rodadas seguintes mandam **só os tokens que faltam**. Tokens apagados por `DeviceNotRegistered` não contam como pendentes. Cada alerta tem no máximo **3 rodadas**: depois disso a API para de tentar e deixa o alerta sem `enviadoEm`, com um aviso no log (só a contagem, uma única vez por alerta). A memória de um alerta é apagada quando ele é concluído ou sai da janela de 1 hora.
+
+**Limitação conhecida:** esse estado fica só na memória e **some quando a API reinicia**. Depois de um reinício, um alerta ainda pendente (e dentro de 1 hora) é reenviado **por inteiro**, inclusive a quem já havia recebido, e ganha mais 3 rodadas. É aceitável porque duplicar é melhor que perder; guardar o progresso no banco ficou para uma etapa futura. Com mais de uma instância da API, cada uma teria a própria memória.
 
 **Quando roda:** (a) logo depois de `registrarAlerta`, sem `await` e com `.catch` de mensagem fixa: nunca atrasa nem derruba o `POST /leituras`; (b) a cada 30 s, por um temporizador em `src/server.ts` (e não em `construirApp`, para os testes não criarem timers), que pega o que ficou pendente. O temporizador é limpo quando o servidor fecha. Uma flag em memória impede duas rodadas ao mesmo tempo; o que chegar durante uma rodada sai na próxima (no máximo 30 s depois).
 

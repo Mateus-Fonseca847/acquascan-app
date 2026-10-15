@@ -67,7 +67,12 @@ vi.mock('../../lib/prisma', () => ({ prisma: prismaFalso }));
 vi.mock('../../config/env', () => ({ env: envFalso }));
 vi.mock('../../lib/dormir', () => ({ dormir: dormirFalso }));
 
-const { processarAlertasPendentes, montarMensagem } = await import('./push.service');
+const {
+  alertasEmAcompanhamento,
+  esquecerProgressoDosAlertas,
+  montarMensagem,
+  processarAlertasPendentes,
+} = await import('./push.service');
 
 const CIDADE_PETROPOLIS = 1;
 const OUTRA_CIDADE = 2;
@@ -109,6 +114,7 @@ let fetchFalso: ReturnType<typeof vi.fn>;
 let logs: string;
 
 beforeEach(() => {
+  esquecerProgressoDosAlertas();
   banco.alertas = [];
   banco.tokens = [];
   envFalso.PUSH_ENVIO_ATIVO = true;
@@ -491,5 +497,147 @@ describe('segredos', () => {
     expect(logs).not.toContain('token-de-acesso-secreto');
     expect(logs).not.toContain('Rio Piabanha');
     expect(logs).not.toContain('Estação Centro');
+  });
+});
+
+describe('reenvio sem duplicar', () => {
+  const tokensEnviados = (chamada: number) =>
+    (corpos()[chamada] as { to: string }[]).map((m) => m.to);
+  const falharSempre = async () => new Response('erro', { status: 503 });
+
+  it('lotes 1 e 2 aceitos e o 3 falha: a próxima rodada reenvia só o lote 3', async () => {
+    criarAlerta();
+    criarTokens(250);
+    fetchFalso
+      .mockImplementationOnce(aceitarTudo)
+      .mockImplementationOnce(aceitarTudo)
+      .mockImplementation(falharSempre);
+
+    await processarAlertasPendentes();
+    // 2 lotes aceitos + 3 tentativas do lote com falha.
+    expect(fetchFalso).toHaveBeenCalledTimes(5);
+    expect(banco.alertas[0]!.enviadoEm).toBeNull();
+    expect(alertasEmAcompanhamento()).toBe(1);
+
+    fetchFalso.mockClear();
+    fetchFalso.mockImplementation(aceitarTudo);
+    await processarAlertasPendentes();
+
+    expect(fetchFalso).toHaveBeenCalledTimes(1);
+    const reenviados = tokensEnviados(0);
+    expect(reenviados).toHaveLength(50);
+    // Só os 50 últimos: nenhum dos 200 que já tinham sido aceitos volta.
+    expect(reenviados[0]).toBe('ExponentPushToken[p-200]');
+    expect(reenviados.at(-1)).toBe('ExponentPushToken[p-249]');
+    expect(banco.alertas[0]!.enviadoEm).toBeInstanceOf(Date);
+  });
+
+  it('depois de 3 rodadas não tenta mais, avisa uma única vez e deixa sem enviadoEm', async () => {
+    criarAlerta();
+    criarTokens(1);
+    fetchFalso.mockImplementation(falharSempre);
+
+    for (let rodada = 1; rodada <= 3; rodada++) await processarAlertasPendentes();
+    expect(fetchFalso).toHaveBeenCalledTimes(9); // 3 rodadas x 3 tentativas
+
+    fetchFalso.mockClear();
+    for (let rodada = 4; rodada <= 6; rodada++) await processarAlertasPendentes();
+
+    expect(fetchFalso).not.toHaveBeenCalled();
+    expect(banco.alertas[0]!.enviadoEm).toBeNull();
+    const avisos = logs.split('esgotaram as 3 rodadas').length - 1;
+    expect(avisos).toBe(1);
+    expect(logs).toContain('1 alerta(s) esgotaram as 3 rodadas');
+  });
+
+  it('se a 3ª rodada der certo, o alerta é concluído e não conta como esgotado', async () => {
+    criarAlerta();
+    criarTokens(1);
+    fetchFalso.mockImplementation(falharSempre);
+    await processarAlertasPendentes();
+    await processarAlertasPendentes();
+
+    fetchFalso.mockImplementation(aceitarTudo);
+    await processarAlertasPendentes();
+
+    expect(banco.alertas[0]!.enviadoEm).toBeInstanceOf(Date);
+    expect(logs).not.toContain('esgotaram');
+    expect(alertasEmAcompanhamento()).toBe(0);
+  });
+
+  it('alerta concluído sai da memória', async () => {
+    criarAlerta();
+    criarTokens(150);
+    fetchFalso.mockImplementationOnce(aceitarTudo).mockImplementation(falharSempre);
+    await processarAlertasPendentes();
+    expect(alertasEmAcompanhamento()).toBe(1);
+
+    fetchFalso.mockImplementation(aceitarTudo);
+    await processarAlertasPendentes();
+    expect(banco.alertas[0]!.enviadoEm).toBeInstanceOf(Date);
+    expect(alertasEmAcompanhamento()).toBe(0);
+  });
+
+  it('alerta que sai da janela de 1 hora também sai da memória', async () => {
+    const alerta = criarAlerta();
+    criarTokens(1);
+    fetchFalso.mockImplementation(falharSempre);
+    await processarAlertasPendentes();
+    expect(alertasEmAcompanhamento()).toBe(1);
+
+    alerta.criadoEm = new Date(Date.now() - HORA - 60_000);
+    await processarAlertasPendentes();
+    expect(alertasEmAcompanhamento()).toBe(0);
+  });
+
+  it('LIMITAÇÃO: a memória some no reinício e o alerta pendente é reenviado por inteiro', async () => {
+    criarAlerta();
+    criarTokens(250);
+    fetchFalso
+      .mockImplementationOnce(aceitarTudo)
+      .mockImplementationOnce(aceitarTudo)
+      .mockImplementation(falharSempre);
+    await processarAlertasPendentes();
+
+    esquecerProgressoDosAlertas(); // simula a API reiniciando
+    fetchFalso.mockClear();
+    fetchFalso.mockImplementation(aceitarTudo);
+    await processarAlertasPendentes();
+
+    expect(corpos().map((c) => c.length)).toEqual([100, 100, 50]);
+    expect(banco.alertas[0]!.enviadoEm).toBeInstanceOf(Date);
+  });
+
+  it('token apagado por DeviceNotRegistered não conta como pendente nem é reenviado', async () => {
+    criarAlerta();
+    criarTokens(150);
+    fetchFalso
+      .mockResolvedValueOnce(
+        respostaExpo([
+          { status: 'error', message: 'x', details: { error: 'DeviceNotRegistered' } },
+          ...Array.from({ length: 99 }, () => ok),
+        ]),
+      )
+      .mockImplementation(falharSempre);
+    await processarAlertasPendentes();
+    expect(banco.tokens).toHaveLength(149);
+
+    fetchFalso.mockClear();
+    fetchFalso.mockImplementation(aceitarTudo);
+    await processarAlertasPendentes();
+
+    const reenviados = tokensEnviados(0);
+    expect(reenviados).toHaveLength(50);
+    expect(reenviados).not.toContain('ExponentPushToken[p-0]');
+    expect(banco.alertas[0]!.enviadoEm).toBeInstanceOf(Date);
+  });
+
+  it('a falha de um alerta não apaga o progresso de outro', async () => {
+    criarAlerta({ id: 1 });
+    criarAlerta({ id: 2, estacaoId: 8 });
+    criarTokens(1);
+    fetchFalso.mockImplementation(falharSempre);
+    await processarAlertasPendentes();
+    expect(alertasEmAcompanhamento()).toBe(2);
   });
 });

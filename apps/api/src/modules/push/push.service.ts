@@ -20,6 +20,11 @@ import { prisma } from '../../lib/prisma';
  *
  * Privacidade: NUNCA registrar token de push, token de acesso, corpo das mensagens nem dados de
  * usuário. O log tem só contagens e códigos de erro.
+ *
+ * Reenvio sem duplicar: quando um lote falha de vez, os lotes já aceitos são lembrados (em memória,
+ * por alerta) e as rodadas seguintes mandam só os tokens que faltam. Cada alerta tem no máximo
+ * 3 rodadas. Esse estado SOME quando a API reinicia: depois de um reinício, um alerta ainda
+ * pendente é reenviado por inteiro (pode duplicar, mas não perde).
  */
 
 /** Alertas mais velhos que isto deixam de ser enviados: avisar tarde de uma cheia confunde. */
@@ -30,6 +35,8 @@ const TIMEOUT_ENVIO_MS = 10_000;
 const ESPERA_BASE_MS = 1_000;
 const ESPERA_MAXIMA_MS = 30_000;
 const TTL_SEGUNDOS = 1_800;
+/** Quantas rodadas de envio cada alerta pode ter. Depois disso, paramos de tentar. */
+const MAX_RODADAS_POR_ALERTA = 3;
 
 export interface MensagemPush {
   to: string;
@@ -122,19 +129,56 @@ interface Contagens {
   mensagens: number;
   tokensRemovidos: number;
   lotesComFalha: number;
+  alertasEsgotados: number;
   errosDeTicket: Map<string, number>;
 }
 
-/** Envia um alerta. Devolve true se TODOS os lotes foram aceitos pelo Expo. */
+/** O que já foi feito por um alerta ainda não concluído. Só existe em memória. */
+interface ProgressoDoAlerta {
+  /** Ids (do banco) dos push tokens cujo lote o Expo já aceitou. */
+  enviados: Set<number>;
+  /** Rodadas em que tentamos enviar este alerta. */
+  rodadas: number;
+}
+
+const progressoDosAlertas = new Map<number, ProgressoDoAlerta>();
+
+/** Quantos alertas estão sendo acompanhados em memória (para os testes). */
+export const alertasEmAcompanhamento = () => progressoDosAlertas.size;
+
+/** Zera a memória do envio, como se a API tivesse reiniciado (para os testes). */
+export function esquecerProgressoDosAlertas() {
+  progressoDosAlertas.clear();
+}
+
+/**
+ * Envia o que falta de um alerta. Devolve true quando não resta nenhum token pendente, isto é,
+ * todos os lotes foram aceitos pelo Expo (agora ou em rodadas anteriores).
+ */
 async function enviarAlerta(alerta: AlertaComEstacao, contagens: Contagens): Promise<boolean> {
+  const progresso = progressoDosAlertas.get(alerta.id) ?? {
+    enviados: new Set<number>(),
+    rodadas: 0,
+  };
+
+  // Já usou as rodadas: não tenta mais (e já foi registrado no log, uma única vez).
+  if (progresso.rodadas >= MAX_RODADAS_POR_ALERTA) return false;
+
   const tokens = await prisma.pushToken.findMany({
     where: { usuario: { cidadeId: alerta.estacao.cidadeId } },
     select: { id: true, token: true },
   });
+  // Tokens que o Expo já aceitou não voltam. Tokens apagados (DeviceNotRegistered) nem
+  // aparecem aqui, então também não contam como pendentes.
+  const pendentes = tokens.filter((t) => !progresso.enviados.has(t.id));
+  if (pendentes.length === 0) return true;
+
+  progresso.rodadas++;
+  progressoDosAlertas.set(alerta.id, progresso);
 
   let todosAceitos = true;
-  for (let inicio = 0; inicio < tokens.length; inicio += TAMANHO_LOTE) {
-    const lote = tokens.slice(inicio, inicio + TAMANHO_LOTE);
+  for (let inicio = 0; inicio < pendentes.length; inicio += TAMANHO_LOTE) {
+    const lote = pendentes.slice(inicio, inicio + TAMANHO_LOTE);
     const resultado = await enviarLote(lote.map((t) => montarMensagem(alerta, t.token)));
 
     if (!resultado.aceito) {
@@ -144,6 +188,8 @@ async function enviarAlerta(alerta: AlertaComEstacao, contagens: Contagens): Pro
     }
 
     contagens.mensagens += lote.length;
+    for (const t of lote) progresso.enviados.add(t.id);
+
     const naoRegistrados: number[] = [];
     resultado.tickets.forEach((ticket, i) => {
       if (ticket?.status !== 'error') return;
@@ -156,6 +202,8 @@ async function enviarAlerta(alerta: AlertaComEstacao, contagens: Contagens): Pro
       contagens.tokensRemovidos += naoRegistrados.length;
     }
   }
+
+  if (!todosAceitos && progresso.rodadas >= MAX_RODADAS_POR_ALERTA) contagens.alertasEsgotados++;
   return todosAceitos;
 }
 
@@ -200,20 +248,34 @@ async function rodada(): Promise<void> {
     mensagens: 0,
     tokensRemovidos: 0,
     lotesComFalha: 0,
+    alertasEsgotados: 0,
     errosDeTicket: new Map(),
   };
+
+  // Alertas que já foram concluídos ou saíram da janela de 1 hora deixam a memória.
+  const idsPendentes = new Set(pendentes.map((a) => a.id));
+  for (const id of progressoDosAlertas.keys()) {
+    if (!idsPendentes.has(id)) progressoDosAlertas.delete(id);
+  }
 
   for (const alerta of pendentes) {
     try {
       // Só marca como enviado se TODOS os lotes foram aceitos. Senão fica pendente.
       if (await enviarAlerta(alerta, contagens)) {
         await prisma.alerta.update({ where: { id: alerta.id }, data: { enviadoEm: new Date() } });
+        progressoDosAlertas.delete(alerta.id);
         contagens.alertas++;
       }
     } catch {
       // Erro do banco: o alerta segue pendente. Mensagem fixa, para não vazar dados.
       console.error('[push] falha ao processar um alerta; ele será tentado de novo');
     }
+  }
+
+  if (contagens.alertasEsgotados > 0) {
+    console.warn(
+      `[push] ${contagens.alertasEsgotados} alerta(s) esgotaram as ${MAX_RODADAS_POR_ALERTA} rodadas de envio e ficarão sem envio`,
+    );
   }
 
   if (pendentes.length === 0) return;
