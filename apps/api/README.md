@@ -116,7 +116,7 @@ O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que
 
 **Endpoint:** `GET /cidades` (público)
 
-Lista as cidades cadastradas, de A a Z, com `id`, `nome`, `uf` e o centro (`latitude`, `longitude`). É a base para o usuário escolher a cidade no cadastro, no lugar do CEP (etapa seguinte). A rota fala direto com o banco, sem service, e não registra nada em log. Cada estação pertence a uma cidade; o usuário pode ter uma, ainda opcional. Mais detalhes em [docs/banco-de-dados.md](../../docs/banco-de-dados.md#cidades).
+Lista as cidades cadastradas, de A a Z, com `id`, `nome`, `uf` e o centro (`latitude`, `longitude`). O app usa essa lista para o usuário escolher a cidade no cadastro. A rota fala direto com o banco, sem service, e não registra nada em log. Cada estação e cada usuário pertencem a uma cidade. Mais detalhes em [docs/banco-de-dados.md](../../docs/banco-de-dados.md#cidades).
 
 ### `rios`: estações agrupadas por rio
 
@@ -160,14 +160,14 @@ A regra fica em `auth.service.ts`; `auth.routes.ts` só cuida do HTTP.
 **Cadastro** (`cadastrarUsuario`) segue estes passos:
 
 1. A rota valida o corpo com `cadastroEntradaSchema`, de `@acquascan/shared`.
-2. O e-mail é normalizado (sem espaços nas pontas, em minúsculas) e o CEP fica só com os 8 dígitos.
-3. Se o e-mail já existe, responde **409** `E-mail já cadastrado`, antes de qualquer consulta à rede.
-4. Consulta o CEP com `lib/cep.ts`: `nao_encontrado` responde **400** `CEP não encontrado`; `indisponivel` segue o cadastro com latitude e longitude `null`; `ok` usa as coordenadas (que também podem ser `null`).
+2. O e-mail é normalizado (sem espaços nas pontas, em minúsculas).
+3. Se o e-mail já existe, responde **409** `E-mail já cadastrado`.
+4. Confere se a cidade (`cidadeId`) existe; se não, responde **400** `Cidade inválida`. Não há chamada de rede.
 5. Gera o hash da senha (`lib/senha.ts`) e cria o usuário, com `consentimentoEm` na hora do cadastro.
-6. Se outro cadastro com o mesmo e-mail entrar entre os passos 3 e 5, o banco recusa (erro `P2002`) e a resposta é o mesmo **409**.
-7. Responde **201** com `{ id, nome, email }`. Nunca devolve senha, CEP nem coordenadas, e não gera token: quem entra com e-mail e senha é o login.
+6. Se o banco recusar o `create`, o erro `P2002` (e-mail repetido por corrida) vira o mesmo **409**, e o `P2003` (cidade apagada no meio do caminho) vira o mesmo **400** `Cidade inválida`. Qualquer outro erro vira `Falha ao salvar o usuário`.
+7. Responde **201** com `{ id, nome, email }`. Nunca devolve a senha nem outros dados, e não gera token: quem entra com e-mail e senha é o login.
 
-**Privacidade:** o serviço não registra e-mail, CEP, nome, coordenadas nem senha, e o Fastify não registra o corpo das requisições (o log de cada requisição traz só método, URL e status). Um erro inesperado do banco é trocado por uma mensagem genérica antes de chegar ao log, porque a mensagem do Prisma pode incluir os dados enviados.
+**Privacidade:** o serviço não registra e-mail, nome nem senha, e o Fastify não registra o corpo das requisições (o log de cada requisição traz só método, URL e status). Um erro inesperado do banco é trocado por uma mensagem genérica antes de chegar ao log, porque a mensagem do Prisma pode incluir os dados enviados.
 
 **Login** (`autenticarCredenciais`, mais o token na rota):
 
@@ -176,7 +176,7 @@ A regra fica em `auth.service.ts`; `auth.routes.ts` só cuida do HTTP.
 3. E-mail inexistente e senha errada dão a mesma resposta: **401** `E-mail ou senha incorretos`.
 4. Se confere, a rota assina um JWT e responde **200** com `{ token, usuario: { id, nome, email } }`.
 
-O token (`@fastify/jwt`, HS256) leva **só o `sub`**, o id do usuário como texto, mais as datas padrão `iat` e `exp`. Nada de e-mail, nome ou CEP. A validade vem de `JWT_EXPIRA_EM` (padrão `7d`) e a assinatura, de `JWT_SECRET`.
+O token (`@fastify/jwt`, HS256) leva **só o `sub`**, o id do usuário como texto, mais as datas padrão `iat` e `exp`. Nada de e-mail ou nome. A validade vem de `JWT_EXPIRA_EM` (padrão `7d`) e a assinatura, de `JWT_SECRET`.
 
 Se os parâmetros do scrypt em `lib/senha.ts` mudarem, gere outro `HASH_FICTICIO` com os mesmos parâmetros (o teste `auth.login.test.ts` avisa).
 
@@ -217,18 +217,6 @@ Cria a conexão com o banco, usada por todos os módulos. Importe sempre daqui (
 O hash é uma string única: `scrypt$N$r$p$salt_base64$hash_base64`. Os parâmetros atuais são N=32768, r=8, p=3, hash de 64 bytes e salt aleatório de 16 bytes. Como N, r e p ficam dentro do hash, `verificarSenha` usa os valores gravados nele: dá para aumentar os parâmetros no futuro sem invalidar as senhas antigas.
 
 `verificarSenha` compara com `timingSafeEqual` e retorna `false` para um hash malformado, sem lançar exceção e sem registrar a senha nem o hash. Os schemas de cadastro e login limitam a senha a 128 caracteres, para que ninguém abuse da CPU com senhas enormes.
-
-### `lib/cep.ts`
-
-`consultarCep(cep)` busca o CEP na [BrasilAPI v2](https://brasilapi.com.br/docs) para obter as coordenadas do usuário, que definem a região dos alertas. Aceita o CEP com ou sem hífen e devolve sempre um resultado, nunca lança exceção:
-
-| Resultado                               | Quando                                                                             |
-| --------------------------------------- | ---------------------------------------------------------------------------------- |
-| `{ status: 'ok', latitude, longitude }` | O CEP existe. Se a BrasilAPI não trouxer coordenadas válidas, os dois vêm `null`.  |
-| `{ status: 'nao_encontrado' }`          | A BrasilAPI respondeu 404, ou o CEP não tem 8 dígitos (nesse caso não usa a rede). |
-| `{ status: 'indisponivel' }`            | Timeout (5 s), falha de rede, erro 5xx ou resposta que não é JSON.                 |
-
-As coordenadas chegam como texto e podem faltar ou vir vazias; só valores finitos dentro de -90..90 (latitude) e -180..180 (longitude) são aceitos, e latitude e longitude valem como um par. CEP, endereço e coordenadas **não são registrados em log**.
 
 ### `lib/erros.ts`
 

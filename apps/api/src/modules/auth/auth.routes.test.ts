@@ -2,7 +2,10 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { hashSenha } from '../../lib/senha';
 
 const { prismaFalso } = vi.hoisted(() => ({
-  prismaFalso: { usuario: { findUnique: vi.fn() } },
+  prismaFalso: {
+    usuario: { findUnique: vi.fn(), create: vi.fn() },
+    cidade: { findUnique: vi.fn() },
+  },
 }));
 
 vi.mock('../../lib/prisma', () => ({ prisma: prismaFalso }));
@@ -34,6 +37,47 @@ const eu = (authorization?: string) =>
     ...(authorization ? { headers: { authorization } } : {}),
   });
 
+describe('POST /auth/cadastro', () => {
+  const corpo = {
+    nome: 'Maria',
+    email: 'maria@exemplo.com',
+    cidadeId: 1,
+    senha: SENHA,
+    consentimento: true,
+  };
+  const cadastrar = (payload: object) =>
+    app.inject({ method: 'POST', url: '/auth/cadastro', payload });
+
+  beforeEach(() => {
+    prismaFalso.usuario.findUnique.mockResolvedValue(null);
+    prismaFalso.cidade.findUnique.mockResolvedValue({ id: 1 });
+    prismaFalso.usuario.create.mockReset().mockResolvedValue({
+      id: 9,
+      nome: 'Maria',
+      email: 'maria@exemplo.com',
+    });
+  });
+
+  it('responde 201 com id, nome e e-mail', async () => {
+    const resposta = await cadastrar(corpo);
+    expect(resposta.statusCode).toBe(201);
+    expect(resposta.json()).toEqual({ id: 9, nome: 'Maria', email: 'maria@exemplo.com' });
+  });
+
+  it('ignora o campo cep: ele é descartado e não chega ao banco', async () => {
+    const resposta = await cadastrar({ ...corpo, cep: '25600000' });
+    expect(resposta.statusCode).toBe(201);
+    expect(prismaFalso.usuario.create.mock.calls[0]![0].data).not.toHaveProperty('cep');
+  });
+
+  it('responde 400 sem a cidade', async () => {
+    const { cidadeId: _cidadeId, ...semCidade } = corpo;
+    const resposta = await cadastrar(semCidade);
+    expect(resposta.statusCode).toBe(400);
+    expect(prismaFalso.usuario.create).not.toHaveBeenCalled();
+  });
+});
+
 describe('POST /auth/login', () => {
   it('responde 200 com token e usuário, e o token leva só o sub', async () => {
     prismaFalso.usuario.findUnique.mockResolvedValue({
@@ -51,7 +95,7 @@ describe('POST /auth/login', () => {
 
     const payload = app.jwt.decode<Record<string, unknown>>(corpo.token)!;
     expect(payload['sub']).toBe('5');
-    // Além do sub, só as datas padrão (iat e exp): nada de e-mail, nome ou CEP.
+    // Além do sub, só as datas padrão (iat e exp): nada de e-mail ou nome.
     expect(Object.keys(payload).filter((k) => !['sub', 'iat', 'exp'].includes(k))).toEqual([]);
     expect(payload['exp']).toBeTypeOf('number');
   });

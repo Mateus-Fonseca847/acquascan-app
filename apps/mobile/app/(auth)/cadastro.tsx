@@ -3,28 +3,29 @@ import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Botao } from '@/components/Botao';
 import { Campo } from '@/components/Campo';
-import { api } from '@/services/api';
+import { SeletorCidade } from '@/components/SeletorCidade';
 import { cores, espaco, fonte } from '@/theme';
 
-type Erros = Partial<Record<'nome' | 'email' | 'cep' | 'senha' | 'consentimento', string>>;
+type Erros = Partial<Record<'nome' | 'email' | 'cidadeId' | 'senha' | 'consentimento', string>>;
 
 /**
- * Cadastro (RF01). A validação usa o mesmo esquema da API (@acquascan/shared).
- * Enquanto a API não implementa o cadastro, ela responde 501 e a mensagem aparece aqui.
+ * Cadastro (RF01): nome, e-mail, senha e cidade (lista de GET /cidades).
+ * A validação usa o mesmo esquema da API (@acquascan/shared).
+ * Por enquanto a tela só valida: ela ainda não chama POST /auth/cadastro (a integração vem depois).
  */
 export default function TelaCadastro() {
-  const [dados, setDados] = useState({ nome: '', email: '', cep: '', senha: '' });
+  const [dados, setDados] = useState({ nome: '', email: '', senha: '' });
+  const [cidadeId, setCidadeId] = useState<number | null>(null);
   const [consentimento, setConsentimento] = useState(false);
   const [erros, setErros] = useState<Erros>({});
-  const [enviando, setEnviando] = useState(false);
 
   const alterar = (campo: keyof typeof dados) => (valor: string) =>
     setDados((atual) => ({ ...atual, [campo]: valor }));
 
-  async function criarConta() {
+  function criarConta() {
     const resultado = cadastroEntradaSchema.safeParse({
       ...dados,
-      cep: dados.cep.replace(/\D/g, ''),
+      cidadeId,
       consentimento,
     });
 
@@ -39,14 +40,8 @@ export default function TelaCadastro() {
     }
 
     setErros({});
-    setEnviando(true);
-    try {
-      await api.cadastrar(resultado.data);
-    } catch (erro) {
-      Alert.alert('Cadastro', (erro as Error).message);
-    } finally {
-      setEnviando(false);
-    }
+    // TODO: enviar com api.cadastrar(resultado.data) quando a integração for ligada.
+    Alert.alert('Cadastro', 'Os dados estão corretos. O envio do cadastro será ligado em breve.');
   }
 
   return (
@@ -67,14 +62,7 @@ export default function TelaCadastro() {
         autoComplete="email"
         erro={erros.email}
       />
-      <Campo
-        rotulo="CEP"
-        value={dados.cep}
-        onChangeText={alterar('cep')}
-        keyboardType="number-pad"
-        autoComplete="postal-code"
-        erro={erros.cep}
-      />
+      <SeletorCidade valor={cidadeId} onChange={setCidadeId} erro={erros.cidadeId} />
       <Campo
         rotulo="Senha"
         value={dados.senha}
@@ -92,13 +80,13 @@ export default function TelaCadastro() {
           accessibilityLabel="Aceito o uso dos meus dados"
         />
         <Text style={styles.consentimentoTexto}>
-          Aceito que o AcquaScan use meu CEP para enviar alertas da minha região e meus dados de
-          contato apenas para avisos de segurança. Posso excluir minha conta a qualquer momento.
+          Aceito que o AcquaScan use a minha cidade para enviar alertas da minha região e meus dados
+          de contato apenas para avisos de segurança. Posso excluir minha conta a qualquer momento.
         </Text>
       </View>
       {erros.consentimento && <Text style={styles.erro}>{erros.consentimento}</Text>}
 
-      <Botao rotulo="Criar conta" onPress={criarConta} carregando={enviando} />
+      <Botao rotulo="Criar conta" onPress={criarConta} />
     </ScrollView>
   );
 }
@@ -106,6 +94,6 @@ export default function TelaCadastro() {
 const styles = StyleSheet.create({
   container: { padding: espaco.lg, gap: espaco.md },
   consentimento: { flexDirection: 'row', gap: espaco.md, alignItems: 'flex-start' },
-  consentimentoTexto: { flex: 1, fontSize: fonte.pequena, color: cores.textoSecundario },
-  erro: { fontSize: fonte.pequena, color: '#B3261E' },
+  consentimentoTexto: { flex: 1, fontSize: fonte.normal, color: cores.textoSecundario },
+  erro: { fontSize: fonte.normal, color: '#B3261E' },
 });

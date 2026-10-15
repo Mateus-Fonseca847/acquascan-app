@@ -7,7 +7,7 @@ PostgreSQL com a extensão PostGIS. O modelo é definido em [`apps/api/prisma/sc
 ```mermaid
 erDiagram
     cidades ||--o{ estacoes : tem
-    cidades |o--o{ usuarios : escolhida_por
+    cidades ||--o{ usuarios : escolhida_por
     rios ||--o{ estacoes : tem
     estacoes ||--o{ leituras : registra
     estacoes ||--o{ alertas : gera
@@ -71,10 +71,7 @@ erDiagram
         int id PK
         text nome
         text email UK
-        text cep
-        int cidade_id FK "opcional"
-        float latitude
-        float longitude
+        int cidade_id FK
         text senha_hash
         timestamp consentimento_em
     }
@@ -96,8 +93,9 @@ erDiagram
 A tabela `cidades` guarda nome, UF (2 letras) e o centro da cidade (latitude e longitude). A combinação `nome` + `uf` é única.
 
 - Toda **estação** pertence a uma cidade (`estacoes.cidade_id`, obrigatório).
-- O **usuário** pode ter uma cidade (`usuarios.cidade_id`, opcional). Ela ainda não é preenchida: o cadastro atual continua usando o CEP, e `cep`, `latitude` e `longitude` do usuário seguem no banco. A troca do CEP pela cidade vem em uma etapa seguinte.
-- Apagar uma cidade é recusado enquanto houver estações nela; para usuários, o campo volta a ficar vazio.
+- Todo **usuário** escolhe uma cidade no cadastro (`usuarios.cidade_id`, obrigatório). O banco não guarda CEP nem coordenadas do usuário: a região dos alertas é a cidade, e o centro dela (`cidades.latitude/longitude`) serve de referência.
+- Apagar uma cidade é recusado enquanto houver estações ou usuários nela.
+- A migração `cadastro_por_cidade` tornou `usuarios.cidade_id` obrigatório (usuários antigos foram para Petrópolis) e apagou as colunas `cep`, `latitude` e `longitude` de `usuarios`, com os dados delas.
 - A migração `adiciona_cidades` criou Petrópolis/RJ e ligou a ela as estações que já existiam. Para criar a coluna obrigatória em uma tabela com dados, o SQL gerado pelo Prisma foi editado: a coluna entra opcional, é preenchida e só então vira `NOT NULL`.
 
 ## Coordenadas e PostGIS

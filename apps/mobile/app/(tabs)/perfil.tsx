@@ -12,7 +12,7 @@ export default function TelaPerfil() {
     <View style={styles.container}>
       <Text style={styles.titulo}>Receba alertas do rio perto de você</Text>
       <Text style={styles.texto}>
-        Crie uma conta com o seu CEP para ser avisado quando o rio da sua região subir.
+        Crie uma conta com a sua cidade para ser avisado quando o rio da sua região subir.
       </Text>
       <Botao rotulo="Entrar" onPress={() => router.push('/login')} />
       <Botao rotulo="Criar conta" variante="secundario" onPress={() => router.push('/cadastro')} />

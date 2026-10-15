@@ -23,7 +23,7 @@ describe('cadastroEntradaSchema', () => {
   const valido = {
     nome: 'Maria',
     email: 'maria@exemplo.com',
-    cep: '25600000',
+    cidadeId: 1,
     senha: '12345678',
     consentimento: true,
   };
@@ -38,8 +38,19 @@ describe('cadastroEntradaSchema', () => {
     );
   });
 
-  it('exige CEP com 8 dígitos', () => {
-    expect(cadastroEntradaSchema.safeParse({ ...valido, cep: '25600-000' }).success).toBe(false);
+  it('exige a cidade', () => {
+    const { cidadeId: _cidadeId, ...semCidade } = valido;
+    expect(cadastroEntradaSchema.safeParse(semCidade).success).toBe(false);
+  });
+
+  it.each([0, -1, 1.5, '1', null])('recusa cidadeId %j', (cidadeId) => {
+    expect(cadastroEntradaSchema.safeParse({ ...valido, cidadeId }).success).toBe(false);
+  });
+
+  it('ignora o campo cep, que não faz mais parte do cadastro', () => {
+    const resultado = cadastroEntradaSchema.safeParse({ ...valido, cep: '25600000' });
+    expect(resultado.success).toBe(true);
+    expect(resultado.data).not.toHaveProperty('cep');
   });
 
   it('recusa senha com mais de 128 caracteres', () => {

@@ -41,7 +41,7 @@ function CartaoPonto({ ponto }: { ponto: PontoApoio }) {
 
 /**
  * TODO(v0.3.0): ordenar pelos mais próximos usando a localização do usuário
- * (expo-location ou coordenadas do CEP) e mostrar distância a pé e de carro (RF11).
+ * (expo-location ou o centro da cidade do usuário) e mostrar distância a pé e de carro (RF11).
  */
 export default function TelaApoio() {
   const { data, isLoading, isError, error, refetch, isRefetching } = usePontosApoio();

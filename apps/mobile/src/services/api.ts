@@ -5,6 +5,7 @@
 import type {
   Alerta,
   CadastroEntrada,
+  Cidade,
   EstacaoDetalhe,
   EstacaoResumo,
   LeituraResumo,
@@ -41,6 +42,7 @@ async function requisitar<T>(caminho: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  listarCidades: () => requisitar<Cidade[]>('/cidades'),
   listarEstacoes: () => requisitar<EstacaoResumo[]>('/estacoes'),
   buscarEstacao: (id: number) => requisitar<EstacaoDetalhe>(`/estacoes/${id}`),
   listarLeituras: (id: number, horas = 24) =>

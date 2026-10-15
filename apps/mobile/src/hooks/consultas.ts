@@ -27,5 +27,9 @@ export const useLeituras = (id: number, horas = 24) =>
 export const usePontosApoio = () =>
   useQuery({ queryKey: ['pontos-apoio'], queryFn: () => api.listarPontosApoio() });
 
+/** A lista de cidades quase não muda: fica em cache por uma hora. */
+export const useCidades = () =>
+  useQuery({ queryKey: ['cidades'], queryFn: api.listarCidades, staleTime: 60 * UM_MINUTO });
+
 export const usePrevisao = () =>
   useQuery({ queryKey: ['previsao'], queryFn: api.buscarPrevisao, staleTime: 30 * UM_MINUTO });

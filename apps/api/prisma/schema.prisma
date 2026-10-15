@@ -120,18 +120,14 @@ model Usuario {
   id              Int         @id @default(autoincrement())
   nome            String
   email           String      @unique
-  cep             String
-  /// Cidade escolhida pelo usuário. Opcional enquanto o cadastro ainda usa o CEP.
-  cidadeId        Int?        @map("cidade_id")
-  /// Obtidas a partir do CEP; definem a região dos alertas
-  latitude        Float?
-  longitude       Float?
+  /// Cidade escolhida no cadastro; define a região dos alertas
+  cidadeId        Int         @map("cidade_id")
   senhaHash       String      @map("senha_hash")
   /// LGPD: momento em que o usuário aceitou os termos de uso de dados
   consentimentoEm DateTime    @map("consentimento_em")
   criadoEm        DateTime    @default(now()) @map("criado_em")
   pushTokens      PushToken[]
-  cidade          Cidade?     @relation(fields: [cidadeId], references: [id])
+  cidade          Cidade      @relation(fields: [cidadeId], references: [id])
 
   @@map("usuarios")
 }

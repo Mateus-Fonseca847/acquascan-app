@@ -3,108 +3,117 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/prisma/client';
 import { ErroHttp } from '../../lib/erros';
 
-const { prismaFalso, consultarCepFalso } = vi.hoisted(() => ({
-  prismaFalso: { usuario: { findUnique: vi.fn(), create: vi.fn() } },
-  consultarCepFalso: vi.fn(),
+const { prismaFalso } = vi.hoisted(() => ({
+  prismaFalso: {
+    usuario: { findUnique: vi.fn(), create: vi.fn() },
+    cidade: { findUnique: vi.fn() },
+  },
 }));
 
 vi.mock('../../lib/prisma', () => ({ prisma: prismaFalso }));
-vi.mock('../../lib/cep', () => ({ consultarCep: consultarCepFalso }));
+// Espia o hash, mas deixa o scrypt real rodar: o teste confere o formato de verdade.
+vi.mock('../../lib/senha', async (importarOriginal) => {
+  const original = await importarOriginal<typeof import('../../lib/senha')>();
+  return { ...original, hashSenha: vi.fn(original.hashSenha) };
+});
 
+const { hashSenha } = await import('../../lib/senha');
 const { cadastrarUsuario } = await import('./auth.service');
 
 const entrada: CadastroEntrada = {
   nome: 'Maria',
   email: 'Maria@Exemplo.com',
-  cep: '25600000',
+  cidadeId: 1,
   senha: 'senha-segura-123',
   consentimento: true,
 };
 
+const erroDoBanco = (code: string) =>
+  new Prisma.PrismaClientKnownRequestError('erro', { code, clientVersion: 'teste' });
+
 beforeEach(() => {
-  vi.resetAllMocks();
-  prismaFalso.usuario.findUnique.mockResolvedValue(null);
-  prismaFalso.usuario.create.mockImplementation(
-    async ({ data }: { data: { nome: string; email: string } }) => ({
+  prismaFalso.usuario.findUnique.mockReset().mockResolvedValue(null);
+  prismaFalso.cidade.findUnique.mockReset().mockResolvedValue({ id: 1 });
+  prismaFalso.usuario.create
+    .mockReset()
+    .mockImplementation(async ({ data }: { data: { nome: string; email: string } }) => ({
       id: 1,
       nome: data.nome,
       email: data.email,
-    }),
-  );
-  consultarCepFalso.mockResolvedValue({ status: 'ok', latitude: -22.5, longitude: -43.1 });
+    }));
+  vi.mocked(hashSenha).mockClear();
 });
 
 const dadosGravados = () => prismaFalso.usuario.create.mock.calls[0]![0].data;
 
 describe('cadastrarUsuario', () => {
-  it('cria o usuário com as coordenadas do CEP', async () => {
+  it('cria o usuário com a cidade e a data do consentimento', async () => {
     const usuario = await cadastrarUsuario(entrada);
 
     expect(usuario).toEqual({ id: 1, nome: 'Maria', email: 'maria@exemplo.com' });
-    expect(consultarCepFalso).toHaveBeenCalledWith('25600000');
-    expect(dadosGravados()).toMatchObject({
-      cep: '25600000',
-      latitude: -22.5,
-      longitude: -43.1,
-    });
+    expect(prismaFalso.cidade.findUnique.mock.calls[0]![0].where).toEqual({ id: 1 });
+    expect(dadosGravados()).toMatchObject({ nome: 'Maria', cidadeId: 1 });
     expect(dadosGravados().consentimentoEm).toBeInstanceOf(Date);
   });
 
-  it('cria o usuário quando o CEP existe mas não tem coordenadas', async () => {
-    consultarCepFalso.mockResolvedValue({ status: 'ok', latitude: null, longitude: null });
+  it('não grava CEP nem coordenadas', async () => {
     await cadastrarUsuario(entrada);
-    expect(dadosGravados()).toMatchObject({ latitude: null, longitude: null });
+    expect(Object.keys(dadosGravados()).sort()).toEqual(
+      ['cidadeId', 'consentimentoEm', 'email', 'nome', 'senhaHash'].sort(),
+    );
   });
 
-  it('cria o usuário sem coordenadas quando a consulta de CEP está indisponível', async () => {
-    consultarCepFalso.mockResolvedValue({ status: 'indisponivel' });
-    await cadastrarUsuario(entrada);
-    expect(dadosGravados()).toMatchObject({ latitude: null, longitude: null });
-  });
-
-  it('responde 400 quando o CEP não existe', async () => {
-    consultarCepFalso.mockResolvedValue({ status: 'nao_encontrado' });
+  it('responde 400 quando a cidade não existe', async () => {
+    prismaFalso.cidade.findUnique.mockResolvedValue(null);
     await expect(cadastrarUsuario(entrada)).rejects.toMatchObject({
       status: 400,
-      message: 'CEP não encontrado',
+      message: 'Cidade inválida',
     });
     expect(prismaFalso.usuario.create).not.toHaveBeenCalled();
   });
 
-  it('responde 409 para e-mail duplicado, sem consultar o CEP', async () => {
+  it('responde 409 para e-mail duplicado, sem consultar a cidade', async () => {
     prismaFalso.usuario.findUnique.mockResolvedValue({ id: 7 });
     const erro = await cadastrarUsuario(entrada).catch((e: unknown) => e);
     expect(erro).toBeInstanceOf(ErroHttp);
     expect(erro).toMatchObject({ status: 409, message: 'E-mail já cadastrado' });
-    expect(consultarCepFalso).not.toHaveBeenCalled();
+    expect(prismaFalso.cidade.findUnique).not.toHaveBeenCalled();
     expect(prismaFalso.usuario.create).not.toHaveBeenCalled();
   });
 
   it('responde 409 quando o banco recusa o e-mail repetido (P2002)', async () => {
-    prismaFalso.usuario.create.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError('duplicado', {
-        code: 'P2002',
-        clientVersion: 'teste',
-      }),
-    );
+    prismaFalso.usuario.create.mockRejectedValue(erroDoBanco('P2002'));
     await expect(cadastrarUsuario(entrada)).rejects.toMatchObject({
       status: 409,
       message: 'E-mail já cadastrado',
     });
   });
 
-  it('troca erros inesperados do banco por uma mensagem sem dados', async () => {
-    prismaFalso.usuario.create.mockRejectedValue(new Error('falha com maria@exemplo.com'));
+  it('responde 400 quando o banco recusa a cidade (P2003)', async () => {
+    prismaFalso.usuario.create.mockRejectedValue(erroDoBanco('P2003'));
+    await expect(cadastrarUsuario(entrada)).rejects.toMatchObject({
+      status: 400,
+      message: 'Cidade inválida',
+    });
+  });
+
+  it('troca outros erros do banco por uma mensagem sem dados', async () => {
+    prismaFalso.usuario.create.mockRejectedValue(erroDoBanco('P2024'));
     const erro = await cadastrarUsuario(entrada).catch((e: unknown) => e);
-    expect(erro).toBeInstanceOf(Error);
+    expect(erro).not.toBeInstanceOf(ErroHttp);
     expect((erro as Error).message).toBe('Falha ao salvar o usuário');
+
+    prismaFalso.usuario.create.mockRejectedValue(new Error('falha com maria@exemplo.com'));
+    const outro = await cadastrarUsuario(entrada).catch((e: unknown) => e);
+    expect((outro as Error).message).toBe('Falha ao salvar o usuário');
   });
 
   it('grava só o hash da senha, nunca a senha em texto', async () => {
     await cadastrarUsuario(entrada);
+    expect(hashSenha).toHaveBeenCalledWith(entrada.senha);
     const { senhaHash, ...resto } = dadosGravados();
     expect(senhaHash.startsWith('scrypt$')).toBe(true);
-    expect(JSON.stringify({ senhaHash })).not.toContain(entrada.senha);
+    expect(senhaHash).not.toContain(entrada.senha);
     expect(Object.values(resto)).not.toContain(entrada.senha);
   });
 
@@ -116,7 +125,7 @@ describe('cadastrarUsuario', () => {
     });
   });
 
-  it('não devolve senha, CEP nem coordenadas', async () => {
+  it('não devolve a senha nem dados além de id, nome e e-mail', async () => {
     const usuario = await cadastrarUsuario(entrada);
     expect(Object.keys(usuario).sort()).toEqual(['email', 'id', 'nome']);
     expect(prismaFalso.usuario.create.mock.calls[0]![0].select).toEqual({

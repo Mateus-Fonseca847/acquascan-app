@@ -19,7 +19,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/auth/login', async (request) => {
     const entrada = loginEntradaSchema.parse(request.body);
     const usuario = await autenticarCredenciais(entrada);
-    // O token leva só o id (sub): nada de e-mail, nome ou CEP.
+    // O token leva só o id (sub): nada de e-mail ou nome.
     const token = app.jwt.sign({ sub: String(usuario.id) });
     return { token, usuario };
   });

@@ -22,7 +22,8 @@ export const SENHA_MAX = 128;
 export const cadastroEntradaSchema = z.object({
   nome: z.string().trim().min(2, 'Informe seu nome'),
   email: z.email('E-mail inválido'),
-  cep: z.string().regex(/^\d{8}$/, 'Use os 8 dígitos do CEP'),
+  /** Id de uma cidade de GET /cidades. */
+  cidadeId: z.number('Escolha sua cidade').int('Escolha sua cidade').positive('Escolha sua cidade'),
   /** O máximo evita abuso de CPU: o hash da senha é lento de propósito. */
   senha: z
     .string()

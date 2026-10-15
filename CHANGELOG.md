@@ -6,8 +6,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+### Alterado
+
+- Cadastro (RF01): o usuário escolhe a **cidade** (`cidadeId`, lista de `GET /cidades`) no lugar do CEP, no esquema de `@acquascan/shared`, na API e na tela do app. A tela ainda não envia o cadastro à API
+- `usuarios.cidade_id` passou a ser obrigatório (migração `cadastro_por_cidade`)
+
 ### Removido
 
+- CEP, latitude e longitude do usuário: campos do cadastro, colunas `usuarios.cep`, `latitude` e `longitude` (apagadas na migração `cadastro_por_cidade`) e a consulta de CEP na BrasilAPI (`lib/cep.ts`), por minimização de dados (LGPD) e para o cadastro não depender de serviço externo
 - Telefone do cadastro de usuário (campo no app, validação em `@acquascan/shared` e coluna `usuarios.telefone` via migração `remove_telefone_usuario`), por não ter finalidade e em respeito ao princípio da minimização da LGPD
 
 ### Adicionado
@@ -38,12 +44,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Esqueleto que responde 501 para a pesquisa por rua
 - Seed com dados fictícios de desenvolvimento
 - `lib/senha.ts`: hash de senha com scrypt assíncrono (`node:crypto`), com os parâmetros gravados no próprio hash
-- `POST /auth/cadastro`: valida, normaliza e-mail e CEP, recusa e-mail repetido (409) e CEP inexistente (400), obtém as coordenadas pelo CEP (o cadastro segue sem elas se a BrasilAPI estiver fora do ar), grava só o hash da senha e responde 201 com `id`, `nome` e `email`
+- `POST /auth/cadastro`: valida, normaliza o e-mail, recusa e-mail repetido (409) e cidade inexistente (400), grava só o hash da senha e responde 201 com `id`, `nome` e `email`
 - `POST /auth/login`: confere e-mail e senha (com hash fictício quando o e-mail não existe, para o tempo de resposta não revelar quais e-mails têm conta) e responde 200 com um JWT e `{ id, nome, email }`; e-mail inexistente e senha errada dão o mesmo 401
 - JWT com `@fastify/jwt` (HS256, `sub` com o id do usuário e validade em `JWT_EXPIRA_EM`, padrão 7 dias), com as variáveis `JWT_SECRET` e `JWT_EXPIRA_EM`
 - Plugin `autenticar-usuario`: valida o token, busca o usuário no banco e o disponibiliza em `request.usuario`
-- Cidades: tabela `cidades` (nome, UF, centro), `cidadeId` obrigatório nas estações e opcional nos usuários (migração `adiciona_cidades`, que cria Petrópolis/RJ e liga as estações existentes a ela), tipo `Cidade` em `@acquascan/shared` e `GET /cidades`, público e em ordem alfabética
-- `lib/cep.ts`: consulta de CEP na BrasilAPI v2 para obter as coordenadas do usuário, com timeout de 5 s e sem registrar dados em log
+- Cidades: tabela `cidades` (nome, UF, centro), `cidadeId` obrigatório nas estações e nos usuários (migrações `adiciona_cidades` e `cadastro_por_cidade`, que criam Petrópolis/RJ e ligam a ela as estações e os usuários existentes), tipo `Cidade` em `@acquascan/shared` e `GET /cidades`, público e em ordem alfabética
 
 **Mobile**
 
