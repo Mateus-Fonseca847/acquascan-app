@@ -6,11 +6,20 @@ PostgreSQL com a extensão PostGIS. O modelo é definido em [`apps/api/prisma/sc
 
 ```mermaid
 erDiagram
+    cidades ||--o{ estacoes : tem
+    cidades |o--o{ usuarios : escolhida_por
     rios ||--o{ estacoes : tem
     estacoes ||--o{ leituras : registra
     estacoes ||--o{ alertas : gera
     usuarios ||--o{ push_tokens : possui
 
+    cidades {
+        int id PK
+        text nome
+        char uf
+        float latitude
+        float longitude
+    }
     rios {
         int id PK
         text nome UK
@@ -19,6 +28,7 @@ erDiagram
         int id PK
         text nome
         int rio_id FK
+        int cidade_id FK
         float latitude
         float longitude
         float altura_instalacao_cm
@@ -62,6 +72,7 @@ erDiagram
         text nome
         text email UK
         text cep
+        int cidade_id FK "opcional"
         float latitude
         float longitude
         text senha_hash
@@ -79,6 +90,15 @@ erDiagram
 - No código (Prisma), campos em `camelCase`. No banco, tabelas e colunas em `snake_case` (via `@map`).
 - Consultas SQL diretas (`$queryRaw`) usam os nomes do banco, como `pontos_apoio` e `distancia_m`.
 - A leitura guarda a **distância bruta** e também o nível e o estado calculados. Se os parâmetros da estação mudarem, o histórico continua mostrando o estado da época.
+
+## Cidades
+
+A tabela `cidades` guarda nome, UF (2 letras) e o centro da cidade (latitude e longitude). A combinação `nome` + `uf` é única.
+
+- Toda **estação** pertence a uma cidade (`estacoes.cidade_id`, obrigatório).
+- O **usuário** pode ter uma cidade (`usuarios.cidade_id`, opcional). Ela ainda não é preenchida: o cadastro atual continua usando o CEP, e `cep`, `latitude` e `longitude` do usuário seguem no banco. A troca do CEP pela cidade vem em uma etapa seguinte.
+- Apagar uma cidade é recusado enquanto houver estações nela; para usuários, o campo volta a ficar vazio.
+- A migração `adiciona_cidades` criou Petrópolis/RJ e ligou a ela as estações que já existiam. Para criar a coluna obrigatória em uma tabela com dados, o SQL gerado pelo Prisma foi editado: a coluna entra opcional, é preenchida e só então vira `NOT NULL`.
 
 ## Coordenadas e PostGIS
 
@@ -110,4 +130,4 @@ Regras:
 
 ## Dados de desenvolvimento
 
-`pnpm db:seed` **apaga** estações, leituras, alertas e pontos de apoio e recria dados fictícios. Nunca rode em produção.
+`pnpm db:seed` **apaga** estações, leituras, alertas e pontos de apoio e recria dados fictícios. As cidades não são apagadas: o seed as cria ou atualiza (`upsert`), porque os usuários as referenciam e o seed nunca apaga usuários. Nunca rode em produção.

@@ -21,6 +21,21 @@ enum Estado {
   CRITICO
 }
 
+model Cidade {
+  id        Int       @id @default(autoincrement())
+  nome      String
+  /// Sigla do estado, 2 letras maiúsculas (ex.: RJ)
+  uf        String    @db.Char(2)
+  /// Centro da cidade
+  latitude  Float
+  longitude Float
+  estacoes  Estacao[]
+  usuarios  Usuario[]
+
+  @@unique([nome, uf])
+  @@map("cidades")
+}
+
 model Rio {
   id       Int       @id @default(autoincrement())
   nome     String    @unique
@@ -33,6 +48,7 @@ model Estacao {
   id                     Int      @id @default(autoincrement())
   nome                   String
   rioId                  Int      @map("rio_id")
+  cidadeId               Int      @map("cidade_id")
   latitude               Float
   longitude              Float
   /// Distância entre o sensor e o fundo do rio, medida na instalação
@@ -47,6 +63,7 @@ model Estacao {
   criadoEm               DateTime @default(now()) @map("criado_em")
 
   rio      Rio       @relation(fields: [rioId], references: [id])
+  cidade   Cidade    @relation(fields: [cidadeId], references: [id])
   leituras Leitura[]
   alertas  Alerta[]
 
@@ -100,18 +117,21 @@ model PontoApoio {
 }
 
 model Usuario {
-  id             Int         @id @default(autoincrement())
-  nome           String
-  email          String      @unique
-  cep            String
+  id              Int         @id @default(autoincrement())
+  nome            String
+  email           String      @unique
+  cep             String
+  /// Cidade escolhida pelo usuário. Opcional enquanto o cadastro ainda usa o CEP.
+  cidadeId        Int?        @map("cidade_id")
   /// Obtidas a partir do CEP; definem a região dos alertas
-  latitude       Float?
-  longitude      Float?
-  senhaHash      String      @map("senha_hash")
+  latitude        Float?
+  longitude       Float?
+  senhaHash       String      @map("senha_hash")
   /// LGPD: momento em que o usuário aceitou os termos de uso de dados
-  consentimentoEm DateTime   @map("consentimento_em")
-  criadoEm       DateTime    @default(now()) @map("criado_em")
-  pushTokens     PushToken[]
+  consentimentoEm DateTime    @map("consentimento_em")
+  criadoEm        DateTime    @default(now()) @map("criado_em")
+  pushTokens      PushToken[]
+  cidade          Cidade?     @relation(fields: [cidadeId], references: [id])
 
   @@map("usuarios")
 }

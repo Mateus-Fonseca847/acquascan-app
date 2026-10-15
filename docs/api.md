@@ -12,6 +12,7 @@ Base em desenvolvimento: `http://localhost:3333`. Respostas em JSON, datas em IS
 | GET    | `/estacoes`                         | Estações ativas com a última leitura                         | Pronto       |
 | GET    | `/estacoes/:id`                     | Detalhe com limites e estimativa                             | Pronto       |
 | GET    | `/estacoes/:id/leituras?horas=24`   | Histórico (1 a 168 horas)                                    | Pronto       |
+| GET    | `/cidades`                          | Cidades atendidas, em ordem alfabética (público)             | Pronto       |
 | GET    | `/rios`                             | Rios com suas estações                                       | Pronto       |
 | GET    | `/alertas?horas=24`                 | Alertas recentes                                             | Pronto       |
 | GET    | `/pontos-apoio?lat=&lng=&limite=10` | Pontos de apoio; com `lat`/`lng`, ordenados por distância    | Pronto       |
@@ -54,6 +55,16 @@ curl -X POST http://localhost:3333/leituras \
   -H "Content-Type: application/json" \
   -d '{"distanciaCm": 150}'
 ```
+
+## Cidades
+
+`GET /cidades` não exige autenticação e devolve as cidades em ordem alfabética (lista vazia se não houver nenhuma):
+
+```json
+[{ "id": 1, "nome": "Petrópolis", "uf": "RJ", "latitude": -22.505, "longitude": -43.17861 }]
+```
+
+`latitude` e `longitude` são o centro da cidade.
 
 ## Login e token do usuário
 

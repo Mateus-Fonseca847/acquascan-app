@@ -42,6 +42,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - `POST /auth/login`: confere e-mail e senha (com hash fictício quando o e-mail não existe, para o tempo de resposta não revelar quais e-mails têm conta) e responde 200 com um JWT e `{ id, nome, email }`; e-mail inexistente e senha errada dão o mesmo 401
 - JWT com `@fastify/jwt` (HS256, `sub` com o id do usuário e validade em `JWT_EXPIRA_EM`, padrão 7 dias), com as variáveis `JWT_SECRET` e `JWT_EXPIRA_EM`
 - Plugin `autenticar-usuario`: valida o token, busca o usuário no banco e o disponibiliza em `request.usuario`
+- Cidades: tabela `cidades` (nome, UF, centro), `cidadeId` obrigatório nas estações e opcional nos usuários (migração `adiciona_cidades`, que cria Petrópolis/RJ e liga as estações existentes a ela), tipo `Cidade` em `@acquascan/shared` e `GET /cidades`, público e em ordem alfabética
 - `lib/cep.ts`: consulta de CEP na BrasilAPI v2 para obter as coordenadas do usuário, com timeout de 5 s e sem registrar dados em log
 
 **Mobile**

@@ -30,6 +30,16 @@ export interface EstacaoDetalhe extends EstacaoResumo {
   estimativaMinutosAteTransbordar: number | null;
 }
 
+export interface Cidade {
+  id: number;
+  nome: string;
+  /** Sigla do estado, 2 letras (ex.: RJ). */
+  uf: string;
+  /** Centro da cidade. */
+  latitude: number;
+  longitude: number;
+}
+
 export interface Rio {
   id: number;
   nome: string;

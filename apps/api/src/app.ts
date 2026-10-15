@@ -9,6 +9,7 @@ import { env } from './config/env';
 import { ErroHttp } from './lib/erros';
 import { alertasRoutes } from './modules/alertas/alertas.routes';
 import { authRoutes } from './modules/auth/auth.routes';
+import { cidadesRoutes } from './modules/cidades/cidades.routes';
 import { estacoesRoutes } from './modules/estacoes/estacoes.routes';
 import { leiturasRoutes } from './modules/leituras/leituras.routes';
 import { pontosApoioRoutes } from './modules/pontos-apoio/pontos-apoio.routes';
@@ -39,6 +40,7 @@ export function construirApp(opcoes: { logger?: boolean } = {}) {
 
   app.register(saudeRoutes);
   app.register(authRoutes);
+  app.register(cidadesRoutes);
   app.register(riosRoutes);
   app.register(estacoesRoutes);
   app.register(leiturasRoutes);

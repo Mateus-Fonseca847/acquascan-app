@@ -20,12 +20,19 @@ const token1 = process.env['SEED_TOKEN_ESTACAO_1'] ?? 'dev-token-estacao-1';
 const token2 = process.env['SEED_TOKEN_ESTACAO_2'] ?? 'dev-token-estacao-2';
 
 async function main() {
-  // Limpa na ordem certa por causa das chaves estrangeiras
+  // Limpa na ordem certa por causa das chaves estrangeiras.
+  // Cidades NÃO são apagadas: os usuários as referenciam e o seed nunca apaga usuários.
   await prisma.alerta.deleteMany();
   await prisma.leitura.deleteMany();
   await prisma.estacao.deleteMany();
   await prisma.rio.deleteMany();
   await prisma.pontoApoio.deleteMany();
+
+  const petropolis = await prisma.cidade.upsert({
+    where: { nome_uf: { nome: 'Petrópolis', uf: 'RJ' } },
+    update: { latitude: -22.505, longitude: -43.17861 },
+    create: { nome: 'Petrópolis', uf: 'RJ', latitude: -22.505, longitude: -43.17861 },
+  });
 
   const piabanha = await prisma.rio.create({ data: { nome: 'Rio Piabanha' } });
   const quitandinha = await prisma.rio.create({ data: { nome: 'Rio Quitandinha' } });
@@ -34,6 +41,7 @@ async function main() {
     data: {
       nome: 'Estação de teste 1 (Piabanha)',
       rioId: piabanha.id,
+      cidadeId: petropolis.id,
       latitude: -22.5046,
       longitude: -43.1786,
       alturaInstalacaoCm: 400,
@@ -46,6 +54,7 @@ async function main() {
     data: {
       nome: 'Estação de teste 2 (Quitandinha)',
       rioId: quitandinha.id,
+      cidadeId: petropolis.id,
       latitude: -22.5181,
       longitude: -43.1958,
       alturaInstalacaoCm: 350,
@@ -99,7 +108,7 @@ async function main() {
     ],
   });
 
-  console.info('Seed concluído: 2 rios, 2 estações, 96 leituras, 3 pontos de apoio.');
+  console.info('Seed concluído: 1 cidade, 2 rios, 2 estações, 96 leituras, 3 pontos de apoio.');
   console.info(`Token da estação 1 (use no simulador): ${token1}`);
 }
 

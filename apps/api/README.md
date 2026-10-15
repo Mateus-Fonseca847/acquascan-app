@@ -53,7 +53,7 @@ Cada módulo separa duas responsabilidades:
 - **`*.routes.ts`** lida com o HTTP: define o endereço, valida o que chegou e devolve a resposta. Não contém regras do projeto.
 - **`*.service.ts`** contém as regras e o acesso ao banco. Não sabe nada de HTTP.
 
-Essa separação permite reaproveitar uma regra em mais de um lugar e testá-la sem subir o servidor. Em módulos muito simples, como `rios` e `saude`, as rotas falam direto com o banco e não há service.
+Essa separação permite reaproveitar uma regra em mais de um lugar e testá-la sem subir o servidor. Em módulos muito simples, como `rios`, `cidades` e `saude`, as rotas falam direto com o banco e não há service.
 
 ---
 
@@ -111,6 +111,12 @@ O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que
 `registrarAlerta` é chamado pelo módulo `leituras` e grava a mudança de estado no banco. `GET /alertas` lista os alertas recentes (até 100), do mais novo para o mais antigo.
 
 **Ainda falta:** enviar a notificação push para o celular dos usuários da região (v0.4.0). Por enquanto, o alerta é só registrado no banco e aparece no log da API.
+
+### `cidades`: onde o AcquaScan atende
+
+**Endpoint:** `GET /cidades` (público)
+
+Lista as cidades cadastradas, de A a Z, com `id`, `nome`, `uf` e o centro (`latitude`, `longitude`). É a base para o usuário escolher a cidade no cadastro, no lugar do CEP (etapa seguinte). A rota fala direto com o banco, sem service, e não registra nada em log. Cada estação pertence a uma cidade; o usuário pode ter uma, ainda opcional. Mais detalhes em [docs/banco-de-dados.md](../../docs/banco-de-dados.md#cidades).
 
 ### `rios`: estações agrupadas por rio
 
@@ -253,7 +259,7 @@ Duas particularidades do Prisma 7, que a maioria dos tutoriais na internet ainda
 - O client é importado de `../generated/prisma/client`, e não de `@prisma/client`.
 - A URL do banco fica em `prisma.config.ts`, e não no `schema.prisma`.
 
-O seed (`pnpm db:seed`) **apaga** estações, leituras, alertas e pontos de apoio antes de recriar os dados fictícios. Nunca rode em produção.
+O seed (`pnpm db:seed`) **apaga** estações, leituras, alertas e pontos de apoio antes de recriar os dados fictícios. As cidades são criadas ou atualizadas com `upsert`, nunca apagadas. Nunca rode em produção.
 
 ---
 
