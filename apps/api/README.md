@@ -118,6 +118,12 @@ O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que
 
 Lista as cidades cadastradas, de A a Z, com `id`, `nome`, `uf` e o centro (`latitude`, `longitude`). O app usa essa lista para o usuário escolher a cidade no cadastro. A rota fala direto com o banco, sem service, e não registra nada em log. Cada estação e cada usuário pertencem a uma cidade. Mais detalhes em [docs/banco-de-dados.md](../../docs/banco-de-dados.md#cidades).
 
+### `usuarios`: o perfil de quem está logado
+
+**Endpoint:** `GET /usuarios/me` (exige o token do usuário)
+
+`usuarios.service.ts` busca o usuário do token e devolve `{ id, nome, email, consentimentoEm, criadoEm, cidade }`, com as datas em ISO e a cidade completa (`id`, `nome`, `uf`, `latitude`, `longitude`). A resposta é montada campo a campo e a senha nunca é lida do banco, então `senhaHash` não aparece de jeito nenhum. Sem token ou com token inválido, 401. Nada disso vai para o log.
+
 ### `rios`: estações agrupadas por rio
 
 **Endpoint:** `GET /rios`
@@ -151,9 +157,9 @@ O ponto da previsão (centro de Petrópolis) vem das variáveis `PREVISAO_LATITU
 
 `/saude` responde "ok" sempre que a API está no ar. `/saude/banco` faz uma consulta mínima ao banco e responde 503 se não conseguir. São os primeiros endereços para testar quando algo não funciona: se `/saude` responde e `/saude/banco` não, o problema está no banco.
 
-### `auth`: cadastro e login
+### `auth`: cadastro, login e exclusão da conta
 
-**Endpoints:** `POST /auth/cadastro` e `POST /auth/login`
+**Endpoints:** `POST /auth/cadastro`, `POST /auth/login` e `DELETE /auth/conta` (os dois últimos usam o token do usuário)
 
 A regra fica em `auth.service.ts`; `auth.routes.ts` só cuida do HTTP.
 
@@ -180,7 +186,17 @@ O token (`@fastify/jwt`, HS256) leva **só o `sub`**, o id do usuário como text
 
 Se os parâmetros do scrypt em `lib/senha.ts` mudarem, gere outro `HASH_FICTICIO` com os mesmos parâmetros (o teste `auth.login.test.ts` avisa).
 
-**Ainda falta:** limitar tentativas de login (rate limit) e `DELETE /auth/conta`.
+**Exclusão da conta** (`excluirConta`, direito previsto na LGPD):
+
+1. A rota exige o token do usuário (`autenticarUsuario`) e valida o corpo `{ "senha": "..." }` com `excluirContaEntradaSchema` (de 1 a 128 caracteres).
+2. Confere a senha contra o hash do usuário do token. Senha incorreta responde **403** `Senha incorreta`: não é 401, para o app não confundir com sessão expirada.
+3. Com a senha certa, apaga o usuário e responde **204** sem corpo. Os tokens de push saem junto (`onDelete: Cascade`).
+4. É idempotente: se o usuário já não existir na hora da exclusão (erro `P2025`), a resposta também é **204**.
+5. Qualquer outro erro do banco vira uma mensagem genérica, sem dados.
+
+Depois da exclusão, o mesmo token passa a dar 401, porque o plugin busca o usuário a cada requisição. Um `DELETE` aceita corpo JSON no Fastify, no `curl` e no `fetch` do Node; um corpo ausente ou malformado responde **400**.
+
+**Ainda falta:** limitar tentativas de login (rate limit).
 
 ### `ruas`: reservado para a próxima versão
 

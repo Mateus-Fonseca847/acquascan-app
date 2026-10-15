@@ -40,6 +40,16 @@ export interface Cidade {
   longitude: number;
 }
 
+/** Dados do próprio usuário (GET /usuarios/me). Nunca inclui a senha. */
+export interface Perfil {
+  id: number;
+  nome: string;
+  email: string;
+  consentimentoEm: string;
+  criadoEm: string;
+  cidade: Cidade;
+}
+
 export interface Rio {
   id: number;
   nome: string;

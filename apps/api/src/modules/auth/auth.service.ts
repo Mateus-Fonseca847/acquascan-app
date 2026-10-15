@@ -82,3 +82,29 @@ export async function autenticarCredenciais(entrada: LoginEntrada): Promise<Usua
 
   return { id: usuario.id, nome: usuario.nome, email: usuario.email };
 }
+
+/**
+ * Exclusão da conta (LGPD). Confere a senha do usuário já autenticado e apaga o usuário;
+ * os tokens de push saem junto (onDelete: Cascade). É idempotente: se o usuário já não
+ * existe, termina sem erro. A senha errada é 403, e não 401, para o app não confundir
+ * com sessão expirada.
+ */
+export async function excluirConta(usuarioId: number, senha: string): Promise<void> {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: usuarioId },
+    select: { senhaHash: true },
+  });
+  if (!usuario) return;
+
+  if (!(await verificarSenha(senha, usuario.senhaHash))) {
+    throw new ErroHttp(403, 'Senha incorreta');
+  }
+
+  try {
+    await prisma.usuario.delete({ where: { id: usuarioId } });
+  } catch (erro) {
+    // P2025: o usuário já foi apagado (outra requisição, por exemplo).
+    if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2025') return;
+    throw new Error('Falha ao excluir a conta');
+  }
+}

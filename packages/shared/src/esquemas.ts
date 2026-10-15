@@ -40,6 +40,12 @@ export const loginEntradaSchema = z.object({
 });
 export type LoginEntrada = z.infer<typeof loginEntradaSchema>;
 
+/** Exclusão da conta (LGPD): a senha confirma que é o próprio usuário. */
+export const excluirContaEntradaSchema = z.object({
+  senha: z.string().min(1, 'Informe sua senha').max(SENHA_MAX),
+});
+export type ExcluirContaEntrada = z.infer<typeof excluirContaEntradaSchema>;
+
 export const coordenadasSchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),

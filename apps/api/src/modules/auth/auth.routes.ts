@@ -1,13 +1,15 @@
-import { cadastroEntradaSchema, loginEntradaSchema } from '@acquascan/shared';
+import {
+  cadastroEntradaSchema,
+  excluirContaEntradaSchema,
+  loginEntradaSchema,
+} from '@acquascan/shared';
 import type { FastifyInstance } from 'fastify';
-import { autenticarCredenciais, cadastrarUsuario } from './auth.service';
+import { autenticarUsuario } from '../../plugins/autenticar-usuario';
+import { autenticarCredenciais, cadastrarUsuario, excluirConta } from './auth.service';
 
 /**
- * Cadastro e login.
- *
- * TODO(v0.2.0):
- * - DELETE /auth/conta: excluir a conta e os dados (direito previsto na LGPD)
- * Ver docs/requisitos.md, RF01 e RF02, e docs/privacidade.md.
+ * Cadastro, login e exclusão da conta.
+ * Ver docs/requisitos.md, RF01, RF02 e RNF02, e docs/privacidade.md.
  */
 export async function authRoutes(app: FastifyInstance) {
   app.post('/auth/cadastro', async (request, reply) => {
@@ -22,5 +24,12 @@ export async function authRoutes(app: FastifyInstance) {
     // O token leva só o id (sub): nada de e-mail ou nome.
     const token = app.jwt.sign({ sub: String(usuario.id) });
     return { token, usuario };
+  });
+
+  /** Exclui a conta de quem está logado. O corpo { senha } confirma a identidade. */
+  app.delete('/auth/conta', { preHandler: autenticarUsuario }, async (request, reply) => {
+    const { senha } = excluirContaEntradaSchema.parse(request.body);
+    await excluirConta(request.usuario!.id, senha);
+    return reply.code(204).send();
   });
 }

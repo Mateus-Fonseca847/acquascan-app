@@ -17,6 +17,7 @@ import { previsaoRoutes } from './modules/previsao/previsao.routes';
 import { riosRoutes } from './modules/rios/rios.routes';
 import { ruasRoutes } from './modules/ruas/ruas.routes';
 import { saudeRoutes } from './modules/saude/saude.routes';
+import { usuariosRoutes } from './modules/usuarios/usuarios.routes';
 
 export function construirApp(opcoes: { logger?: boolean } = {}) {
   const app = Fastify({ logger: opcoes.logger ?? true });
@@ -27,6 +28,17 @@ export function construirApp(opcoes: { logger?: boolean } = {}) {
     }
     if (erro instanceof ErroHttp) {
       return reply.code(erro.status).send({ erro: erro.message });
+    }
+    // Erros do próprio Fastify causados pelo cliente (JSON malformado, corpo vazio, tipo
+    // de conteúdo errado). A mensagem é fixa porque a original pode citar trechos do corpo.
+    if (
+      erro instanceof Error &&
+      'statusCode' in erro &&
+      typeof erro.statusCode === 'number' &&
+      erro.statusCode >= 400 &&
+      erro.statusCode < 500
+    ) {
+      return reply.code(erro.statusCode).send({ erro: 'Requisição inválida' });
     }
     app.log.error(erro);
     return reply.code(500).send({ erro: 'Erro interno do servidor' });
@@ -40,6 +52,7 @@ export function construirApp(opcoes: { logger?: boolean } = {}) {
 
   app.register(saudeRoutes);
   app.register(authRoutes);
+  app.register(usuariosRoutes);
   app.register(cidadesRoutes);
   app.register(riosRoutes);
   app.register(estacoesRoutes);

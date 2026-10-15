@@ -19,6 +19,8 @@ Base em desenvolvimento: `http://localhost:3333`. Respostas em JSON, datas em IS
 | GET    | `/previsao`                         | Próximos 7 dias (Open-Meteo, cache de 30 min)             | Pronto       |
 | POST   | `/auth/cadastro`                    | Cadastro com nome, e-mail, senha e cidade (201)           | Pronto       |
 | POST   | `/auth/login`                       | Login (responde 200 com `token` e `usuario`)              | Pronto       |
+| GET    | `/usuarios/me`                      | Perfil de quem está logado (exige token)                  | Pronto       |
+| DELETE | `/auth/conta`                       | Exclui a conta; corpo `{ senha }` (exige token, 204)      | Pronto       |
 | GET    | `/ruas/busca?q=`                    | Pesquisa por rua                                          | 501 (v0.3.0) |
 
 ## Leitura enviada pela estação (ESP32)
@@ -93,16 +95,52 @@ Resposta 200: `{ "token": "<jwt>", "usuario": { "id": 1, "nome": "Maria", "email
 
 O app guarda o token e o envia nas rotas protegidas: `Authorization: Bearer <token>`. O token vale por `JWT_EXPIRA_EM` (padrão 7 dias); depois disso, ou se a conta for apagada, as rotas protegidas respondem 401 e o usuário precisa entrar de novo. Nenhuma rota usa o token ainda; a primeira será `DELETE /auth/conta`.
 
+## Perfil e exclusão da conta
+
+Os dois exigem `Authorization: Bearer <token>` (o token do login).
+
+```bash
+curl http://localhost:3333/usuarios/me -H "Authorization: Bearer <token>"
+```
+
+Resposta 200:
+
+```json
+{
+  "id": 1,
+  "nome": "Maria",
+  "email": "maria@example.com",
+  "consentimentoEm": "2026-10-15T12:00:00.000Z",
+  "criadoEm": "2026-10-15T12:00:00.000Z",
+  "cidade": {
+    "id": 1,
+    "nome": "Petrópolis",
+    "uf": "RJ",
+    "latitude": -22.505,
+    "longitude": -43.17861
+  }
+}
+```
+
+```bash
+curl -X DELETE http://localhost:3333/auth/conta \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{ "senha": "a-senha-dela" }'
+```
+
+Resposta 204, sem corpo. A conta e os tokens de push são apagados, e o mesmo token passa a dar 401. Chamar de novo com um usuário que já foi apagado também responde 204. Senha incorreta responde **403** `Senha incorreta` (e não 401, para o app não confundir com sessão expirada); corpo sem `senha` ou com JSON malformado, 400.
+
 ## Erros
 
 Todos os erros seguem o formato `{ "erro": "mensagem", "detalhes": ... }`.
 
-| Código | Quando                                                                     |
-| ------ | -------------------------------------------------------------------------- |
-| 400    | Dados inválidos (`detalhes` lista os campos com problema)                  |
-| 401    | Token de estação ou de usuário ausente, inválido ou expirado; login errado |
-| 404    | Recurso não encontrado                                                     |
-| 409    | E-mail já cadastrado                                                       |
-| 501    | Funcionalidade ainda não implementada (a mensagem diz a versão prevista)   |
-| 502    | Serviço externo (previsão do tempo) indisponível                           |
-| 500    | Erro inesperado (detalhes no log da API)                                   |
+| Código | Quando                                                                       |
+| ------ | ---------------------------------------------------------------------------- |
+| 400    | Dados inválidos (`detalhes` lista os campos com problema) ou JSON malformado |
+| 401    | Token de estação ou de usuário ausente, inválido ou expirado; login errado   |
+| 403    | Senha incorreta ao excluir a conta                                           |
+| 404    | Recurso não encontrado                                                       |
+| 409    | E-mail já cadastrado                                                         |
+| 501    | Funcionalidade ainda não implementada (a mensagem diz a versão prevista)     |
+| 502    | Serviço externo (previsão do tempo) indisponível                             |
+| 500    | Erro inesperado (detalhes no log da API)                                     |

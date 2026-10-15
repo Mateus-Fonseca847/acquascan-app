@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { cadastroEntradaSchema, leituraEntradaSchema, loginEntradaSchema } from './esquemas';
+import {
+  cadastroEntradaSchema,
+  excluirContaEntradaSchema,
+  leituraEntradaSchema,
+  loginEntradaSchema,
+} from './esquemas';
 
 describe('leituraEntradaSchema', () => {
   it('aceita uma leitura válida do ESP32', () => {
@@ -68,5 +73,15 @@ describe('loginEntradaSchema', () => {
     const base = { email: 'maria@exemplo.com' };
     expect(loginEntradaSchema.safeParse({ ...base, senha: 'a'.repeat(128) }).success).toBe(true);
     expect(loginEntradaSchema.safeParse({ ...base, senha: 'a'.repeat(129) }).success).toBe(false);
+  });
+});
+
+describe('excluirContaEntradaSchema', () => {
+  it('aceita uma senha de até 128 caracteres', () => {
+    expect(excluirContaEntradaSchema.safeParse({ senha: 'a'.repeat(128) }).success).toBe(true);
+  });
+
+  it.each([{}, { senha: '' }, { senha: 'a'.repeat(129) }, { senha: 123 }])('recusa %j', (corpo) => {
+    expect(excluirContaEntradaSchema.safeParse(corpo).success).toBe(false);
   });
 });
