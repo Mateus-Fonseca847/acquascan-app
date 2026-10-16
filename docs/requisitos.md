@@ -6,8 +6,8 @@ Derivados do mapa mental do aplicativo (repositório acquascan-supernova, `docs/
 
 | Código | Requisito                                                             | Versão          | Status                                                                           |
 | ------ | --------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------- |
-| RF01   | Cadastro com nome, e-mail, senha e cidade                             | v0.2.0          | API pronta; app ainda não integrado                                              |
-| RF02   | Login                                                                 | v0.2.0          | API pronta; app ainda não integrado                                              |
+| RF01   | Cadastro com nome, e-mail, senha e cidade                             | v0.2.0          | Integrado no app (API + tela + sessão)                                           |
+| RF02   | Login                                                                 | v0.2.0          | Integrado no app (API + tela + sessão persistida)                                |
 | RF03   | Mapa de Petrópolis com as estações coloridas pelo estado              | v0.1.0          | Feito                                                                            |
 | RF04   | Pesquisa do estado do rio por rua                                     | v0.3.0          | Endpoint reservado (501)                                                         |
 | RF05   | Nível do rio em %                                                     | v0.1.0          | Feito                                                                            |
@@ -24,7 +24,7 @@ Derivados do mapa mental do aplicativo (repositório acquascan-supernova, `docs/
 | Código | Requisito                      | Como atendemos                                                                                                                                                            |
 | ------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | RNF01  | Acessibilidade                 | Estado sempre com cor, ícone e texto; contraste AA; fonte mínima de 16 px; alvos de toque de 44 px                                                                        |
-| RNF02  | Privacidade (LGPD)             | Consentimento obrigatório no cadastro, dados mínimos, exclusão de conta (API pronta; app ainda não integrado). Ver [privacidade.md](privacidade.md)                       |
+| RNF02  | Privacidade (LGPD)             | Consentimento obrigatório no cadastro, dados mínimos, exclusão de conta (API pronta; **a exclusão ainda não está no app**). Ver [privacidade.md](privacidade.md)          |
 | RNF03  | Segurança das estações         | Token por estação, só o hash no banco                                                                                                                                     |
 | RNF04  | Atualização                    | App atualiza os dados a cada minuto, no mesmo ritmo das estações                                                                                                          |
 | RNF05  | Honestidade da informação      | Estimativa apresentada como estimativa; estação sem dados aparece como "Sem dados", nunca com valor antigo como se fosse atual                                            |

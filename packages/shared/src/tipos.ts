@@ -50,6 +50,22 @@ export interface Perfil {
   cidade: Cidade;
 }
 
+/** Resumo do usuário devolvido no cadastro e no login. */
+export interface UsuarioResumo {
+  id: number;
+  nome: string;
+  email: string;
+}
+
+/** Resposta de POST /auth/login. */
+export interface LoginResposta {
+  token: string;
+  usuario: UsuarioResumo;
+}
+
+/** Resposta de POST /auth/cadastro (201). Não traz token: o app entra em seguida com o login. */
+export type CadastroResposta = UsuarioResumo;
+
 export interface Rio {
   id: number;
   nome: string;

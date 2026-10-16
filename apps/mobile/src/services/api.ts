@@ -5,40 +5,78 @@
 import type {
   Alerta,
   CadastroEntrada,
+  CadastroResposta,
   Cidade,
   EstacaoDetalhe,
   EstacaoResumo,
   LeituraResumo,
+  LoginEntrada,
+  LoginResposta,
+  Perfil,
   PontoApoio,
   PrevisaoDia,
 } from '@acquascan/shared';
 import { env } from '@/config/env';
+import { deveExpirarSessao, erroDeRede, erroDeResposta } from './regras';
 
-export class ErroApi extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
+export { ErroApi } from './regras';
+
+const TEMPO_LIMITE_MS = 10_000;
+
+/** Token da sessão em memória; o provedor de sessão é quem o define. */
+let tokenAtual: string | null = null;
+let aoSessaoExpirar: (() => void) | null = null;
+
+export function definirToken(token: string | null) {
+  tokenAtual = token;
 }
 
-async function requisitar<T>(caminho: string, init?: RequestInit): Promise<T> {
+/** Registrado pelo provedor de sessão. Chamado só quando uma chamada autenticada recebe 401. */
+export function definirAoSessaoExpirar(gancho: (() => void) | null) {
+  aoSessaoExpirar = gancho;
+}
+
+interface Opcoes {
+  metodo?: 'GET' | 'POST' | 'DELETE';
+  corpo?: unknown;
+  /** Envia o token da sessão e trata 401 como sessão expirada. */
+  autenticada?: boolean;
+}
+
+async function requisitar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
+  const { metodo = 'GET', corpo, autenticada = false } = opcoes;
+  const tokenDaChamada = autenticada ? tokenAtual : null;
+
+  const headers: Record<string, string> = {};
+  if (corpo !== undefined) headers['Content-Type'] = 'application/json';
+  if (tokenDaChamada) headers.Authorization = `Bearer ${tokenDaChamada}`;
+
   let resposta: Response;
   try {
     resposta = await fetch(`${env.apiUrl}${caminho}`, {
-      ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      method: metodo,
+      headers,
+      body: corpo === undefined ? undefined : JSON.stringify(corpo),
+      signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
     });
   } catch {
-    throw new ErroApi(0, 'Sem conexão com o servidor. Verifique a internet e tente de novo.');
+    throw erroDeRede();
   }
 
   if (!resposta.ok) {
-    const corpo = (await resposta.json().catch(() => null)) as { erro?: string } | null;
-    throw new ErroApi(resposta.status, corpo?.erro ?? `Erro ${resposta.status} no servidor.`);
+    const corpoErro: unknown = await resposta.json().catch(() => null);
+    // Ignora a resposta tardia de uma sessão que já foi trocada ou encerrada.
+    if (deveExpirarSessao(autenticada, resposta.status) && tokenDaChamada === tokenAtual) {
+      aoSessaoExpirar?.();
+    }
+    throw erroDeResposta(resposta.status, corpoErro);
   }
-  return resposta.json() as Promise<T>;
+  if (resposta.status === 204) return undefined as T;
+  try {
+    return (await resposta.json()) as T;
+  } catch {
+    throw erroDeResposta(resposta.status, null);
+  }
 }
 
 export const api = {
@@ -54,5 +92,10 @@ export const api = {
     ),
   buscarPrevisao: () => requisitar<PrevisaoDia[]>('/previsao'),
   cadastrar: (dados: CadastroEntrada) =>
-    requisitar<unknown>('/auth/cadastro', { method: 'POST', body: JSON.stringify(dados) }),
+    requisitar<CadastroResposta>('/auth/cadastro', { metodo: 'POST', corpo: dados }),
+  entrar: (dados: LoginEntrada) =>
+    requisitar<LoginResposta>('/auth/login', { metodo: 'POST', corpo: dados }),
+  perfil: () => requisitar<Perfil>('/usuarios/me', { autenticada: true }),
+  excluirConta: (senha: string) =>
+    requisitar<void>('/auth/conta', { metodo: 'DELETE', corpo: { senha }, autenticada: true }),
 };

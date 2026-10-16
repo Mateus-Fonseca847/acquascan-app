@@ -1,13 +1,61 @@
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Botao } from '@/components/Botao';
+import { Mensagem } from '@/components/Mensagem';
+import { useSessao } from '@/contexts/Sessao';
 import { cores, espaco, fonte } from '@/theme';
 
 /**
- * TODO(v0.2.0): mostrar os dados do usuário logado, preferências de alerta,
- * botão "Sair" e "Excluir minha conta" (LGPD).
+ * Perfil: dados de quem está logado e botão de sair; para o visitante, convite para entrar.
+ * TODO: preferências de alerta e "Excluir minha conta" (LGPD).
  */
 export default function TelaPerfil() {
+  const { estado, usuario, sair, recarregarPerfil } = useSessao();
+  const [saindo, setSaindo] = useState(false);
+
+  function confirmarSaida() {
+    Alert.alert('Sair da conta', 'Você vai precisar entrar de novo para ver seus dados.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          setSaindo(true);
+          await sair();
+          setSaindo(false);
+        },
+      },
+    ]);
+  }
+
+  if (estado === 'logado') {
+    if (!usuario) {
+      return (
+        <Mensagem
+          titulo="Não foi possível carregar seus dados"
+          texto="Verifique sua internet e tente de novo."
+          acao={{ rotulo: 'Tentar de novo', onPress: () => void recarregarPerfil() }}
+        />
+      );
+    }
+    return (
+      <View style={styles.container}>
+        <Text style={styles.titulo}>{usuario.nome}</Text>
+        <Text style={styles.texto}>E-mail: {usuario.email}</Text>
+        <Text style={styles.texto}>
+          Cidade: {usuario.cidade.nome} - {usuario.cidade.uf}
+        </Text>
+        <Botao
+          rotulo="Sair da conta"
+          variante="secundario"
+          carregando={saindo}
+          onPress={confirmarSaida}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Receba alertas do rio perto de você</Text>

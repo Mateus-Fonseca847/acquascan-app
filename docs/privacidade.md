@@ -28,6 +28,10 @@ O app só consegue gerar o token em aparelho físico com development build (não
 
 As mensagens enviadas ao Expo Push Service levam só o nome do **rio**, o nome da **estação**, o **novo estado** e três números de identificação (`alertaId`, `estacaoId`, `estado`). Elas **não têm nome, e-mail, cidade do usuário nem qualquer outro dado pessoal**: a mesma mensagem vai a todos os aparelhos da cidade. O token de push é o único dado do usuário que chega ao Expo, porque é ele que identifica o aparelho. Apenas usuários da cidade da estação recebem o alerta, e só alertas das últimas 1 hora são enviados. Para conferir a entrega, a API guarda por no máximo 24 horas o _ticket_ que o Expo devolve (tabela `push_tickets`): é só um código aleatório do Expo ligado ao token e ao alerta, **sem dado pessoal**, e ele é apagado junto com o token ou com a conta do usuário. Se o recibo disser que o aparelho não existe mais, o token é apagado. O Expo (e, por trás dele, a Apple e o Google) trata a entrega; verifique os termos deles ao escrever a política de privacidade.
 
+## Sessão no aparelho
+
+Ao entrar, o app guarda no **armazenamento seguro do aparelho** (Keychain no iOS, Keystore no Android, via `expo-secure-store`) o token de sessão, uma cópia do perfil (nome, e-mail e cidade, usada quando o app abre sem internet) e a marca de que o usuário já viu as boas-vindas. O token nunca vai em URL nem em log. **Ao sair da conta**, o token e a cópia do perfil são apagados; ao excluir a conta, a marca das boas-vindas também. Quem usa o app como visitante não tem token nem dado pessoal guardado.
+
 ## Minimização
 
 O AcquaScan não guarda telefone, CEP, endereço nem a localização exata do usuário: só a cidade, que basta para escolher os alertas. A cidade vem de uma lista da própria API, então nenhum dado do usuário é enviado a serviços de terceiros no cadastro.

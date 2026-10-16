@@ -8,7 +8,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Alterado
 
-- Cadastro (RF01): o usuário escolhe a **cidade** (`cidadeId`, lista de `GET /cidades`) no lugar do CEP, no esquema de `@acquascan/shared`, na API e na tela do app. A tela ainda não envia o cadastro à API
+- Cadastro (RF01): o usuário escolhe a **cidade** (`cidadeId`, lista de `GET /cidades`) no lugar do CEP, no esquema de `@acquascan/shared`, na API e na tela do app. A tela agora envia o cadastro à API
 - `usuarios.cidade_id` passou a ser obrigatório (migração `cadastro_por_cidade`)
 - O log de cada requisição passa a trazer só método e caminho, sem host, IP nem query string (`lib/log.ts`). Antes o Fastify registrava `remoteAddress`, `remotePort` e a URL completa
 - Erros de requisição causados pelo cliente que o próprio Fastify detecta (como JSON malformado) passam a responder 400 `Requisição inválida`, em vez de 500 com registro no log
@@ -23,6 +23,15 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Telefone do cadastro de usuário (campo no app, validação em `@acquascan/shared` e coluna `usuarios.telefone` via migração `remove_telefone_usuario`), por não ter finalidade e em respeito ao princípio da minimização da LGPD
 
 ### Adicionado
+
+**App: sessão**
+
+- Login e cadastro de verdade no app (RF01 e RF02): `entrar`, `cadastrar`, `perfil` e `excluirConta` em `services/api.ts`, com tempo limite de 10 s, `ErroApi` com `status` e mensagem em português e o gancho `aoSessaoExpirar` (só em 401 de chamada autenticada)
+- Sessão persistida no `expo-secure-store` (token, perfil em cache e "boas-vindas vistas"), provedor `useSessao()` com os estados `carregando`, `novo`, `visitante` e `logado`, e portão de navegação com `Stack.Protected`
+- Tela de boas-vindas com "Entrar na minha conta", "Criar conta" e "Continuar sem conta"; o visitante usa mapa, previsão e apoio sem restrição
+- Perfil mostra nome, e-mail e cidade e tem "Sair da conta" com confirmação
+- Tipos `UsuarioResumo`, `LoginResposta` e `CadastroResposta` em `@acquascan/shared`
+- O app continua logado, com o perfil em cache, quando abre sem internet; só um 401 encerra a sessão
 
 **Estrutura**
 

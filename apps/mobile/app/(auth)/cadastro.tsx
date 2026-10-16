@@ -1,9 +1,12 @@
 import { cadastroEntradaSchema } from '@acquascan/shared';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Botao } from '@/components/Botao';
 import { Campo } from '@/components/Campo';
 import { SeletorCidade } from '@/components/SeletorCidade';
+import { useSessao } from '@/contexts/Sessao';
+import { ErroApi } from '@/services/api';
 import { cores, espaco, fonte } from '@/theme';
 
 type Erros = Partial<Record<'nome' | 'email' | 'cidadeId' | 'senha' | 'consentimento', string>>;
@@ -11,18 +14,24 @@ type Erros = Partial<Record<'nome' | 'email' | 'cidadeId' | 'senha' | 'consentim
 /**
  * Cadastro (RF01): nome, e-mail, senha e cidade (lista de GET /cidades).
  * A validação usa o mesmo esquema da API (@acquascan/shared).
- * Por enquanto a tela só valida: ela ainda não chama POST /auth/cadastro (a integração vem depois).
+ * Depois de validar, `criarContaEEntrar` cadastra (POST /auth/cadastro) e já entra na conta.
  */
 export default function TelaCadastro() {
+  const { criarContaEEntrar } = useSessao();
   const [dados, setDados] = useState({ nome: '', email: '', senha: '' });
   const [cidadeId, setCidadeId] = useState<number | null>(null);
   const [consentimento, setConsentimento] = useState(false);
   const [erros, setErros] = useState<Erros>({});
+  const [erroEnvio, setErroEnvio] = useState<string>();
+  const [semConexao, setSemConexao] = useState(false);
+  const [emailDuplicado, setEmailDuplicado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
   const alterar = (campo: keyof typeof dados) => (valor: string) =>
     setDados((atual) => ({ ...atual, [campo]: valor }));
 
-  function criarConta() {
+  async function criarConta() {
+    if (enviando) return;
     const resultado = cadastroEntradaSchema.safeParse({
       ...dados,
       cidadeId,
@@ -40,8 +49,28 @@ export default function TelaCadastro() {
     }
 
     setErros({});
-    // TODO: enviar com api.cadastrar(resultado.data) quando a integração for ligada.
-    Alert.alert('Cadastro', 'Os dados estão corretos. O envio do cadastro será ligado em breve.');
+    setErroEnvio(undefined);
+    setSemConexao(false);
+    setEmailDuplicado(false);
+    setEnviando(true);
+    try {
+      const entrou = await criarContaEEntrar(resultado.data);
+      // Conta criada, mas o login seguinte falhou: o provedor avisa e levamos ao login.
+      router.replace(entrou ? '/mapa' : '/login');
+    } catch (e) {
+      const erroApi = e instanceof ErroApi ? e : null;
+      setSemConexao(erroApi?.status === 0);
+      setEmailDuplicado(erroApi?.status === 409);
+      if (erroApi?.status === 409) {
+        setErroEnvio('Este e-mail já tem cadastro. Tente entrar.');
+      } else if (erroApi?.status === 400 && erroApi.mensagem === 'Cidade inválida') {
+        setErroEnvio('Escolha uma cidade da lista.');
+      } else {
+        setErroEnvio(erroApi?.mensagem ?? 'Não foi possível criar a conta. Tente de novo.');
+      }
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -86,7 +115,19 @@ export default function TelaCadastro() {
       </View>
       {erros.consentimento && <Text style={styles.erro}>{erros.consentimento}</Text>}
 
-      <Botao rotulo="Criar conta" onPress={criarConta} />
+      {erroEnvio && (
+        <Text style={styles.erro} accessibilityLiveRegion="polite">
+          ⚠ {erroEnvio}
+        </Text>
+      )}
+      <Botao
+        rotulo={semConexao ? 'Tentar de novo' : 'Criar conta'}
+        onPress={criarConta}
+        carregando={enviando}
+      />
+      {emailDuplicado && (
+        <Botao rotulo="Entrar" variante="secundario" onPress={() => router.replace('/login')} />
+      )}
     </ScrollView>
   );
 }
