@@ -29,7 +29,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Adicionado
 
-**Desvio de rios** (`packages/desvio`, quarta etapa do roteamento; só lógica pura, sem mudar API, app, banco nem `packages/roteamento`)
+**Instruções de curva e acompanhamento** (`packages/roteamento`, quinta etapa do roteamento; só lógica pura, sem mudar API, app, banco, `packages/desvio` nem `tools/`)
+
+- `gerarPassos(rota, atributos, { nomeDestino? })`: instruções em português ("Siga para o norte pela Rua X", "Vire à direita na Avenida Y", "Atravesse a ponte", "Você chegou: ..."), com ângulo pelo rumo médio de 15 m, agrupamento por nome, suavização de manobras a menos de 15 m, avisos `ESCADA`, `TRILHA`, `PONTE` e `TUNEL`, passos de encaixe maior que 30 m e preposição pelo tipo do nome
+- `acompanhar(rota, passos, posicao, estado?, opcoes?)`: função pura que projeta o GPS numa janela de 250 m à frente do progresso, sem regredir, e informa passo atual, distâncias, `foraDaRota` (30 m em 3 amostras seguidas) e `chegou` (25 m)
+- Utilitários `formatarDistancia`, `formatarDuracao` e `rumoCardeal`
+- Testes sem rede com geometrias sintéticas e, se `tools/grafo/saida` existir, 300 pares no grafo real. Limitações: rotatórias viram curvas comuns e as preposições são heurísticas
+  **Desvio de rios** (`packages/desvio`, quarta etapa do roteamento; só lógica pura, sem mudar API, app, banco nem `packages/roteamento`)
 
 - Pacote `@acquascan/desvio`: `criarDesvio({ roteador, exposicao, rios }, estacoes, politica?)` valida os dados (erros em português) e oferece `estadosEfetivos`, `estadoDosSegmentos` (fonte única do mapa e do desvio), `rotear` (modos `sem_risco`, `segura` e `menos_exposta`, duas passadas, avisos), `escolherApoio` e `resumoCobertura`
 - Política `POLITICA_PADRAO` com todas as constantes comentadas e marcadas como **PROVISÓRIAS** (validar com a Defesa Civil); **falha segura**: CRITICO e ATENCAO antigos valem por até 6 h

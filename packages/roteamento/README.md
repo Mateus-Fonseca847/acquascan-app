@@ -1,6 +1,6 @@
 # @acquascan/roteamento
 
-Roteamento **a pé, offline**: recebe o grafo de ruas gerado por [`tools/grafo`](../../tools/grafo/README.md) e calcula o caminho entre dois pontos com **A\***. Foi escrito para rodar no celular (motor Hermes do app) e também no Node (testes e ferramentas). É a segunda etapa do roteamento offline; as instruções de curva e a leitura dos rios virão depois.
+Roteamento **a pé, offline**: recebe o grafo de ruas gerado por [`tools/grafo`](../../tools/grafo/README.md) e calcula o caminho entre dois pontos com **A\***. Foi escrito para rodar no celular (motor Hermes do app) e também no Node (testes e ferramentas). É a segunda etapa do roteamento offline; a quinta acrescentou as instruções de curva e o acompanhamento da rota (veja abaixo). A leitura dos rios fica em [`packages/desvio`](../desvio/README.md).
 
 ```ts
 import { criarRoteador } from '@acquascan/roteamento';
@@ -82,6 +82,63 @@ Por que `>= 1`: a heurística do A\* usa a distância em linha reta, que só é 
 - **Heurística:** distância em linha reta até o destino, calculada num **plano local** (bem mais barato que o haversine), vezes **0,99** e menos **3 m** de folga. O fator cobre a diferença entre o plano e o haversine (abaixo de 0,1% na área de Petrópolis, medida nos testes) e a folga cobre o arredondamento dos comprimentos e coordenadas do grafo (~0,1 m por aresta). Assim ela **nunca passa do custo real mínimo**, e o A\* devolve sempre a rota ótima, igual à de um Dijkstra.
 - **Precondição do grafo:** `comprimentoM` de cada aresta não deve ser menor que a reta entre suas pontas (a menos de arredondamento). O grafo de `tools/grafo` garante isso.
 
+## Instruções de curva e acompanhamento
+
+Quinta etapa do roteamento: lógica pura sobre o resultado `ok` de `rotear`, sem tela e sem leitura de rios. O texto é em português do Brasil.
+
+### `gerarPassos(rota, atributos, { nomeDestino? }) → Passo[]`
+
+`atributos` é o próprio `Roteador` ou uma função `(arestaId) => AtributosAresta`.
+
+```ts
+const passos = gerarPassos(rota, roteador, { nomeDestino: 'Ponto de apoio A' });
+// [{ tipo: 'partida', texto: 'Siga para o norte pela Rua do Imperador', distanciaM: 250, ... },
+//  { tipo: 'curva', manobra: 'direita', texto: 'Vire à direita na Avenida Koeler', ... },
+//  { tipo: 'chegada', texto: 'Você chegou: Ponto de apoio A', ... }]
+```
+
+Cada `Passo` tem `tipo` (`partida`, `siga`, `curva`, `travessia`, `chegada`), `manobra` (ou `null`), `texto`, `rua` (nome da via depois do passo, `null` se não tem), `distanciaM` (do ponto da manobra até o próximo passo), `acumuladaM` (desde o início da rede), `indiceNaLinha` (índice em `rota.pontos`), `ponto` e `avisos` (`ESCADA`, `TRILHA`, `PONTE`, `TUNEL`).
+
+**Regras**
+
+1. Trechos consecutivos com o mesmo nome (comparação sem acento, maiúsculas e espaços repetidos) e as mesmas marcas de ponte, escada e túnel viram uma unidade. Way sem nome só agrupa com outro sem nome **da mesma classe**.
+2. O ângulo de cada junção é o rumo médio dos primeiros 15 m de quem sai menos o dos últimos 15 m de quem chega (se há menos de 15 m, usa o que existir). Positivo = direita, em (-180, 180].
+3. Há um passo quando: há manobra (|Δ| >= 25), o nome muda mesmo em frente ("Continue pela Rua Y") ou começa/termina ponte, escada ou túnel (`travessia`). Nunca há "em frente" sem mudança de nome.
+4. Manobras separadas por menos de 15 m viram uma só (os ângulos somam e a manobra é reclassificada). Dois "continue" a menos de 15 m um do outro também: fica o segundo.
+5. Encaixe da origem maior que 30 m: primeiro passo "Vá até a Rua X (50 m)". Encaixe do destino maior que 30 m: "O destino fica a 50 m da Rua X" antes da chegada. Esses dois passos levam o próprio encaixe em `distanciaM`; a soma das `distanciaM` dos demais passos é `distanciaRedeM` (tolerância de 1 m).
+
+| \|Δ\| (graus) | Manobra   | Texto                                              |
+| ------------- | --------- | -------------------------------------------------- |
+| menos de 25   | em frente | só se o nome muda: "Continue pela Rua Y"           |
+| 25 a 60       | leve      | "Vire levemente à direita/esquerda na Rua X"       |
+| 60 a 120      | normal    | "Vire à direita/esquerda na Rua X"                 |
+| 120 a 160     | fechada   | "Faça a curva fechada à direita/esquerda na Rua X" |
+| mais de 160   | retorno   | "Retorne e siga pela Rua X"                        |
+
+Os limites são fechados no menor valor (25 já é leve; 60 já é normal) e o retorno começa acima de 160.
+
+**Textos.** Partida: "Siga para o norte pela Rua do Imperador" (oito pontos cardeais pelo rumo inicial). Ponte: "Atravesse a ponte"; escada: "Pegue a escadaria"; túnel: "Siga pelo túnel"; no fim deles, "Continue pela Rua Y". A preposição vem do tipo do nome: Rua, Avenida, Travessa, Alameda, Estrada, Praça, Ladeira, Servidão, Rodovia, Via e Passarela são femininos (na, pela, à); Beco, Caminho, Largo, Viaduto e Túnel, masculinos (no, pelo); qualquer outro nome usa "em" e "por". Sem nome, descreve pela classe: `footway` "passagem de pedestres", `steps` "escadaria", `path` e `track` "caminho", `service` "via de serviço", o resto "via".
+
+Utilitários exportados: `formatarDistancia` (menos de 100 m arredonda a 5 m; até 1000 m, a 10 m; acima, "1,2 km"), `formatarDuracao` ("menos de 1 min", "12 min a pé", "1 h 05 min") e `rumoCardeal(graus)`.
+
+### `acompanhar(rota, passos, posicao, estado?, opcoes?)`
+
+Função **pura**: recebe a posição do GPS e o estado devolvido na chamada anterior, e devolve `{ estado, passoAtualIndice, distanciaAtePassoM, distanciaRestanteM, distanciaDaRotaM, foraDaRota, chegou }`.
+
+- A posição é projetada na polilinha **só numa janela à frente do progresso** (250 m), para não saltar para um trecho paralelo ou um laço da rota; em empate prático vale o ponto que vem primeiro. O progresso guardado nunca diminui, e a busca começa até 20 m antes dele (ruído de GPS).
+- `foraDaRota`: `distanciaDaRotaM` acima de 30 m em 3 amostras **seguidas** (o estado guarda o contador); volta ao normal com menos de 20 m. `chegou`: a menos de 25 m do destino.
+- `passoAtualIndice` é o último passo já iniciado; `distanciaAtePassoM` é a distância até o início do passo seguinte (a próxima manobra, é o que a tela anuncia).
+- O primeiro `estado` é `ESTADO_INICIAL` (ou omitido). Se a tela reposicionar a pessoa longe do progresso guardado, passe um estado novo.
+- Não recalcula a rota: quando `foraDaRota`, a tela chama `rotear` de novo.
+
+### Limitações
+
+- **Rotatórias não são reconhecidas**: viram curvas comuns ("Vire à direita na Rua X" seguido de outras curvas).
+- **O texto das preposições é heurístico**: depende da primeira palavra do nome. Nomes fora das listas usam "em" e "por", e podem soar estranhos.
+- Os nomes vêm do OSM como estão (ruas sem nome viram "via", "caminho" etc.), e trechos muito curtos de ponte ou escada geram passos curtos.
+- Dois "continue" seguidos continuam possíveis quando as ruas são diferentes e distantes (é intencional: a rua mudou).
+- Não há voz, recálculo nem leitura de rios ou estações aqui.
+
 ## Restrições de plataforma
 
 O código de `src/` (tudo menos `*.test.ts`) roda no **Hermes**, o motor JavaScript do app, que não tem as APIs do Node. Por isso ele **não pode** importar `node:*` nem usar `Buffer`, `fs`, `path`, `process` ou `require`: só TypeScript puro e typed arrays. Três proteções:
@@ -120,8 +177,8 @@ O celular será mais lento que o computador; vale medir lá antes de tirar concl
 pnpm --filter @acquascan/roteamento test
 ```
 
-Sem rede. Cobrem: encaixe (sobre a aresta, ao lado, perto de um nó, além do limite, e contra uma busca por força bruta); rotas em grafos feitos à mão (caminho único, dois caminhos, multiplicadores 3 e 1000, `Infinity` com e sem alternativa, mesma aresta nos dois sentidos, origem igual ao destino, ilhas, junções sem vértices repetidos, sentido inverso, sentido único); validação das entradas; a guarda de plataforma; e a comparação com um **Dijkstra ingênuo** (dentro do teste) em grades aleatórias de 30×30, com 300 pares e multiplicadores aleatórios (inclusive `Infinity`), exigindo custo **igual**. Se `tools/grafo/saida/grafo-petropolis.json` existir, o grafo real também é conferido (200 pares sem `sem_caminho`, e 100 com multiplicadores); sem o arquivo (como no CI), essa parte é pulada.
+Sem rede. Cobrem: encaixe (sobre a aresta, ao lado, perto de um nó, além do limite, e contra uma busca por força bruta); rotas em grafos feitos à mão (caminho único, dois caminhos, multiplicadores 3 e 1000, `Infinity` com e sem alternativa, mesma aresta nos dois sentidos, origem igual ao destino, ilhas, junções sem vértices repetidos, sentido inverso, sentido único); validação das entradas; a guarda de plataforma; e a comparação com um **Dijkstra ingênuo** (dentro do teste) em grades aleatórias de 30×30, com 300 pares e multiplicadores aleatórios (inclusive `Infinity`), exigindo custo **igual**. Para as instruções: curvas de 90 graus (direita e esquerda), T e X, curva leve, fechada e retorno, nomes iguais e diferentes em frente, trechos unificados, manobras a menos de 15 m, ponte, escada, túnel e trilha, cada classe sem nome, encaixes grandes e pequenos, os oito pontos cardeais e suas fronteiras, formatação de distância e duração, preposições por tipo de nome e as invariantes (soma das distâncias e índices crescentes). Para o acompanhamento: caminhada com ruído de 8 m (PRNG semeado) que termina em `chegou` sem nunca marcar `foraDaRota`, desvio de 100 m (só na terceira amostra), rota que passa duas vezes perto do mesmo ponto e GPS que recua 15 m. Se `tools/grafo/saida/grafo-petropolis.json` existir, o grafo real também é conferido (e 300 pares aleatórios têm as invariantes das instruções verificadas) (200 pares sem `sem_caminho`, e 100 com multiplicadores); sem o arquivo (como no CI), essa parte é pulada.
 
 ## O que este pacote ainda não faz
 
-Instruções de curva (próxima etapa), leitura do estado dos rios (quem calcula os multiplicadores é o chamador) e formato binário do grafo (o JSON basta por enquanto).
+Voz, recálculo automático da rota, rotatórias, leitura do estado dos rios (quem calcula os multiplicadores é o chamador) e formato binário do grafo (o JSON basta por enquanto).

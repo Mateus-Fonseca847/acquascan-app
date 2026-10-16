@@ -85,6 +85,8 @@ O caminho a pé até um ponto de apoio é calculado **no próprio aparelho**, se
 
 O resultado traz a rota recomendada, a mais curta quando ela for bem mais exposta, os avisos e os estados usados. Os rios sem estação não são evitados: o app deve avisar que o desvio vale apenas para os rios monitorados. Os números da política são provisórios (veja [decisoes.md](decisoes.md)).
 
+**Instruções e acompanhamento.** Com a rota calculada, o mesmo pacote gera as **instruções de curva** (`gerarPassos`: "Vire à direita na Avenida Koeler", com distância, avisos de escada, trilha, ponte e túnel, e o ponto de cada manobra) e acompanha a pessoa no caminho (`acompanhar`: dada a posição do GPS, diz o passo atual, quanto falta e se ela saiu da rota). As duas são funções puras; quando a pessoa sai da rota, a tela chama o `rotear` de novo. Rotatórias não são reconhecidas e o texto das preposições é heurístico.
+
 O pacote roda no Hermes (o motor do app) e no Node, então `src/` não usa nenhuma API do Node; um teste garante isso. A API do AcquaScan **não participa** do cálculo de rotas. A justificativa está em [decisoes.md](decisoes.md).
 
 ## Ambientes
