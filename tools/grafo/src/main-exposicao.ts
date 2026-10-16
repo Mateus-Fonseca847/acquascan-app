@@ -48,9 +48,12 @@ const bytesGrafo = await readFile(arquivoGrafo);
 const grafo = JSON.parse(bytesGrafo.toString('utf8')) as Grafo;
 const sha256 = sha256Hex(bytesGrafo);
 
+const bytesRios = await readFile(arquivoRios);
+const shaRios = sha256Hex(bytesRios);
+
 let segmentos;
 try {
-  segmentos = lerSegmentosGeoJson(JSON.parse(await readFile(arquivoRios, 'utf8')));
+  segmentos = lerSegmentosGeoJson(JSON.parse(bytesRios.toString('utf8')));
 } catch (erro) {
   falhar(erro instanceof Error ? erro.message : String(erro));
 }
@@ -86,6 +89,7 @@ if (existsSync(arquivoCache)) {
 const arquivo = montarArquivoExposicao({
   geradoEm: new Date(),
   grafo: { nos: grafo.nos.length, arestas: grafo.arestas.length, sha256 },
+  rios: { sha256: shaRios },
   segmentos,
   resultado,
 });

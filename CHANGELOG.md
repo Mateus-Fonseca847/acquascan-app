@@ -8,6 +8,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Alterado
 
+- `tools/grafo`: `pnpm grafo:exposicao` passou a gravar `rios: { sha256 }` (hash do `rios-petropolis.geojson`) em `exposicao-petropolis.json`, para detectar rios e exposição de gerações diferentes. `tools/grafo` agora depende de `@acquascan/shared` (workspace)
+- A normalização de nome de rio (`normalizarNome`) saiu de `tools/grafo/src/nomes.ts` para `@acquascan/shared` (`src/rios.ts`, com testes); `nomes.ts` reexporta a função e os comandos e testes do grafo seguem iguais
+
 - Cadastro (RF01): o usuário escolhe a **cidade** (`cidadeId`, lista de `GET /cidades`) no lugar do CEP, no esquema de `@acquascan/shared`, na API e na tela do app. A tela agora envia o cadastro à API
 - `usuarios.cidade_id` passou a ser obrigatório (migração `cadastro_por_cidade`)
 - O log de cada requisição passa a trazer só método e caminho, sem host, IP nem query string (`lib/log.ts`). Antes o Fastify registrava `remoteAddress`, `remotePort` e a URL completa
@@ -23,6 +26,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Telefone do cadastro de usuário (campo no app, validação em `@acquascan/shared` e coluna `usuarios.telefone` via migração `remove_telefone_usuario`), por não ter finalidade e em respeito ao princípio da minimização da LGPD
 
 ### Adicionado
+
+**Desvio de rios** (`packages/desvio`, quarta etapa do roteamento; só lógica pura, sem mudar API, app, banco nem `packages/roteamento`)
+
+- Pacote `@acquascan/desvio`: `criarDesvio({ roteador, exposicao, rios }, estacoes, politica?)` valida os dados (erros em português) e oferece `estadosEfetivos`, `estadoDosSegmentos` (fonte única do mapa e do desvio), `rotear` (modos `sem_risco`, `segura` e `menos_exposta`, duas passadas, avisos), `escolherApoio` e `resumoCobertura`
+- Política `POLITICA_PADRAO` com todas as constantes comentadas e marcadas como **PROVISÓRIAS** (validar com a Defesa Civil); **falha segura**: CRITICO e ATENCAO antigos valem por até 6 h
+- Testes sem rede com mundos sintéticos, teste de propriedade (tudo ESTAVEL = rota normal), guarda de plataforma (sem Node em `src/`) e, se `tools/grafo/saida` existir, dados reais de Petrópolis
+- Documentação: `packages/desvio/README.md`, decisão em `docs/decisoes.md` e fluxo em `docs/arquitetura.md`
 
 **App: sessão**
 

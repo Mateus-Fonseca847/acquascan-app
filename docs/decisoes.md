@@ -33,3 +33,45 @@ Calcular a rota **no próprio celular**, com um **A\* escrito no projeto** (`@ac
 - **Código a manter:** o A\* é nosso. Em troca, é pequeno, sem dependências, roda no Node e no Hermes (há um teste que impede o uso de APIs do Node) e é conferido contra um Dijkstra de referência, inclusive no grafo real.
 - **Cuidados com os multiplicadores:** penalizar demais pode forçar desvios enormes. Na medição com 1000 em todas as ruas `primary`, a metade dos pares mudou de caminho e o acréscimo médio foi de ~4 km, porque essas vias costumam ser as pontes e ligações entre bairros. Os multiplicadores devem valer só para as arestas realmente expostas ao rio.
 - **Ainda não decidido:** formato final do grafo (binário ou JSON), onde distribuí-lo e como atualizá-lo; as instruções de curva; e a regra que transforma o estado dos rios em multiplicadores.
+
+## Política de desvio de rios
+
+**Data:** 16/10/2026. **Status:** adotada como **provisória**. **Onde:** [`packages/desvio`](../packages/desvio/README.md).
+
+> **Os números abaixo são PROVISÓRIOS e precisam ser validados com a Defesa Civil** antes de qualquer uso real. Foram escolhidos olhando medições com os dados de Petrópolis, não critérios técnicos de risco.
+
+### Contexto
+
+O roteador não decide segurança: só soma `comprimento × multiplicador`. Faltava a regra que junta o estado das estações, a exposição das ruas aos rios e o roteador para recomendar a rota mais segura, e que fosse consistente com o que o mapa mostra.
+
+### Decisão
+
+Um pacote de lógica pura, `@acquascan/desvio`. **Princípio: o que o mapa mostra em vermelho é exatamente o que a rota evita**, então há uma única função, `estadoDosSegmentos`, para colorir o mapa e montar os multiplicadores. Cada trecho de rio é governado pela estação mais próxima do mesmo rio dentro de `distanciaTrechoM`; sem estação por perto, o trecho é "sem monitoramento" e não recebe desvio. Estado ruim antigo é mantido por **falha segura**. O desvio usa duas passadas: a estrita bloqueia as travessias de rio crítico; se não houver rota, a de reserva as permite com penalidade (`menos_exposta`).
+
+| Constante                    | Valor                                  |
+| ---------------------------- | -------------------------------------- |
+| `distanciaTrechoM`           | 1000 m                                 |
+| `critico`                    | faixa 50 m, `k` 49, bloqueia travessia |
+| `atencao`                    | faixa 15 m, `k` 3, não bloqueia        |
+| `frescoMin`                  | 20 min                                 |
+| `retencaoH`                  | 6 h                                    |
+| `larguraTravessiaM`          | 60 m                                   |
+| `limiarExposicaoM`           | 50 m                                   |
+| `diferencaMostrarMaisCurtaM` | 100 m                                  |
+| `pesoExposicaoNoRanking`     | 10                                     |
+
+### Alternativas consideradas
+
+| Alternativa                                           | Por que não                                                                                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Bloquear sempre as ruas junto ao rio                  | Deixa a pessoa sem rota quando já está na zona de risco ou quando só há uma ponte. Por isso existe a passada de reserva              |
+| Somar as penalidades de rios diferentes na mesma rua  | Uma rua junto de dois rios não é duas vezes mais perigosa; vale o máximo                                                             |
+| Tratar "sem leitura" como estável                     | Esconderia o perigo justo quando a estação parou. Estado ruim antigo é mantido por 6 h; o que não se sabe é sinalizado, não ignorado |
+| Calcular o estado do mapa e o do desvio separadamente | Poderia mostrar um rio verde e a rota desviar dele (ou o contrário). Daí a fonte única                                               |
+
+### Consequências
+
+- **Só os rios monitorados são evitados.** Com estações hipotéticas, 3 estações a 1000 m cobrem ~13 de 24 km de rio. A cobertura depende de onde as estações forem de fato instaladas.
+- **Desvios podem ser longos** quando a única alternativa é uma ponte distante (no experimento, o pior caso passou de 20 km). O app deve mostrar a rota mais curta quando ela for bem mais exposta e deixar a pessoa decidir.
+- Os valores acima precisam ser validados com a Defesa Civil; mudar um valor é trocar uma constante em `politica.ts` (ou passar a política parcial a `criarDesvio`).
+- Ficam fora: terreno e relevo, deslizamentos, vias interditadas e rios sem estação.

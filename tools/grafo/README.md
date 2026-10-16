@@ -234,13 +234,14 @@ Compacto de propósito (vai para o celular):
   "versao": 1,
   "geradoEm": "2026-10-16T16:40:53.013Z",
   "grafo": { "nos": 6329, "arestas": 7219, "sha256": "bd36d6f1..." }, // do arquivo do grafo usado
+  "rios": { "sha256": "3fa1c0d2..." }, // do rios-petropolis.geojson usado
   "parametros": { "passoM": 5, "faixasM": [15, 30, 50] },
   "segmentos": [{ "id": 0, "rio": "Piabanha", "osmWayId": 11981006, "coberto": false }],
   "entradas": [[arestaId, segmentoId, cruza /* 0 ou 1 */, distMinM, f15, f30, f50]]
 }
 ```
 
-`arestaId` é o índice da aresta em `arestas` do grafo, e `segmentoId` é o `id` do segmento em `segmentos`. As distâncias são arredondadas a 0,1 m e as frações a 0,01. O **`sha256`** é o do arquivo `grafo-petropolis.json` usado: quem carregar a exposição deve conferir que o grafo é o mesmo, porque os `arestaId` só valem para ele (se o grafo for regerado, a exposição precisa ser regerada).
+`arestaId` é o índice da aresta em `arestas` do grafo, e `segmentoId` é o `id` do segmento em `segmentos`. As distâncias são arredondadas a 0,1 m e as frações a 0,01. O **`sha256`** é o do arquivo `grafo-petropolis.json` usado: quem carregar a exposição deve conferir que o grafo é o mesmo, porque os `arestaId` só valem para ele (se o grafo for regerado, a exposição precisa ser regerada). O **`rios.sha256`** é o do `rios-petropolis.geojson` usado, pelo mesmo motivo: os `segmentoId` só valem para ele (os ids mudam se o OSM mudar). Quem usa a exposição no celular confere os hashes ao empacotar os arquivos; o app não calcula `sha256`.
 
 ### O relatório
 
@@ -274,4 +275,4 @@ A **cobertura do monitoramento** refaz o cruzamento com **todos** os waterways d
 pnpm --filter @acquascan/grafo test
 ```
 
-Sem rede, com fixtures mínimas em memória (ruas e rios): cada regra de inclusão e exclusão de `caminhavel`, haversine contra distâncias conhecidas, Douglas-Peucker (extremos mantidos, colineares removidos), compressão de nós de grau 2, interseção virando nó, descarte de ilhas, marcação de ponte e escada, `oneway:foot`, e o cache e as tentativas do download (com um `fetch` falso). Para os rios: normalização de nomes, igualdade exata (não "contém"), nome vindo da relação, flags `coberto` e `canal`, sentido preservado após simplificar, componentes e lacunas (20 m reportada, 100 m não), resposta parcial rejeitada, rio fora da lista só no relatório, e o relatório. Para a exposição: distância e interseção de segmentos (em X, toque na ponta, paralelas), o índice em grade contra a comparação de tudo com tudo, as frações (rua paralela a 10, 20 e 40 m do rio, rua que cruza em ângulo, rua meio exposta, amostra atribuída ao segmento mais próximo com soma menor ou igual a 1), o erro da projeção plana contra o haversine, os aliases e a absorção de ways sem nome (que nunca absorve way com outro nome), a estabilidade dos ids, o formato compacto do arquivo (com o sha256 do grafo), a cobertura e o relatório.
+Sem rede, com fixtures mínimas em memória (ruas e rios): cada regra de inclusão e exclusão de `caminhavel`, haversine contra distâncias conhecidas, Douglas-Peucker (extremos mantidos, colineares removidos), compressão de nós de grau 2, interseção virando nó, descarte de ilhas, marcação de ponte e escada, `oneway:foot`, e o cache e as tentativas do download (com um `fetch` falso). Para os rios: normalização de nomes, igualdade exata (não "contém"), nome vindo da relação, flags `coberto` e `canal`, sentido preservado após simplificar, componentes e lacunas (20 m reportada, 100 m não), resposta parcial rejeitada, rio fora da lista só no relatório, e o relatório. Para a exposição: distância e interseção de segmentos (em X, toque na ponta, paralelas), o índice em grade contra a comparação de tudo com tudo, as frações (rua paralela a 10, 20 e 40 m do rio, rua que cruza em ângulo, rua meio exposta, amostra atribuída ao segmento mais próximo com soma menor ou igual a 1), o erro da projeção plana contra o haversine, os aliases e a absorção de ways sem nome (que nunca absorve way com outro nome), a estabilidade dos ids, o formato compacto do arquivo (com o sha256 do grafo e dos rios), a cobertura e o relatório.

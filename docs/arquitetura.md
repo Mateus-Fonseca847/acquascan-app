@@ -70,12 +70,20 @@ As telas ficam em `apps/mobile/app/` (cada arquivo é uma rota do Expo Router). 
 
 ## Roteamento no celular
 
-O caminho a pé até um ponto de apoio é calculado **no próprio aparelho**, sem internet, e no futuro vai desviar de rios em estado crítico. Duas peças:
+O caminho a pé até um ponto de apoio é calculado **no próprio aparelho**, sem internet, e desvia de rios em estado crítico. Duas peças:
 
 1. **O grafo de ruas** é gerado fora do app por [`tools/grafo`](../tools/grafo/README.md), a partir do OpenStreetMap: nós nas interseções, arestas com comprimento, geometria, nome, classe e marcas de escada, ponte e túnel (hoje um JSON de 1,9 MB para Petrópolis).
 2. **O pacote [`packages/roteamento`](../packages/roteamento/README.md)** carrega esse grafo e calcula a rota com **A\***. Ele encaixa a origem e o destino no ponto mais próximo de **qualquer aresta** (não só nos nós) e aceita um **multiplicador de custo por aresta** (`>= 1`; `Infinity` bloqueia). Os multiplicadores são a forma de o estado dos rios entrar na conta: o roteador devolve, em cada trecho, o multiplicador usado, e **quem chama** decide a política de segurança.
 
-**O desvio de rios** combina duas fontes. A primeira é **estática**: `tools/grafo` calcula, uma vez, a **exposição** de cada rua aos rios alvo (se cruza o rio e que fração da rua fica a até 15, 30 e 50 m dele) e grava um arquivo compacto, amarrado ao grafo pelo hash. A segunda é **dinâmica**: o estado das estações, que muda a cada minuto. Em tempo de uso, o app lê o estado do rio, transforma a exposição em um multiplicador de custo por rua (por exemplo, `1 + k × fração`, com `k` crescendo conforme o rio piora) e passa o vetor ao roteador. Assim a rota evita as ruas junto ao rio só quando ele está em estado crítico, e os dados pesados (a geometria) são calculados antes, não no celular. Os rios sem estação não têm essa informação: o app deve avisar que o desvio vale apenas para os rios monitorados. A política (qual `k`, em que estado) ainda está por decidir.
+**O desvio de rios** fica no pacote [`packages/desvio`](../packages/desvio/README.md), que junta três fontes: o roteador, a **exposição** das ruas aos rios (estática: `tools/grafo` calcula, uma vez, se cada rua cruza o rio e que fração dela fica a até 15, 30 e 50 m, em um arquivo amarrado ao grafo pelo hash) e o **estado das estações** (dinâmico, muda a cada minuto). O fluxo, a cada consulta:
+
+1. **Estado das estações**: a última leitura de cada estação (como a API devolve) e a hora de agora.
+2. **Estado efetivo**: leitura fresca (até 20 min) vale como está; CRITICO ou ATENCAO antigo continua valendo por até 6 h (**falha segura**); o resto vira `DESCONHECIDO`, sem penalidade.
+3. **Estado de cada trecho de rio**: o da estação mais próxima do mesmo rio, até 1000 m; fora disso, "sem monitoramento". É a **mesma função que colore o mapa**.
+4. **Multiplicador por rua**: o máximo, entre os rios que a tocam, de `1 + k × fração exposta` (crítico: faixa de 50 m, `k` 49; atenção: faixa de 15 m, `k` 3), com uma fração mínima para quem cruza o rio.
+5. **Duas passadas**: a estrita bloqueia (`Infinity`) as ruas que cruzam rio crítico; se não houver rota, a de reserva as permite com penalidade, e o resultado vem como `menos_exposta` com aviso.
+
+O resultado traz a rota recomendada, a mais curta quando ela for bem mais exposta, os avisos e os estados usados. Os rios sem estação não são evitados: o app deve avisar que o desvio vale apenas para os rios monitorados. Os números da política são provisórios (veja [decisoes.md](decisoes.md)).
 
 O pacote roda no Hermes (o motor do app) e no Node, então `src/` não usa nenhuma API do Node; um teste garante isso. A API do AcquaScan **não participa** do cálculo de rotas. A justificativa está em [decisoes.md](decisoes.md).
 

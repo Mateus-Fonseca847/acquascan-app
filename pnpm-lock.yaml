@@ -289,6 +289,25 @@ importers:
         specifier: ~6.0.3
         version: 6.0.3
 
+  packages/desvio:
+    dependencies:
+      '@acquascan/roteamento':
+        specifier: workspace:*
+        version: link:../roteamento
+      '@acquascan/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: 22.20.4
+        version: 22.20.4
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 5.0.2
+        version: 5.0.2(@types/node@22.20.4)(vite@8.3.4(@types/node@22.20.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
+
   packages/roteamento:
     devDependencies:
       '@types/node':
@@ -315,6 +334,10 @@ importers:
         version: 5.0.2(@types/node@22.20.4)(vite@8.3.4(@types/node@22.20.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
 
   tools/grafo:
+    dependencies:
+      '@acquascan/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
     devDependencies:
       '@types/node':
         specifier: 22.20.4

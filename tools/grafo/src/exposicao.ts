@@ -277,6 +277,8 @@ export interface ArquivoExposicao {
   versao: 1;
   geradoEm: string;
   grafo: { nos: number; arestas: number; sha256: string };
+  /** Hash do rios-petropolis.geojson usado: os ids dos segmentos só valem para ele. */
+  rios: { sha256: string };
   parametros: { passoM: number; faixasM: readonly number[] };
   segmentos: { id: number; rio: string; osmWayId: number; coberto: boolean }[];
   entradas: EntradaCompacta[];
@@ -290,6 +292,7 @@ export function sha256Hex(conteudo: Uint8Array | string): string {
 export function montarArquivoExposicao(dados: {
   geradoEm: Date;
   grafo: { nos: number; arestas: number; sha256: string };
+  rios: { sha256: string };
   segmentos: readonly SegmentoParaExposicao[];
   resultado: ResultadoExposicao;
 }): ArquivoExposicao {
@@ -297,6 +300,7 @@ export function montarArquivoExposicao(dados: {
     versao: 1,
     geradoEm: dados.geradoEm.toISOString(),
     grafo: dados.grafo,
+    rios: dados.rios,
     parametros: { passoM: dados.resultado.passoM, faixasM: dados.resultado.faixasM },
     segmentos: dados.segmentos.map((s) => ({
       id: s.id,
