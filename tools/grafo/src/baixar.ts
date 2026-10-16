@@ -28,6 +28,10 @@ export function montarConsulta(bbox: Bbox): string {
 
 export interface OpcoesBaixar {
   bbox: Bbox;
+  /** Outra consulta Overpass (padrão: as ruas). A chave do cache vem dela. */
+  consulta?: string;
+  /** Prefixo do nome do arquivo de cache (padrão: `overpass`). */
+  prefixoCache?: string;
   dirCache: string;
   atualizar?: boolean;
   /** Para os testes. */
@@ -96,10 +100,10 @@ export async function baixarOuUsarCache(opcoes: OpcoesBaixar): Promise<Resultado
   const log = opcoes.log ?? (() => {});
   const fetchImpl = opcoes.fetchImpl ?? fetch;
   const dormir = opcoes.dormir ?? esperarPadrao;
-  const consulta = montarConsulta(opcoes.bbox);
+  const consulta = opcoes.consulta ?? montarConsulta(opcoes.bbox);
   // A chave do cache é a própria consulta: mudar a caixa usa outro arquivo.
   const chave = createHash('sha1').update(consulta).digest('hex').slice(0, 12);
-  const arquivoCache = join(opcoes.dirCache, `overpass-${chave}.json`);
+  const arquivoCache = join(opcoes.dirCache, `${opcoes.prefixoCache ?? 'overpass'}-${chave}.json`);
 
   if (!opcoes.atualizar) {
     try {

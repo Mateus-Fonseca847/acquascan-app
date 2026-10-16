@@ -17,6 +17,7 @@
     "dev:mobile": "pnpm --filter @acquascan/mobile start",
     "simulador": "pnpm --filter @acquascan/simulador start",
     "grafo:construir": "pnpm --filter @acquascan/grafo construir",
+    "grafo:rios": "pnpm --filter @acquascan/grafo rios",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "format": "prettier --write .",

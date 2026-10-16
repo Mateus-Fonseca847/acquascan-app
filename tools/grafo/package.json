@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "construir": "tsx src/main.ts",
+    "rios": "tsx src/main-rios.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

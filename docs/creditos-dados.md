@@ -20,11 +20,15 @@ Os dados do OpenStreetMap são licenciados sob a [Open Database License (ODbL) 1
 - **Compartilhamento pela mesma licença (_share-alike_):** se a equipe criar e **distribuir** uma _base de dados derivada_ do OSM, essa base derivada precisa continuar aberta, sob a ODbL.
 - **Manter aberto:** a licença também pede que a base derivada seja oferecida ou mantida aberta, e não apenas protegida por restrições técnicas ou contratuais que impeçam seu uso.
 
+### Hidrografia (rios)
+
+Os rios também vêm do OpenStreetMap (`waterway` e relações de rio, pela Overpass API), extraídos por `pnpm grafo:rios`. Valem as mesmas regras: **atribuição "© colaboradores do OpenStreetMap"** e **ODbL**. O GeoJSON dos rios (`rios-petropolis.geojson`) também é uma base derivada (extraída, filtrada pelos rios alvo e com a geometria simplificada), e o mesmo vale para qualquer arquivo que **cruze rios e ruas** (por exemplo, a lista de ruas expostas a um rio): a equipe deve tratá-lo como derivado do OSM até confirmar o contrário.
+
 ### O que isso significa para o grafo
 
 O arquivo `grafo-petropolis.json` é uma **base derivada** do OSM: ele é extraído, filtrado (só o que é caminhável), reorganizado (nós, arestas, geometria simplificada) e acrescido de comprimentos calculados. Isso não é só "mostrar um mapa". Portanto:
 
-1. **Atribuição:** o grafo, e o app que o usa, devem creditar "© colaboradores do OpenStreetMap".
+1. **Atribuição:** o grafo (e o GeoJSON dos rios), e o app que os usa, devem creditar "© colaboradores do OpenStreetMap".
 2. **Se o grafo for distribuído** (por exemplo, embutido no app ou baixado por ele), a equipe deve esperar que **a base derivada distribuída precise continuar aberta sob a ODbL**, com a indicação de que vem do OSM. Convém publicar o arquivo (ou a ferramenta e as instruções para reproduzi-lo) e deixar a licença explícita junto dele.
 3. **As rotas mostradas ao usuário** (o caminho desenhado no mapa) tendem a ser um _trabalho produzido_ (_produced work_) a partir da base: costumam exigir só a atribuição, não a abertura. A fronteira entre os dois casos é justamente o ponto a confirmar.
 4. **Dados próprios misturados à base** (por exemplo, o estado dos rios ou os pontos de apoio) podem ou não ser tratados como parte da base derivada, dependendo de como forem combinados. Convém **manter os dados do AcquaScan em camadas separadas** do grafo do OSM até esse ponto ser confirmado.

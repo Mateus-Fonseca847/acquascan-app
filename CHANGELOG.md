@@ -74,6 +74,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 - Cenários `estavel`, `cheia` e `vazante` enviando leituras para a API
 
+**Rios** (`tools/grafo`, segunda etapa de dados do desvio de rios em estado crítico; só dados, sem mudar API, app, banco, `packages/roteamento` nem o comando de ruas)
+
+- Comando `pnpm grafo:rios` (`--atualizar` baixa de novo): uma única consulta à Overpass, com o mesmo cliente e cache das ruas (o `baixar.ts` ganhou só a consulta e o prefixo do cache como opções), com os ways `waterway` river, stream, canal e drain e as relações de rio com nome. Resposta parcial é falha e nunca entra no cache
+- Rios alvo configuráveis (`RIOS_ALVO`, padrão Piabanha e Quitandinha), comparados por **igualdade** do nome normalizado (minúsculas, sem acento, sem o prefixo "rio "). O nome vem do way ou, na falta, da relação. Os demais rios aparecem só no relatório
+- Saída `rios-petropolis.geojson` (um `LineString` por segmento, com `osmWayId`, `rio`, `waterway`, `coberto` e o `tunnel` bruto, `canal`, `comprimentoM`; geometria simplificada em 3 m preservando o sentido do fluxo, a jusante) e `relatorio-rios.md` (todos os waterways nomeados, o resumo de cada rio alvo com componentes, lacunas de pontas a menos de 30 m e ways sem nome ligados, e os tamanhos). Nada é unido automaticamente. Saída e cache ficam fora do git
+- Primeira execução: Piabanha com 16,89 km em 7 componentes e 5 lacunas; Quitandinha com 7,31 km em 3 componentes e 2 lacunas; GeoJSON de 18 KB. Hidrografia também do OpenStreetMap (ODbL), registrada em `docs/creditos-dados.md`
+
 **Roteamento** (`packages/roteamento`, segunda etapa do roteamento offline; só o pacote, sem mudar API, app, banco nem `tools/grafo`)
 
 - Pacote `@acquascan/roteamento`: `criarRoteador(grafo)` valida o JSON de `tools/grafo` (erro claro em português) e monta as estruturas indexadas (grafo em CSR com typed arrays, geometrias achatadas e índice espacial em grade de ~100 m)

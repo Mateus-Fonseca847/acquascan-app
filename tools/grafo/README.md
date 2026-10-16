@@ -130,10 +130,73 @@ Coordenadas com 6 casas decimais (cerca de 0,1 m). O formato é **provisório**:
 
 O relatório completo de cada execução fica em `tools/grafo/saida/relatorio.md`. Para a revisão dos dados, os números a olhar são a porcentagem descartada, a contagem de arestas por classe e as arestas muito longas (trilhas sem interseção).
 
+## Rios (hidrografia)
+
+Segunda etapa de dados do **desvio de rios em estado crítico**: extrai do OpenStreetMap os rios que interessam, para depois cruzá-los com o grafo de ruas. Esta etapa é só dados; não há estado de rio nem roteamento aqui.
+
+```bash
+pnpm grafo:rios                  # na raiz; usa o cache se já houver download
+pnpm grafo:rios -- --atualizar   # baixa de novo da Overpass
+```
+
+| Arquivo                                     | O que é                                                            |
+| ------------------------------------------- | ------------------------------------------------------------------ |
+| `tools/grafo/saida/rios-petropolis.geojson` | Um `Feature` `LineString` por segmento dos **rios alvo**           |
+| `tools/grafo/saida/relatorio-rios.md`       | Todos os waterways nomeados, o resumo de cada rio alvo e o GeoJSON |
+| `tools/grafo/cache/rios-<hash>.json`        | Resposta bruta da Overpass (cache; separado do das ruas)           |
+
+Saída e cache ficam fora do git, como o grafo de ruas. O comando de ruas (`pnpm grafo:construir`) **não muda**.
+
+### Rios alvo
+
+A lista fica em `RIOS_ALVO` (`src/config.ts`) e hoje é `['Piabanha', 'Quitandinha']`. Só esses rios vão para o GeoJSON; os demais aparecem **apenas no relatório** (seção 1, com a coluna "Alvo"), para a equipe escolher quais entram. Para incluir um rio, acrescente o nome na lista e rode de novo (o cache é reaproveitado, não baixa nada).
+
+A comparação é por **igualdade do nome normalizado** (minúsculas, sem acento e sem o prefixo `rio `), nunca por "contém": `Rio Piabanha`, `Piabanha` e `RIO PIABANHÁ` são o mesmo rio, e `Rio Quitandinha do Sul` não é o Quitandinha. A consequência é que **grafias diferentes no OSM ficam de fora**. Na primeira execução, por exemplo, apareceram `Rio Pirabanha` e `Rio Quintandinha` (provavelmente erros de digitação no OSM) como rios à parte; vale corrigir no OSM ou decidir se entram.
+
+### O que a consulta pede e como o nome é decidido
+
+Uma única consulta à Overpass (com cache e as mesmas regras do download das ruas): (a) os ways com `waterway` = `river`, `stream`, `canal` ou `drain` na bbox e (b) as relações `type=waterway` com `name`, com seus ways membros e os nós de todos. Resposta parcial (200 com aviso de erro) é falha e nunca entra no cache.
+
+Nome do way: a tag `name` do próprio way; se faltar, o `name` da relação a que ele pertence; senão, "sem nome". Ways inteiramente fora da bbox (membros distantes de uma relação) são ignorados.
+
+### O que cada segmento tem
+
+Cada way vira um segmento com: `osmWayId`, `rio` (o nome canônico da lista), `nomeOsm`, `waterway`, `coberto` (`tunnel=culvert` ou `yes`) com o valor bruto em `tunnel`, `canal` (`waterway=canal` ou `drain`), `comprimentoM` (calculado na geometria **original**) e a geometria simplificada (Douglas-Peucker, tolerância de 3 m). Propriedades extras: `covered` (valor bruto da tag `covered`, só para conferência: **não** conta como coberto).
+
+**Sentido do fluxo:** a geometria preserva a ordem do OSM, que é o sentido do fluxo, **a jusante** (da nascente para a foz). Nada inverte nem reordena os pontos, nem a simplificação. As coordenadas do GeoJSON seguem o padrão `[longitude, latitude]`.
+
+### Conectividade e lacunas
+
+Para cada rio alvo, os segmentos são agrupados em **componentes**: dois segmentos estão no mesmo componente se compartilham um nó que é ponta de pelo menos um deles (isso cobre a emenda ponta a ponta e a foz de um afluente no meio de outro trecho).
+
+Uma **lacuna** é um par de pontas livres (nó que é ponta de um segmento e que nenhum outro segmento do rio usa) de componentes **diferentes** a menos de 30 m uma da outra (`DISTANCIA_LACUNA_M`): provável rio quebrado no OSM. **Nada é unido automaticamente**: o relatório só lista a distância, as coordenadas aproximadas e os dois ways, para alguém corrigir no OSM ou decidir o que fazer.
+
+O relatório também lista os **ways sem nome** cuja ponta toca o rio alvo: podem ser trechos do mesmo rio sem a tag.
+
+### O que NÃO está coberto
+
+- **Margens largas mapeadas como área** (`waterway=riverbank`, `natural=water`): só entram linhas; um rio largo mapeado como polígono não aparece, e o eixo dele pode estar fora da área real da água.
+- **Rios não nomeados:** só entram os que têm nome (no way ou na relação). Os sem nome aparecem no relatório como contagem, não como geometria.
+- **Outras grafias do mesmo nome** (veja acima) e rios cujo nome no OSM não bate com a lista.
+- **Tipos fora de `river`, `stream`, `canal` e `drain`** (por exemplo, `ditch`).
+- **`covered=yes`:** é registrado, mas só `tunnel` conta como coberto.
+- **O OSM pode estar incompleto ou impreciso.** A hidrografia de Petrópolis tem trechos quebrados, e este extrato não tem nenhuma relação de rio com nome, então o nome depende de cada way. Não há larguras, cotas, nem o estado dos rios: esta etapa só entrega as linhas.
+
+### Primeira execução (Petrópolis, 16/10/2026)
+
+| Medida         | Valor                                            |
+| -------------- | ------------------------------------------------ |
+| Download bruto | 202 KB (136 ways waterway, 0 relações com nome)  |
+| Piabanha       | 16,89 km, 11 segmentos, 7 componentes, 5 lacunas |
+| Quitandinha    | 7,31 km, 20 segmentos, 3 componentes, 2 lacunas  |
+| GeoJSON        | 18 KB (3,5 KB com gzip)                          |
+
+As lacunas do Piabanha ficam entre 18 e 25 m; as do Quitandinha, entre 9 e 12 m. O relatório completo está em `tools/grafo/saida/relatorio-rios.md`.
+
 ## Testes
 
 ```bash
 pnpm --filter @acquascan/grafo test
 ```
 
-Sem rede, com uma fixture mínima em memória: cada regra de inclusão e exclusão de `caminhavel`, haversine contra distâncias conhecidas, Douglas-Peucker (extremos mantidos, colineares removidos), compressão de nós de grau 2, interseção virando nó, descarte de ilhas, marcação de ponte e escada, `oneway:foot`, e o cache e as tentativas do download (com um `fetch` falso).
+Sem rede, com fixtures mínimas em memória (ruas e rios): cada regra de inclusão e exclusão de `caminhavel`, haversine contra distâncias conhecidas, Douglas-Peucker (extremos mantidos, colineares removidos), compressão de nós de grau 2, interseção virando nó, descarte de ilhas, marcação de ponte e escada, `oneway:foot`, e o cache e as tentativas do download (com um `fetch` falso). Para os rios: normalização de nomes, igualdade exata (não "contém"), nome vindo da relação, flags `coberto` e `canal`, sentido preservado após simplificar, componentes e lacunas (20 m reportada, 100 m não), resposta parcial rejeitada, rio fora da lista só no relatório, e o relatório.

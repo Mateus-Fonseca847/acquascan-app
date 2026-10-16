@@ -19,9 +19,17 @@ export interface ViaOsm {
   tags?: Tags;
 }
 
+export interface MembroOsm {
+  type: 'node' | 'way' | 'relation';
+  ref: number;
+  role: string;
+}
+
 export interface OutroElementoOsm {
   type: 'relation';
   id: number;
+  members?: MembroOsm[];
+  tags?: Tags;
 }
 
 export type ElementoOsm = NoOsm | ViaOsm | OutroElementoOsm;

@@ -30,3 +30,14 @@ export const USER_AGENT = 'acquascan-grafo/1.0 (projeto acadêmico)';
 
 /** Tolerância do Douglas-Peucker na geometria das arestas, em metros. */
 export const TOLERANCIA_SIMPLIFICACAO_M = 3;
+
+/**
+ * Rios que entram no mapa de exposição (desvio de rios em estado crítico). Comparados pelo nome
+ * NORMALIZADO e por IGUALDADE (não "contém"): minúsculas, sem acento e sem o prefixo "rio ".
+ * "Rio Piabanha", "Piabanha" e "RIO PIABANHÁ" são o mesmo rio; "Rio Piabanha do Sul" não é.
+ * Os demais rios aparecem só no relatório, para a equipe decidir se entram.
+ */
+export const RIOS_ALVO: readonly string[] = ['Piabanha', 'Quitandinha'];
+
+/** Pontas de rio de componentes diferentes mais perto que isto são reportadas como lacuna (m). */
+export const DISTANCIA_LACUNA_M = 30;
