@@ -73,3 +73,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 **Simulador**
 
 - Cenários `estavel`, `cheia` e `vazante` enviando leituras para a API
+
+**Grafo de ruas** (`tools/grafo`, primeira etapa do roteamento offline do app; só dados, sem mudar API, app nem banco)
+
+- Ferramenta `pnpm grafo:construir` que baixa os ways `highway` de Petrópolis do OpenStreetMap (uma única consulta à Overpass API, com cache em disco e `--atualizar`) e constrói o grafo de ruas a pé: nós nas interseções e pontas, arestas com comprimento (haversine), geometria simplificada (Douglas-Peucker, 3 m), nome, classe e marcas de escada, ponte e túnel, mantendo só o maior componente conexo
+- Tabela de decisões do que é caminhável a pé (`caminhavel.ts`), a ser revisada com a equipe, e relatório de cada execução (`saida/relatorio.md`)
+- Primeira execução: 6.329 nós e 7.219 arestas (782,7 km), JSON de 1,90 MB (343,6 KB com gzip). A saída e o cache ficam fora do git por enquanto
+- `docs/creditos-dados.md`: atribuição "© colaboradores do OpenStreetMap" e a licença ODbL (o grafo é uma base derivada; a equipe deve confirmar as obrigações)

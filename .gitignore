@@ -23,6 +23,10 @@ expo-env.d.ts
 /apps/mobile/ios/
 /apps/mobile/android/
 
+# Grafo de ruas: download bruto da Overpass e saída (formato e distribuição ainda a decidir)
+tools/grafo/cache/
+tools/grafo/saida/
+
 # Logs e sistema
 *.log
 .DS_Store

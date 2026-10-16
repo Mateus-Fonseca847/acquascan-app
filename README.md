@@ -45,6 +45,7 @@ acquascan-app/
 ├── packages/
 │   └── shared/           ← regras de nível e estado, validações e tipos
 ├── tools/
+│   ├── grafo/            ← constrói o grafo de ruas a pé (OpenStreetMap)
 │   └── simulador/        ← imita uma estação enviando leituras
 ├── docs/                 ← requisitos, arquitetura, banco, API, decisões
 ├── docker-compose.yml    ← PostgreSQL + PostGIS para desenvolvimento
@@ -101,6 +102,7 @@ Todos rodam na raiz do repositório.
 | `pnpm dev:api`                | API com recarga automática                  |
 | `pnpm dev:mobile`             | Servidor do Expo                            |
 | `pnpm simulador`              | Envia leituras simuladas para a API         |
+| `pnpm grafo:construir`        | Baixa o OSM e constrói o grafo de ruas a pé |
 | `pnpm db:up` / `pnpm db:down` | Liga e desliga o banco no Docker            |
 | `pnpm db:migrate`             | Aplica mudanças do `schema.prisma` no banco |
 | `pnpm db:seed`                | Recria os dados de desenvolvimento          |
@@ -126,12 +128,13 @@ Lista completa: [docs/requisitos.md](docs/requisitos.md). Histórico: [CHANGELOG
 
 ## Documentação
 
-| Documento                                               | Conteúdo                                          |
-| ------------------------------------------------------- | ------------------------------------------------- |
-| [requisitos.md](docs/requisitos.md)                     | O mapa mental traduzido em requisitos, com status |
-| [arquitetura.md](docs/arquitetura.md)                   | Como as partes se conectam e as regras de cálculo |
-| [banco-de-dados.md](docs/banco-de-dados.md)             | Tabelas, relações e migrações                     |
-| [api.md](docs/api.md)                                   | Endpoints, exemplos e formato da leitura do ESP32 |
-| [privacidade.md](docs/privacidade.md)                   | Dados pessoais coletados e cuidados de LGPD       |
-| [validacao.md](docs/validacao.md)                       | Testes realizados e resultados                    |
-| [solucao-de-problemas.md](docs/solucao-de-problemas.md) | Erros comuns e como resolver                      |
+| Documento                                               | Conteúdo                                           |
+| ------------------------------------------------------- | -------------------------------------------------- |
+| [requisitos.md](docs/requisitos.md)                     | O mapa mental traduzido em requisitos, com status  |
+| [arquitetura.md](docs/arquitetura.md)                   | Como as partes se conectam e as regras de cálculo  |
+| [banco-de-dados.md](docs/banco-de-dados.md)             | Tabelas, relações e migrações                      |
+| [api.md](docs/api.md)                                   | Endpoints, exemplos e formato da leitura do ESP32  |
+| [privacidade.md](docs/privacidade.md)                   | Dados pessoais coletados e cuidados de LGPD        |
+| [creditos-dados.md](docs/creditos-dados.md)             | Atribuição e licenças dos dados de terceiros (OSM) |
+| [validacao.md](docs/validacao.md)                       | Testes realizados e resultados                     |
+| [solucao-de-problemas.md](docs/solucao-de-problemas.md) | Erros comuns e como resolver                       |

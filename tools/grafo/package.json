@@ -1,0 +1,18 @@
+{
+  "name": "@acquascan/grafo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Constrói o grafo de ruas a pé de Petrópolis a partir do OpenStreetMap (base do roteamento offline do app)",
+  "type": "module",
+  "scripts": {
+    "construir": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "tsx": "4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "5.0.2"
+  }
+}

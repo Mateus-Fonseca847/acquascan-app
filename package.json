@@ -16,6 +16,7 @@
     "dev:api": "pnpm --filter @acquascan/api dev",
     "dev:mobile": "pnpm --filter @acquascan/mobile start",
     "simulador": "pnpm --filter @acquascan/simulador start",
+    "grafo:construir": "pnpm --filter @acquascan/grafo construir",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "format": "prettier --write .",
