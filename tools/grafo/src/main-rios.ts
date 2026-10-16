@@ -11,7 +11,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { baixarOuUsarCache } from './baixar';
-import { BBOX_PETROPOLIS, RIOS_ALVO } from './config';
+import { ALIASES_RIOS, BBOX_PETROPOLIS, RIOS_ALVO } from './config';
 import { montarConsultaRios } from './consulta-rios';
 import type { RespostaOverpass } from './osm';
 import { gerarRelatorioRios } from './relatorio-rios';
@@ -34,7 +34,12 @@ const download = await baixarOuUsarCache({
 
 const resposta = JSON.parse(download.texto) as RespostaOverpass;
 console.info(`Processando ${resposta.elements.length.toLocaleString('pt-BR')} elementos...`);
-const resultado = extrairRios(resposta.elements, { riosAlvo: RIOS_ALVO, bbox: BBOX_PETROPOLIS });
+const resultado = extrairRios(resposta.elements, {
+  riosAlvo: RIOS_ALVO,
+  bbox: BBOX_PETROPOLIS,
+  aliases: ALIASES_RIOS,
+  absorverSemNome: true,
+});
 
 const geojson = JSON.stringify(paraGeoJson(resultado.segmentos));
 const bytesGzip = gzipSync(geojson).length;

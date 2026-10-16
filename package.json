@@ -18,6 +18,7 @@
     "simulador": "pnpm --filter @acquascan/simulador start",
     "grafo:construir": "pnpm --filter @acquascan/grafo construir",
     "grafo:rios": "pnpm --filter @acquascan/grafo rios",
+    "grafo:exposicao": "pnpm --filter @acquascan/grafo exposicao",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "format": "prettier --write .",

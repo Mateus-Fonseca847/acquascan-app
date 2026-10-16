@@ -75,3 +75,37 @@ export function douglasPeucker<T extends Ponto>(pontos: readonly T[], tolerancia
   }
   return pontos.filter((_, i) => manter[i]);
 }
+
+/**
+ * Projeção plana local (equiretangular), em metros, em volta de um ponto de referência. Para uma
+ * cidade (dezenas de km) o erro de distância fica abaixo de 0,2% e é bem mais barata que o
+ * haversine; serve para a exposição, em que se compara muita coisa com muita coisa.
+ */
+export class ProjecaoLocal {
+  private readonly kx: number;
+  private readonly ky: number;
+
+  constructor(
+    readonly lat0: number,
+    readonly lon0: number,
+  ) {
+    this.kx = PARA_RAD * RAIO_TERRA_M * Math.cos(lat0 * PARA_RAD);
+    this.ky = PARA_RAD * RAIO_TERRA_M;
+  }
+
+  x(lon: number): number {
+    return (lon - this.lon0) * this.kx;
+  }
+
+  y(lat: number): number {
+    return (lat - this.lat0) * this.ky;
+  }
+
+  lat(y: number): number {
+    return this.lat0 + y / this.ky;
+  }
+
+  lon(x: number): number {
+    return this.lon0 + x / this.kx;
+  }
+}

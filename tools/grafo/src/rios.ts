@@ -12,11 +12,17 @@ import { normalizarNome } from './nomes';
 import type { ElementoOsm, NoOsm, ViaOsm } from './osm';
 
 export interface SegmentoRio {
+  /** Número estável e sequencial: ordenado por rio e depois por osmWayId. */
+  id: number;
   osmWayId: number;
   /** Nome canônico, o da lista de rios alvo. */
   rio: string;
-  /** Nome como está no OSM (da tag do way ou da relação). */
-  nomeOsm: string;
+  /** Nome como está no OSM (da tag do way ou da relação). Nulo nos segmentos inferidos. */
+  nomeOsm: string | null;
+  /** Entrou por uma grafia alternativa do nome (ALIASES_RIOS). */
+  alias: boolean;
+  /** Way sem nome absorvido por se ligar a um segmento do rio. */
+  inferido: boolean;
   waterway: string;
   /** tunnel=culvert ou tunnel=yes. */
   coberto: boolean;
@@ -61,6 +67,10 @@ export interface ResumoRioAlvo {
   semNomeLigados: WaySemNome[];
   /** Quantos segmentos têm covered=yes (não contados como cobertos). */
   comCoveredYes: number;
+  /** Segmentos que entraram por uma grafia alternativa (way e nome original). */
+  aliases: { osmWayId: number; nomeOsm: string }[];
+  /** Ways sem nome absorvidos por se ligarem ao rio. */
+  inferidos: WaySemNome[];
 }
 
 export interface RioDoMapa {
@@ -92,6 +102,13 @@ export interface OpcoesRios {
   bbox?: Bbox;
   toleranciaM?: number;
   distanciaLacunaM?: number;
+  /** Nome normalizado de uma grafia alternativa -> rio alvo (veja ALIASES_RIOS). Padrão: nenhum. */
+  aliases?: Readonly<Record<string, string>>;
+  /**
+   * Absorve ways SEM nome que compartilham um nó com um segmento do rio (e, em cadeia, com outros
+   * ways sem nome já absorvidos). Nunca absorve um way que tenha outro nome. Padrão: não.
+   */
+  absorverSemNome?: boolean;
 }
 
 const arredondar = (valor: number, casas: number) => {
@@ -99,7 +116,7 @@ const arredondar = (valor: number, casas: number) => {
   return Math.round(valor * f) / f;
 };
 
-interface ViaRio {
+export interface ViaRio {
   osmWayId: number;
   ids: number[];
   pontos: Ponto[];
@@ -135,12 +152,23 @@ class Conjuntos {
   }
 }
 
-export function extrairRios(elementos: readonly ElementoOsm[], opcoes: OpcoesRios): ResultadoRios {
-  const toleranciaM = opcoes.toleranciaM ?? TOLERANCIA_SIMPLIFICACAO_M;
-  const distanciaLacunaM = opcoes.distanciaLacunaM ?? DISTANCIA_LACUNA_M;
-  const tipos = new Set<string>(TIPOS_WATERWAY);
+export interface LeituraVias {
+  nos: Map<number, NoOsm>;
+  /** Todos os ways waterway (river, stream, canal, drain) com geometria, já com o nome efetivo. */
+  viasRio: ViaRio[];
+  waysWaterway: number;
+  relacoesComNome: number;
+}
 
-  // Rios alvo: nome normalizado -> nome canônico da lista.
+/**
+ * Lê os elementos do OSM: os nós, os ways waterway com o nome efetivo (o do way ou, na falta, o
+ * da relação) e a contagem de relações. Se `bbox` for informada, ignora ways inteiramente fora dela.
+ */
+export function lerVias(
+  elementos: readonly ElementoOsm[],
+  opcoes: { riosAlvo: readonly string[]; bbox?: Bbox },
+): LeituraVias {
+  const tipos = new Set<string>(TIPOS_WATERWAY);
   const alvos = new Map<string, string>();
   for (const nome of opcoes.riosAlvo) alvos.set(normalizarNome(nome), nome);
 
@@ -202,6 +230,26 @@ export function extrairRios(elementos: readonly ElementoOsm[], opcoes: OpcoesRio
     });
   }
 
+  return { nos, viasRio, waysWaterway, relacoesComNome };
+}
+
+export function extrairRios(elementos: readonly ElementoOsm[], opcoes: OpcoesRios): ResultadoRios {
+  const toleranciaM = opcoes.toleranciaM ?? TOLERANCIA_SIMPLIFICACAO_M;
+  const distanciaLacunaM = opcoes.distanciaLacunaM ?? DISTANCIA_LACUNA_M;
+
+  // Rios alvo: nome normalizado -> nome canônico da lista.
+  const alvos = new Map<string, string>();
+  for (const nome of opcoes.riosAlvo) alvos.set(normalizarNome(nome), nome);
+
+  // Grafias alternativas (só valem se o rio de destino estiver na lista de rios alvo).
+  const aliases = new Map<string, string>();
+  for (const [apelido, rio] of Object.entries(opcoes.aliases ?? {})) {
+    const canonico = alvos.get(normalizarNome(rio));
+    if (canonico !== undefined) aliases.set(normalizarNome(apelido), canonico);
+  }
+
+  const { nos, viasRio, waysWaterway, relacoesComNome } = lerVias(elementos, opcoes);
+
   // 2. Todos os waterways nomeados (relatório 1) e os sem nome.
   const grupos = new Map<
     string,
@@ -244,24 +292,85 @@ export function extrairRios(elementos: readonly ElementoOsm[], opcoes: OpcoesRio
       km: arredondar(g.km, 2),
       pctCoberto: g.km === 0 ? 0 : arredondar((g.kmCoberto / g.km) * 100, 1),
       ways: g.ways,
-      alvo: alvos.has(chave),
+      alvo: alvos.has(chave) || aliases.has(chave),
     }))
     .sort((a, b) => b.km - a.km || a.nome.localeCompare(b.nome));
 
-  // 3. Segmentos dos rios alvo (a única coisa que vai para a saída).
-  const segmentos: SegmentoRio[] = [];
-  const viasPorRio = new Map<string, ViaRio[]>();
+  // 3. Quais vias pertencem a um rio alvo: pelo nome, por um alias ou (opcional) por ligação.
+  interface Escolha {
+    via: ViaRio;
+    rio: string;
+    alias: boolean;
+    inferido: boolean;
+  }
+  const escolhidas = new Map<number, Escolha>(); // osmWayId -> escolha
   for (const v of viasRio) {
-    const canonico = alvos.get(v.chave);
-    if (v.nome === null || canonico === undefined) continue;
-    const lista = viasPorRio.get(canonico) ?? [];
-    lista.push(v);
-    viasPorRio.set(canonico, lista);
+    if (v.nome === null) continue;
+    const direto = alvos.get(v.chave);
+    if (direto !== undefined) {
+      escolhidas.set(v.osmWayId, { via: v, rio: direto, alias: false, inferido: false });
+      continue;
+    }
+    const doAlias = aliases.get(v.chave);
+    if (doAlias !== undefined) {
+      escolhidas.set(v.osmWayId, { via: v, rio: doAlias, alias: true, inferido: false });
+    }
+  }
 
-    segmentos.push({
+  if (opcoes.absorverSemNome) {
+    // Ways SEM nome que compartilham um nó com um segmento do rio, em cadeia (um way sem nome
+    // absorvido pode puxar o próximo). Way com outro nome nunca é absorvido. Se um way toca dois
+    // rios alvo, vale o que vem primeiro na lista de rios alvo.
+    const ordemRios = [...alvos.values()];
+    const posicao = (rio: string) => ordemRios.indexOf(rio);
+    const rioDoNo = new Map<number, string>();
+    const registrar = (e: Escolha) => {
+      for (const id of e.via.ids) {
+        const atual = rioDoNo.get(id);
+        if (atual === undefined || posicao(e.rio) < posicao(atual)) rioDoNo.set(id, e.rio);
+      }
+    };
+    for (const e of escolhidas.values()) registrar(e);
+
+    const semNome = viasRio.filter((v) => v.nome === null);
+    let mudou = true;
+    while (mudou) {
+      mudou = false;
+      for (const v of semNome) {
+        if (escolhidas.has(v.osmWayId)) continue;
+        let rio: string | undefined;
+        for (const id of v.ids) {
+          const candidato = rioDoNo.get(id);
+          if (candidato !== undefined && (rio === undefined || posicao(candidato) < posicao(rio))) {
+            rio = candidato;
+          }
+        }
+        if (rio === undefined) continue;
+        const escolha: Escolha = { via: v, rio, alias: false, inferido: true };
+        escolhidas.set(v.osmWayId, escolha);
+        registrar(escolha);
+        mudou = true;
+      }
+    }
+  }
+
+  // Ordem estável: por rio e depois por osmWayId. O id do segmento é a posição nessa ordem.
+  const ordenadas = [...escolhidas.values()].sort(
+    (a, b) => a.rio.localeCompare(b.rio) || a.via.osmWayId - b.via.osmWayId,
+  );
+  const viasPorRio = new Map<string, ViaRio[]>();
+  const segmentos: SegmentoRio[] = ordenadas.map((e, id) => {
+    const v = e.via;
+    const lista = viasPorRio.get(e.rio) ?? [];
+    lista.push(v);
+    viasPorRio.set(e.rio, lista);
+    return {
+      id,
       osmWayId: v.osmWayId,
-      rio: canonico,
+      rio: e.rio,
       nomeOsm: v.nome,
+      alias: e.alias,
+      inferido: e.inferido,
       waterway: v.waterway,
       coberto: ehCoberto(v.tunnel),
       tunnel: v.tunnel,
@@ -271,11 +380,11 @@ export function extrairRios(elementos: readonly ElementoOsm[], opcoes: OpcoesRio
       geometria: douglasPeucker(v.pontos, toleranciaM).map(
         ([lat, lon]) => [arredondar(lat, 6), arredondar(lon, 6)] as [number, number],
       ),
-    });
-  }
+    };
+  });
 
   // 4. Por rio alvo: componentes, lacunas e ways sem nome ligados.
-  const semNomeVias = viasRio.filter((v) => v.nome === null);
+  const semNomeVias = viasRio.filter((v) => v.nome === null && !escolhidas.has(v.osmWayId));
   const resumos: ResumoRioAlvo[] = [];
   for (const [, canonico] of alvos) {
     const doRio = viasPorRio.get(canonico) ?? [];
@@ -364,6 +473,16 @@ export function extrairRios(elementos: readonly ElementoOsm[], opcoes: OpcoesRio
       lacunas,
       semNomeLigados,
       comCoveredYes: segs.filter((s) => s.covered === 'yes').length,
+      aliases: segs
+        .filter((s) => s.alias)
+        .map((s) => ({ osmWayId: s.osmWayId, nomeOsm: s.nomeOsm ?? '' })),
+      inferidos: segs
+        .filter((s) => s.inferido)
+        .map((s) => ({
+          osmWayId: s.osmWayId,
+          waterway: s.waterway,
+          km: arredondar(s.comprimentoM / 1000, 3),
+        })),
     });
   }
 
@@ -383,9 +502,12 @@ export function paraGeoJson(segmentos: readonly SegmentoRio[]) {
     features: segmentos.map((s) => ({
       type: 'Feature' as const,
       properties: {
+        id: s.id,
         osmWayId: s.osmWayId,
         rio: s.rio,
         nomeOsm: s.nomeOsm,
+        alias: s.alias,
+        inferido: s.inferido,
         waterway: s.waterway,
         coberto: s.coberto,
         tunnel: s.tunnel,

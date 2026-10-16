@@ -41,3 +41,25 @@ export const RIOS_ALVO: readonly string[] = ['Piabanha', 'Quitandinha'];
 
 /** Pontas de rio de componentes diferentes mais perto que isto são reportadas como lacuna (m). */
 export const DISTANCIA_LACUNA_M = 30;
+
+/**
+ * Grafias alternativas que valem como um rio alvo. A chave é o nome NORMALIZADO (minúsculas,
+ * sem acento, sem o prefixo "rio ") e o valor é o rio alvo. São, em geral, erros de digitação
+ * no OSM; os segmentos entram com `alias: true` e o relatório lista cada um (way e nome original)
+ * para a equipe corrigir no OpenStreetMap.
+ */
+export const ALIASES_RIOS: Readonly<Record<string, string>> = {
+  pirabanha: 'Piabanha',
+  quintandinha: 'Quitandinha',
+};
+
+// ---------- Exposição das ruas aos rios ----------
+
+/** Passo da amostragem ao longo de cada aresta, em metros. */
+export const PASSO_AMOSTRA_M = 5;
+
+/** Faixas de distância ao rio, em metros (cada uma inclui as anteriores). */
+export const FAIXAS_EXPOSICAO_M = [15, 30, 50] as const;
+
+/** Um toque a até esta distância (m) conta como cruzamento (extremidades que se encostam). */
+export const TOLERANCIA_TOQUE_M = 0.5;

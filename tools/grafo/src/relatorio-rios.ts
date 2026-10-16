@@ -67,6 +67,27 @@ export function gerarRelatorioRios(d: DadosDoRelatorioRios): string {
       );
     }
 
+    if (a.aliases.length > 0) {
+      linhas.push(
+        '',
+        '**Grafias alternativas** (entraram como este rio por ALIASES_RIOS; corrigir o `name` no OpenStreetMap):',
+        '',
+        '| Way | Nome no OSM |',
+        '| --- | --- |',
+        ...a.aliases.map((x) => `| ${x.osmWayId} | ${x.nomeOsm} |`),
+      );
+    }
+    if (a.inferidos.length > 0) {
+      linhas.push(
+        '',
+        '**Ways sem nome absorvidos** (inferidos por se ligarem ao rio; vale conferir no mapa):',
+        '',
+        '| Way | Tipo | km |',
+        '| --- | --- | ---: |',
+        ...a.inferidos.map((x) => `| ${x.osmWayId} | ${x.waterway} | ${num(x.km)} |`),
+      );
+    }
+
     linhas.push(
       '',
       `**Lacunas** (pontas de componentes diferentes a menos de ${d.distanciaLacunaM ?? DISTANCIA_LACUNA_M} m, provável rio quebrado no OSM; nada foi unido):`,

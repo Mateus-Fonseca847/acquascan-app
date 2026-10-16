@@ -105,6 +105,7 @@ Todos rodam na raiz do repositório.
 | `pnpm simulador`              | Envia leituras simuladas para a API         |
 | `pnpm grafo:construir`        | Baixa o OSM e constrói o grafo de ruas a pé |
 | `pnpm grafo:rios`             | Baixa o OSM e extrai os rios (GeoJSON)      |
+| `pnpm grafo:exposicao`        | Mede a exposição das ruas aos rios          |
 | `pnpm db:up` / `pnpm db:down` | Liga e desliga o banco no Docker            |
 | `pnpm db:migrate`             | Aplica mudanças do `schema.prisma` no banco |
 | `pnpm db:seed`                | Recria os dados de desenvolvimento          |

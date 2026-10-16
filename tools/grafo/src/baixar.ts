@@ -96,14 +96,19 @@ async function consultar(consulta: string, url: string, fetchImpl: typeof fetch)
   return texto;
 }
 
+/** Onde fica (ou ficaria) o cache de uma consulta. O nome vem de um hash da própria consulta. */
+export function caminhoDoCache(dirCache: string, consulta: string, prefixo = 'overpass'): string {
+  const chave = createHash('sha1').update(consulta).digest('hex').slice(0, 12);
+  return join(dirCache, `${prefixo}-${chave}.json`);
+}
+
 export async function baixarOuUsarCache(opcoes: OpcoesBaixar): Promise<ResultadoDownload> {
   const log = opcoes.log ?? (() => {});
   const fetchImpl = opcoes.fetchImpl ?? fetch;
   const dormir = opcoes.dormir ?? esperarPadrao;
   const consulta = opcoes.consulta ?? montarConsulta(opcoes.bbox);
   // A chave do cache é a própria consulta: mudar a caixa usa outro arquivo.
-  const chave = createHash('sha1').update(consulta).digest('hex').slice(0, 12);
-  const arquivoCache = join(opcoes.dirCache, `${opcoes.prefixoCache ?? 'overpass'}-${chave}.json`);
+  const arquivoCache = caminhoDoCache(opcoes.dirCache, consulta, opcoes.prefixoCache);
 
   if (!opcoes.atualizar) {
     try {

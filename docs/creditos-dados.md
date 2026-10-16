@@ -22,7 +22,7 @@ Os dados do OpenStreetMap são licenciados sob a [Open Database License (ODbL) 1
 
 ### Hidrografia (rios)
 
-Os rios também vêm do OpenStreetMap (`waterway` e relações de rio, pela Overpass API), extraídos por `pnpm grafo:rios`. Valem as mesmas regras: **atribuição "© colaboradores do OpenStreetMap"** e **ODbL**. O GeoJSON dos rios (`rios-petropolis.geojson`) também é uma base derivada (extraída, filtrada pelos rios alvo e com a geometria simplificada), e o mesmo vale para qualquer arquivo que **cruze rios e ruas** (por exemplo, a lista de ruas expostas a um rio): a equipe deve tratá-lo como derivado do OSM até confirmar o contrário.
+Os rios também vêm do OpenStreetMap (`waterway` e relações de rio, pela Overpass API), extraídos por `pnpm grafo:rios`. Valem as mesmas regras: **atribuição "© colaboradores do OpenStreetMap"** e **ODbL**. O GeoJSON dos rios (`rios-petropolis.geojson`) também é uma base derivada (extraída, filtrada pelos rios alvo e com a geometria simplificada), e o mesmo vale para o arquivo de **exposição** (`exposicao-petropolis.json`), que cruza rios e ruas, os dois do OSM: a equipe deve tratá-lo como derivado do OSM até confirmar o contrário, e manter a atribuição.
 
 ### O que isso significa para o grafo
 

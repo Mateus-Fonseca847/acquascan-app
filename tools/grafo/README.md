@@ -151,7 +151,11 @@ Saída e cache ficam fora do git, como o grafo de ruas. O comando de ruas (`pnpm
 
 A lista fica em `RIOS_ALVO` (`src/config.ts`) e hoje é `['Piabanha', 'Quitandinha']`. Só esses rios vão para o GeoJSON; os demais aparecem **apenas no relatório** (seção 1, com a coluna "Alvo"), para a equipe escolher quais entram. Para incluir um rio, acrescente o nome na lista e rode de novo (o cache é reaproveitado, não baixa nada).
 
-A comparação é por **igualdade do nome normalizado** (minúsculas, sem acento e sem o prefixo `rio `), nunca por "contém": `Rio Piabanha`, `Piabanha` e `RIO PIABANHÁ` são o mesmo rio, e `Rio Quitandinha do Sul` não é o Quitandinha. A consequência é que **grafias diferentes no OSM ficam de fora**. Na primeira execução, por exemplo, apareceram `Rio Pirabanha` e `Rio Quintandinha` (provavelmente erros de digitação no OSM) como rios à parte; vale corrigir no OSM ou decidir se entram.
+A comparação é por **igualdade do nome normalizado** (minúsculas, sem acento e sem o prefixo `rio `), nunca por "contém": `Rio Piabanha`, `Piabanha` e `RIO PIABANHÁ` são o mesmo rio, e `Rio Quitandinha do Sul` não é o Quitandinha. A consequência é que **grafias diferentes no OSM ficam de fora**, a menos que estejam em `ALIASES_RIOS` (`src/config.ts`): `pirabanha` vale como Piabanha e `quintandinha` como Quitandinha, erros de digitação que apareceram na primeira execução. Esses segmentos entram com `alias: true`, e o relatório lista cada um (way e nome original) para a equipe **corrigir o `name` no OpenStreetMap**.
+
+**Ways sem nome que se ligam ao rio** também entram: um way de rio sem nome que compartilha um nó com um segmento do rio alvo é absorvido (e, em cadeia, o que se liga a ele), com `inferido: true`. Só se encadeia por ways **sem nome**: um way com outro nome nunca é absorvido, nem serve de ponte para chegar a outro. O relatório lista cada um para conferência no mapa. Se um way sem nome toca dois rios alvo, vale o que vem primeiro em `RIOS_ALVO`.
+
+**Ids dos segmentos:** cada segmento tem um `id` numérico sequencial, ordenado por rio (ordem alfabética) e depois por `osmWayId`. É estável para os mesmos dados do OSM, e é o id que a exposição usa. Se o OSM mudar (um rio novo, um way a mais), os ids podem mudar: regere a exposição junto.
 
 ### O que a consulta pede e como o nome é decidido
 
@@ -161,7 +165,7 @@ Nome do way: a tag `name` do próprio way; se faltar, o `name` da relação a qu
 
 ### O que cada segmento tem
 
-Cada way vira um segmento com: `osmWayId`, `rio` (o nome canônico da lista), `nomeOsm`, `waterway`, `coberto` (`tunnel=culvert` ou `yes`) com o valor bruto em `tunnel`, `canal` (`waterway=canal` ou `drain`), `comprimentoM` (calculado na geometria **original**) e a geometria simplificada (Douglas-Peucker, tolerância de 3 m). Propriedades extras: `covered` (valor bruto da tag `covered`, só para conferência: **não** conta como coberto).
+Cada way vira um segmento com: `osmWayId`, `rio` (o nome canônico da lista), `nomeOsm`, `waterway`, `coberto` (`tunnel=culvert` ou `yes`) com o valor bruto em `tunnel`, `canal` (`waterway=canal` ou `drain`), `comprimentoM` (calculado na geometria **original**) e a geometria simplificada (Douglas-Peucker, tolerância de 3 m). Propriedades de identificação: `id` (estável, veja abaixo), `alias` e `inferido`. Propriedades extras: `covered` (valor bruto da tag `covered`, só para conferência: **não** conta como coberto).
 
 **Sentido do fluxo:** a geometria preserva a ordem do OSM, que é o sentido do fluxo, **a jusante** (da nascente para a foz). Nada inverte nem reordena os pontos, nem a simplificação. As coordenadas do GeoJSON seguem o padrão `[longitude, latitude]`.
 
@@ -171,7 +175,7 @@ Para cada rio alvo, os segmentos são agrupados em **componentes**: dois segment
 
 Uma **lacuna** é um par de pontas livres (nó que é ponta de um segmento e que nenhum outro segmento do rio usa) de componentes **diferentes** a menos de 30 m uma da outra (`DISTANCIA_LACUNA_M`): provável rio quebrado no OSM. **Nada é unido automaticamente**: o relatório só lista a distância, as coordenadas aproximadas e os dois ways, para alguém corrigir no OSM ou decidir o que fazer.
 
-O relatório também lista os **ways sem nome** cuja ponta toca o rio alvo: podem ser trechos do mesmo rio sem a tag.
+O relatório também lista os **ways sem nome** cuja ponta toca o rio alvo e que **não** foram absorvidos (com a absorção ligada, em geral nenhum).
 
 ### O que NÃO está coberto
 
@@ -184,14 +188,85 @@ O relatório também lista os **ways sem nome** cuja ponta toca o rio alvo: pode
 
 ### Primeira execução (Petrópolis, 16/10/2026)
 
-| Medida         | Valor                                            |
-| -------------- | ------------------------------------------------ |
-| Download bruto | 202 KB (136 ways waterway, 0 relações com nome)  |
-| Piabanha       | 16,89 km, 11 segmentos, 7 componentes, 5 lacunas |
-| Quitandinha    | 7,31 km, 20 segmentos, 3 componentes, 2 lacunas  |
-| GeoJSON        | 18 KB (3,5 KB com gzip)                          |
+| Medida         | Valor                                           |
+| -------------- | ----------------------------------------------- |
+| Download bruto | 202 KB (136 ways waterway, 0 relações com nome) |
+| Piabanha       | 17,01 km, 18 segmentos, 3 componentes, 1 lacuna |
+| Quitandinha    | 7,35 km, 23 segmentos, 1 componente, 0 lacunas  |
+| GeoJSON        | 22 KB (3,9 KB com gzip)                         |
 
-As lacunas do Piabanha ficam entre 18 e 25 m; as do Quitandinha, entre 9 e 12 m. O relatório completo está em `tools/grafo/saida/relatorio-rios.md`.
+Antes dos aliases e da absorção, o Piabanha tinha 7 componentes e 5 lacunas, e o Quitandinha, 3 componentes e 2 lacunas. Entraram por alias 4 ways do Piabanha (`Rio Pirabanha`) e 2 do Quitandinha (`Rio Quintandinha`), e por inferência 3 do Piabanha e 1 do Quitandinha. Resta uma lacuna de 22 m no Piabanha (ways 308553220 e 308553222). O relatório completo está em `tools/grafo/saida/relatorio-rios.md`.
+
+## Exposição das ruas aos rios
+
+Terceira etapa de dados do desvio de rios: para **cada rua do grafo** (aresta) e **cada segmento de rio alvo**, mede o quanto a rua cruza o rio ou corre junto dele. É estático (calculado uma vez); o **estado dos rios** (dinâmico) entra depois, na política de desvio. Sem rede.
+
+```bash
+pnpm grafo:exposicao             # na raiz; precisa dos dois comandos anteriores
+```
+
+Entrada: `saida/grafo-petropolis.json` (`pnpm grafo:construir`) e `saida/rios-petropolis.geojson` (`pnpm grafo:rios`). Se faltar algum, o comando para com uma mensagem dizendo qual rodar; se o GeoJSON for de uma versão antiga (sem `id` nos segmentos), manda rodar `pnpm grafo:rios` de novo. A análise de cobertura usa também o cache bruto da Overpass dos rios (`cache/rios-<hash>.json`); sem ele, só essa seção do relatório é pulada.
+
+Saída (fora do git): `saida/exposicao-petropolis.json` e `saida/relatorio-exposicao.md`.
+
+### O que é calculado
+
+Para cada par (aresta, segmento) guarda-se:
+
+| Campo               | Significado                                                                                                                                                                               |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cruza`             | A geometria da rua cruza a do segmento (interseção de segmentos), **ou encosta nela a até 0,5 m** (`TOLERANCIA_TOQUE_M`: toques nas pontas). A aresta já traz as marcas de ponte e túnel. |
+| `distMinM`          | A menor distância entre as duas geometrias, em metros.                                                                                                                                    |
+| `f15`, `f30`, `f50` | A **fração do comprimento da rua** que fica a até 15, 30 e 50 m desse segmento (as faixas incluem as anteriores).                                                                         |
+
+Só ficam os pares com `cruza` verdadeiro ou `f50 > 0`. Uma grade espacial evita comparar tudo com tudo.
+
+### Como as frações são medidas (amostragem)
+
+A geometria da rua é **amostrada a cada 5 m** ao longo da polilinha, incluindo os dois extremos. Cada amostra representa o pedaço da rua em volta dela (regra do ponto médio, então uma rua toda exposta dá exatamente 1) e é **atribuída ao segmento de rio MAIS PRÓXIMO** dela, se estiver a até 50 m. Por isso as frações dos vários segmentos de uma mesma rua **nunca somam mais que 1**, e dá para somar a exposição de vários segmentos (ou rios) sem contar duas vezes. A amostragem tem um erro de alguns por cento em ruas curtas (uma amostra a mais ou a menos na borda de uma faixa). As distâncias usam uma projeção plana local (erro abaixo de 0,2% nesta escala, conferido nos testes contra o haversine).
+
+### Formato do `exposicao-petropolis.json`
+
+Compacto de propósito (vai para o celular):
+
+```jsonc
+{
+  "versao": 1,
+  "geradoEm": "2026-10-16T16:40:53.013Z",
+  "grafo": { "nos": 6329, "arestas": 7219, "sha256": "bd36d6f1..." }, // do arquivo do grafo usado
+  "parametros": { "passoM": 5, "faixasM": [15, 30, 50] },
+  "segmentos": [{ "id": 0, "rio": "Piabanha", "osmWayId": 11981006, "coberto": false }],
+  "entradas": [[arestaId, segmentoId, cruza /* 0 ou 1 */, distMinM, f15, f30, f50]]
+}
+```
+
+`arestaId` é o índice da aresta em `arestas` do grafo, e `segmentoId` é o `id` do segmento em `segmentos`. As distâncias são arredondadas a 0,1 m e as frações a 0,01. O **`sha256`** é o do arquivo `grafo-petropolis.json` usado: quem carregar a exposição deve conferir que o grafo é o mesmo, porque os `arestaId` só valem para ele (se o grafo for regerado, a exposição precisa ser regerada).
+
+### O relatório
+
+`relatorio-exposicao.md` traz: (1) por rio alvo, as arestas que cruzam e as de cada faixa, com o comprimento exposto em km e em % da malha; (2) o histograma da fração f30; (3) as arestas que cruzam rio sem serem ponte nem túnel (com coordenadas); (4) as pontes que cruzam, as que ficam perto sem cruzar e as sem rio perto; (5) os segmentos de rio com mais ruas associadas; (6) a **cobertura do monitoramento**; e (7) o tamanho do arquivo.
+
+A **cobertura do monitoramento** refaz o cruzamento com **todos** os waterways do cache bruto (nomeados ou não, inclusive os que não são rios alvo): das ruas que cruzam algum waterway, que parte cruza rios alvo e que parte cruza **outros**. Os cruzamentos com outros rios **não terão desvio por estado de estação**, porque não há estação neles, e o app precisa dizer isso.
+
+### Primeira execução (Petrópolis, 16/10/2026)
+
+| Medida                                 | Valor                                                   |
+| -------------------------------------- | ------------------------------------------------------- |
+| Segmentos de rio / entradas            | 41 / 1.198                                              |
+| Ruas que cruzam um rio alvo            | 160 (Piabanha 62, Quitandinha 98)                       |
+| Ruas até 15 / 30 / 50 m de um rio alvo | 772 / 971 / 1.102 (3,15% / 5,3% / 6,8% da malha, em km) |
+| Ruas expostas com f30 de 90% a 100%    | 683 de 971 (70%): correm junto ao rio                   |
+| Pontes que cruzam um rio alvo          | 140 de 246 (57%)                                        |
+| Ruas que cruzam algum waterway         | 303: 160 em rios alvo e 143 (47%) SÓ em outros rios     |
+| Arquivo                                | 31,8 KB (8,7 KB com gzip)                               |
+
+### O que NÃO está coberto
+
+- **Rios sem estação:** só os rios alvo entram. Quase metade das ruas que cruzam algum waterway cruza **outros** rios (o Rio Palatino, 87,7% coberto, lidera), e esses não terão desvio por estado de estação.
+- **A distância ao rio é uma aproximação do alagamento.** Não considera o relevo: uma rua a 20 m do rio, mas bem acima dele, pode estar segura, e uma a 80 m, numa baixada, pode alagar. Também não há largura do rio, cota, nem histórico de cheias.
+- **Rios cobertos:** a geometria de um rio em galeria (`tunnel=culvert`) é a do OSM e pode estar imprecisa; a exposição trata o segmento como qualquer outro (a marca `coberto` vai no arquivo para a política decidir).
+- **O OSM pode estar incompleto** (trechos de rio faltando, lacunas, pontes não mapeadas) e as ruas amostradas são as do grafo a pé, não todas as vias.
+- **Rios não nomeados e grafias não previstas** ficam de fora (veja "O que NÃO está coberto" dos rios).
 
 ## Testes
 
@@ -199,4 +274,4 @@ As lacunas do Piabanha ficam entre 18 e 25 m; as do Quitandinha, entre 9 e 12 m.
 pnpm --filter @acquascan/grafo test
 ```
 
-Sem rede, com fixtures mínimas em memória (ruas e rios): cada regra de inclusão e exclusão de `caminhavel`, haversine contra distâncias conhecidas, Douglas-Peucker (extremos mantidos, colineares removidos), compressão de nós de grau 2, interseção virando nó, descarte de ilhas, marcação de ponte e escada, `oneway:foot`, e o cache e as tentativas do download (com um `fetch` falso). Para os rios: normalização de nomes, igualdade exata (não "contém"), nome vindo da relação, flags `coberto` e `canal`, sentido preservado após simplificar, componentes e lacunas (20 m reportada, 100 m não), resposta parcial rejeitada, rio fora da lista só no relatório, e o relatório.
+Sem rede, com fixtures mínimas em memória (ruas e rios): cada regra de inclusão e exclusão de `caminhavel`, haversine contra distâncias conhecidas, Douglas-Peucker (extremos mantidos, colineares removidos), compressão de nós de grau 2, interseção virando nó, descarte de ilhas, marcação de ponte e escada, `oneway:foot`, e o cache e as tentativas do download (com um `fetch` falso). Para os rios: normalização de nomes, igualdade exata (não "contém"), nome vindo da relação, flags `coberto` e `canal`, sentido preservado após simplificar, componentes e lacunas (20 m reportada, 100 m não), resposta parcial rejeitada, rio fora da lista só no relatório, e o relatório. Para a exposição: distância e interseção de segmentos (em X, toque na ponta, paralelas), o índice em grade contra a comparação de tudo com tudo, as frações (rua paralela a 10, 20 e 40 m do rio, rua que cruza em ângulo, rua meio exposta, amostra atribuída ao segmento mais próximo com soma menor ou igual a 1), o erro da projeção plana contra o haversine, os aliases e a absorção de ways sem nome (que nunca absorve way com outro nome), a estabilidade dos ids, o formato compacto do arquivo (com o sha256 do grafo), a cobertura e o relatório.
