@@ -43,6 +43,7 @@ acquascan-app/
 │   ├── api/              ← API (Fastify + Prisma)
 │   └── mobile/           ← App (Expo)
 ├── packages/
+│   ├── roteamento/       ← rotas a pé offline (A*), para o celular e o Node
 │   └── shared/           ← regras de nível e estado, validações e tipos
 ├── tools/
 │   ├── grafo/            ← constrói o grafo de ruas a pé (OpenStreetMap)

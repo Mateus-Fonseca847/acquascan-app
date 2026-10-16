@@ -74,6 +74,17 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 - Cenários `estavel`, `cheia` e `vazante` enviando leituras para a API
 
+**Roteamento** (`packages/roteamento`, segunda etapa do roteamento offline; só o pacote, sem mudar API, app, banco nem `tools/grafo`)
+
+- Pacote `@acquascan/roteamento`: `criarRoteador(grafo)` valida o JSON de `tools/grafo` (erro claro em português) e monta as estruturas indexadas (grafo em CSR com typed arrays, geometrias achatadas e índice espacial em grade de ~100 m)
+- `encaixar(ponto)`: o ponto mais próximo sobre qualquer aresta, com a posição ao longo dela (fração da geometria simplificada vezes o comprimento)
+- `rotear(origem, destino)`: A\* com heap binário próprio e heurística admissível, com origem e destino no meio de arestas (fontes e destinos virtuais), trajeto direto na mesma aresta, sentido único, e `trechos` com nome, classe, sentido, comprimento da parte percorrida, multiplicador e pontos orientados
+- Multiplicador de custo por aresta (`Float32Array`, `>= 1` ou `Infinity`): o ponto de extensão do futuro desvio de rios. O roteador só devolve o multiplicador usado em cada trecho; não decide política de segurança
+- Roda no Hermes e no Node: `src/` não usa APIs do Node (tsconfig sem os tipos do Node e um teste que varre os arquivos)
+- Testes sem rede: casos feitos à mão, comparação com um Dijkstra de referência em grades aleatórias de 30x30 (custo igual em todos os pares) e, se `tools/grafo/saida` existir, no grafo real de Petrópolis
+- Medido no Node com o grafo real: `criarRoteador` ~7 ms, estruturas de ~1,4 MB, rota com mediana de 0,21 ms (p95 0,55 ms), e o A\* expande 31% dos nós do Dijkstra
+- `docs/decisoes.md` (novo, com a decisão de rotear no celular com A\* próprio) e a seção "Roteamento no celular" em `docs/arquitetura.md`
+
 **Grafo de ruas** (`tools/grafo`, primeira etapa do roteamento offline do app; só dados, sem mudar API, app nem banco)
 
 - Ferramenta `pnpm grafo:construir` que baixa os ways `highway` de Petrópolis do OpenStreetMap (uma única consulta à Overpass API, com cache em disco e `--atualizar`) e constrói o grafo de ruas a pé: nós nas interseções e pontas, arestas com comprimento (haversine), geometria simplificada (Douglas-Peucker, 3 m), nome, classe e marcas de escada, ponte e túnel, mantendo só o maior componente conexo

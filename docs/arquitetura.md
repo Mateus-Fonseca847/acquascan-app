@@ -68,6 +68,15 @@ Cada assunto é um módulo em `apps/api/src/modules/`. As rotas só validam a en
 
 As telas ficam em `apps/mobile/app/` (cada arquivo é uma rota do Expo Router). As telas não chamam `fetch` diretamente: usam os hooks de `src/hooks/consultas.ts`, que usam `src/services/api.ts`. Assim, mudar a URL ou o formato de uma chamada exige alterar um único lugar.
 
+## Roteamento no celular
+
+O caminho a pé até um ponto de apoio é calculado **no próprio aparelho**, sem internet, e no futuro vai desviar de rios em estado crítico. Duas peças:
+
+1. **O grafo de ruas** é gerado fora do app por [`tools/grafo`](../tools/grafo/README.md), a partir do OpenStreetMap: nós nas interseções, arestas com comprimento, geometria, nome, classe e marcas de escada, ponte e túnel (hoje um JSON de 1,9 MB para Petrópolis).
+2. **O pacote [`packages/roteamento`](../packages/roteamento/README.md)** carrega esse grafo e calcula a rota com **A\***. Ele encaixa a origem e o destino no ponto mais próximo de **qualquer aresta** (não só nos nós) e aceita um **multiplicador de custo por aresta** (`>= 1`; `Infinity` bloqueia). Os multiplicadores são a forma de o estado dos rios entrar na conta: o roteador devolve, em cada trecho, o multiplicador usado, e **quem chama** decide a política de segurança.
+
+O pacote roda no Hermes (o motor do app) e no Node, então `src/` não usa nenhuma API do Node; um teste garante isso. A API do AcquaScan **não participa** do cálculo de rotas. A justificativa está em [decisoes.md](decisoes.md).
+
 ## Ambientes
 
 | Ambiente        | API                                          | Banco                                          |
