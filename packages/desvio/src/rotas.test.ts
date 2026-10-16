@@ -175,7 +175,7 @@ describe('multiplicadores', () => {
     expect(r.recomendada.rota.trechos[0]!.multiplicador).toBeCloseTo(50, 6);
   });
 
-  it('vários rios na mesma rua: vale o MÁXIMO, não a soma', () => {
+  it('vários rios na mesma rua: as frações (partes separadas da rua) se SOMAM', () => {
     const m = criarMundo({
       nos: [
         [0, 0],
@@ -206,10 +206,12 @@ describe('multiplicadores', () => {
     const leituras = [leitura(1, 'CRITICO', 2), leitura(2, 'CRITICO', 2)];
     const r = m.desvio.rotear(p(0, 0), p(400, 0), leituras, AGORA);
     if (r.status !== 'ok') throw new Error(r.status);
-    const f = Math.max(...m.exposicao.entradas.map((e) => e[6]!));
+    // Cada amostra da rua pertence a um só rio (o mais próximo): as frações são partes
+    // separadas da rua e somam (antes valia o máximo, o que subestimava a exposição).
+    const soma = m.exposicao.entradas.reduce((t, e) => t + e[6]!, 0);
     const mult = r.recomendada.rota.trechos[0]!.multiplicador;
-    expect(mult).toBeCloseTo(1 + 49 * f, 4);
-    expect(mult).toBeLessThan(1 + 49 * 2 * f - 1);
+    expect(soma).toBeGreaterThan(0.4);
+    expect(mult).toBeCloseTo(1 + 49 * soma, 4);
   });
 
   it('ESTAVEL e DESCONHECIDO não penalizam', () => {

@@ -65,13 +65,40 @@ Um pacote de lógica pura, `@acquascan/desvio`. **Princípio: o que o mapa mostr
 | Alternativa                                           | Por que não                                                                                                                          |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Bloquear sempre as ruas junto ao rio                  | Deixa a pessoa sem rota quando já está na zona de risco ou quando só há uma ponte. Por isso existe a passada de reserva              |
-| Somar as penalidades de rios diferentes na mesma rua  | Uma rua junto de dois rios não é duas vezes mais perigosa; vale o máximo                                                             |
+| Usar o maior valor entre os trechos de uma rua        | Foi o que se fez primeiro e estava errado: veja a correção abaixo. As frações de trechos diferentes são partes separadas da rua      |
 | Tratar "sem leitura" como estável                     | Esconderia o perigo justo quando a estação parou. Estado ruim antigo é mantido por 6 h; o que não se sabe é sinalizado, não ignorado |
 | Calcular o estado do mapa e o do desvio separadamente | Poderia mostrar um rio verde e a rota desviar dele (ou o contrário). Daí a fonte única                                               |
 
 ### Consequências
 
-- **Só os rios monitorados são evitados.** Com estações hipotéticas, 3 estações a 1000 m cobrem ~13 de 24 km de rio. A cobertura depende de onde as estações forem de fato instaladas.
-- **Desvios podem ser longos** quando a única alternativa é uma ponte distante (no experimento, o pior caso passou de 20 km). O app deve mostrar a rota mais curta quando ela for bem mais exposta e deixar a pessoa decidir.
+- **Só os rios monitorados são evitados.** Com estações hipotéticas, 3 estações a 1000 m cobrem ~8 de 24 km de rio (veja a correção abaixo; a primeira medição dizia 13 km). A cobertura depende de onde as estações forem de fato instaladas.
+- **Desvios podem ser longos** quando a única alternativa é uma ponte distante (no primeiro experimento o pior caso passou de 20 km; com os trechos curtos caiu para ~10 km). O app deve mostrar a rota mais curta quando ela for bem mais exposta e deixar a pessoa decidir.
 - Os valores acima precisam ser validados com a Defesa Civil; mudar um valor é trocar uma constante em `politica.ts` (ou passar a política parcial a `criarDesvio`).
 - Ficam fora: terreno e relevo, deslizamentos, vias interditadas e rios sem estação.
+
+## Correção: trechos curtos e soma das frações
+
+**Data:** 16/10/2026. **Status:** adotada (corrige a decisão anterior). **Onde:** [`tools/grafo`](../tools/grafo/README.md) (trechos) e [`packages/desvio`](../packages/desvio/README.md) (soma).
+
+### O que estava errado
+
+1. **A unidade de cobertura era o way inteiro do OSM.** Um way pode ter quilômetros, e uma estação a 1 km de um único ponto dele marcava o way todo como monitorado. Isso inflava o "monitorado" (13,2 km, quando o real é ~8 km) e pintava de vermelho no mapa (e fazia a rota desviar de) trechos de rio que a estação não alcança.
+2. **A exposição de uma rua usava o MAIOR valor entre as entradas.** Mas cada amostra da rua pertence a um único trecho de rio (o mais próximo), então as frações de trechos diferentes são partes **separadas** da mesma rua e devem ser **somadas**. A especificação anterior é que estava errada, não só o código: uma rua com metade junto de um trecho crítico e metade junto de outro valia `1 + 49 × 0,5` em vez de `1 + 49`, e a exposição das rotas ficava subestimada.
+
+### A correção
+
+- `tools/grafo` fatia os ways em trechos iguais de até 250 m (`TRECHO_MAX_M`); o trecho passa a ser a unidade de estado, de cobertura e de exposição.
+- O desvio soma as frações por estado: `FC = min(1, Σ críticos)`, `FA = min(1, Σ atenção)` com `FA ≤ 1 − FC`, multiplicador `1 + 49 FC + 3 FA`. A exposição das rotas usa as mesmas `FC` e `FA`.
+- Aproximação conhecida: a amostra vale para o trecho mais próximo, mesmo que outro trecho (em outro estado) esteja só um pouco mais longe.
+
+### Efeito medido (estações hipotéticas, 300 pares, semente 20260316)
+
+| Configuração       | Monitorado antes | Monitorado agora |
+| ------------------ | ---------------- | ---------------- |
+| 3 estações, 1000 m | 13,2 km          | 8,0 km           |
+| 4 estações, 1000 m | 13,3 km          | 10,1 km          |
+| 3 estações, 2000 m | 16,5 km          | 16,3 km          |
+
+Exposição crítica média (S3, ambos os rios críticos), nas **mesmas rotas**, trocando só a regra com os trechos novos: a rota mais curta passa de 611 m (maior) para **790 m (soma)**, e a recomendada de 37 m para **49 m**. Ou seja, o "maior" subestimava a exposição em ~30% (S1: 344 para 482 m na mais curta). Nas rotas recomendadas pelo método antigo (por way inteiro), a soma sozinha não muda nada (86 m nos dois casos), porque com ways inteiros uma rua quase nunca toca dois segmentos críticos; o efeito aparece com os trechos curtos, que dividem a mesma rua entre vários trechos. A recomendada nova também é bem mais curta no desvio: extra médio no S3 de 2447 m para 616 m, e o pior caso de 21,7 km para 9,9 km.
+
+Os números da política continuam **provisórios**.

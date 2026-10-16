@@ -63,3 +63,10 @@ export const FAIXAS_EXPOSICAO_M = [15, 30, 50] as const;
 
 /** Um toque a até esta distância (m) conta como cruzamento (extremidades que se encostam). */
 export const TOLERANCIA_TOQUE_M = 0.5;
+
+/**
+ * Comprimento máximo, em metros, de um trecho de rio. Os ways do OSM são fatiados em trechos
+ * iguais de até este tamanho (veja trechos.ts): o trecho é a unidade de monitoramento e de
+ * exposição. Mudar este valor muda os ids dos trechos e exige regenerar rios e exposição.
+ */
+export const TRECHO_MAX_M = 250;

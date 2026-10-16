@@ -11,11 +11,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { baixarOuUsarCache } from './baixar';
-import { ALIASES_RIOS, BBOX_PETROPOLIS, RIOS_ALVO } from './config';
+import { ALIASES_RIOS, BBOX_PETROPOLIS, RIOS_ALVO, TRECHO_MAX_M } from './config';
 import { montarConsultaRios } from './consulta-rios';
 import type { RespostaOverpass } from './osm';
 import { gerarRelatorioRios } from './relatorio-rios';
 import { extrairRios, paraGeoJson } from './rios';
+import { fatiarSegmentos } from './trechos';
 
 const raiz = fileURLToPath(new URL('..', import.meta.url));
 const dirCache = `${raiz}cache`;
@@ -41,7 +42,8 @@ const resultado = extrairRios(resposta.elements, {
   absorverSemNome: true,
 });
 
-const geojson = JSON.stringify(paraGeoJson(resultado.segmentos));
+const trechos = fatiarSegmentos(resultado.segmentos);
+const geojson = JSON.stringify(paraGeoJson(trechos));
 const bytesGzip = gzipSync(geojson).length;
 
 await mkdir(dirSaida, { recursive: true });
@@ -54,6 +56,17 @@ const relatorio = gerarRelatorioRios({
   download: { bytes: download.bytes, doCache: download.doCache },
   resultado,
   saida: { bytes: Buffer.byteLength(geojson), bytesGzip },
+  trechos: {
+    maxM: TRECHO_MAX_M,
+    porRio: RIOS_ALVO.map((rio) => {
+      const doRio = trechos.filter((t) => t.rio === rio);
+      return {
+        rio,
+        trechos: doRio.length,
+        km: Math.round(doRio.reduce((soma, t) => soma + t.comprimentoM, 0) / 10) / 100,
+      };
+    }),
+  },
 });
 await writeFile(`${dirSaida}/relatorio-rios.md`, relatorio);
 

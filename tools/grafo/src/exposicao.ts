@@ -279,7 +279,7 @@ export interface ArquivoExposicao {
   grafo: { nos: number; arestas: number; sha256: string };
   /** Hash do rios-petropolis.geojson usado: os ids dos segmentos só valem para ele. */
   rios: { sha256: string };
-  parametros: { passoM: number; faixasM: readonly number[] };
+  parametros: { passoM: number; faixasM: readonly number[]; trechoMaxM: number };
   segmentos: { id: number; rio: string; osmWayId: number; coberto: boolean }[];
   entradas: EntradaCompacta[];
 }
@@ -293,6 +293,8 @@ export function montarArquivoExposicao(dados: {
   geradoEm: Date;
   grafo: { nos: number; arestas: number; sha256: string };
   rios: { sha256: string };
+  /** TRECHO_MAX_M com que os rios foram fatiados (só registro). */
+  trechoMaxM: number;
   segmentos: readonly SegmentoParaExposicao[];
   resultado: ResultadoExposicao;
 }): ArquivoExposicao {
@@ -301,7 +303,11 @@ export function montarArquivoExposicao(dados: {
     geradoEm: dados.geradoEm.toISOString(),
     grafo: dados.grafo,
     rios: dados.rios,
-    parametros: { passoM: dados.resultado.passoM, faixasM: dados.resultado.faixasM },
+    parametros: {
+      passoM: dados.resultado.passoM,
+      faixasM: dados.resultado.faixasM,
+      trechoMaxM: dados.trechoMaxM,
+    },
     segmentos: dados.segmentos.map((s) => ({
       id: s.id,
       rio: s.rio,

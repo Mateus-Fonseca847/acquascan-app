@@ -155,7 +155,16 @@ A comparação é por **igualdade do nome normalizado** (minúsculas, sem acento
 
 **Ways sem nome que se ligam ao rio** também entram: um way de rio sem nome que compartilha um nó com um segmento do rio alvo é absorvido (e, em cadeia, o que se liga a ele), com `inferido: true`. Só se encadeia por ways **sem nome**: um way com outro nome nunca é absorvido, nem serve de ponte para chegar a outro. O relatório lista cada um para conferência no mapa. Se um way sem nome toca dois rios alvo, vale o que vem primeiro em `RIOS_ALVO`.
 
-**Ids dos segmentos:** cada segmento tem um `id` numérico sequencial, ordenado por rio (ordem alfabética) e depois por `osmWayId`. É estável para os mesmos dados do OSM, e é o id que a exposição usa. Se o OSM mudar (um rio novo, um way a mais), os ids podem mudar: regere a exposição junto.
+**Ids dos segmentos (trechos):** cada trecho tem um `id` numérico sequencial, ordenado por rio (ordem alfabética) e depois por `osmWayId`. É estável para os mesmos dados do OSM, e é o id que a exposição usa. Se o OSM mudar (um rio novo, um way a mais), os ids podem mudar: regere a exposição junto.
+
+### Trechos curtos (`TRECHO_MAX_M`)
+
+Um way do OSM pode ter quilômetros. Se o way fosse a unidade de monitoramento, uma estação a 1 km de **um ponto** do way "monitoraria" o way inteiro e a cobertura ficaria inflada (medido: 13,2 km de 24,4 km, contra 8,0 km reais com trechos). Por isso, **depois** de consolidar os segmentos (aliases e absorção), o `pnpm grafo:rios` **fatia cada segmento em trechos iguais de no máximo `TRECHO_MAX_M = 250` m** (`src/trechos.ts`):
+
+- `n = ceil(comprimento / 250)` trechos, cada um com `comprimento / n`; o corte é por interpolação na polilinha, em projeção plana local, **preservando o sentido do fluxo**; trechos consecutivos compartilham o ponto de corte. Segmentos de até 250 m ficam como estão;
+- cada trecho tem um `id` novo, sequencial (ordenado por rio, `osmWayId` e posição), mantém o `osmWayId` e as flags (`coberto`, `canal`, `alias`, `inferido`...) e ganha `indice` (posição dentro do way) e o `comprimentoM` do trecho;
+- o relatório dos rios traz o número de trechos por rio (Petrópolis: Piabanha 82, Quitandinha 45, 127 no total);
+- o `grafo:exposicao` não tem lógica nova (lê os trechos) e registra `parametros.trechoMaxM` no arquivo. Mudar `TRECHO_MAX_M` muda os ids: regere rios **e** exposição.
 
 ### O que a consulta pede e como o nome é decidido
 

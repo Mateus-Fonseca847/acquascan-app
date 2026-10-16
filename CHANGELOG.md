@@ -18,6 +18,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Corrigido
 
+- Desvio de rios, cobertura: a unidade de monitoramento era o way inteiro do OSM, o que inflava os km "monitorados" (13,2 km para 3 estações a 1000 m; o real, com trechos, é 8,0 km). `pnpm grafo:rios` agora fatia os segmentos em **trechos de até 250 m** (`TRECHO_MAX_M`, `src/trechos.ts`), com `id` novo sequencial, `indice` e `comprimentoM`, e o relatório traz o número de trechos por rio (Piabanha 82, Quitandinha 45). `grafo:exposicao` registra `parametros.trechoMaxM` (1.346 entradas, 43,7 KB; 11,4 KB com gzip). É preciso regerar rios e exposição juntos
+- Desvio de rios, exposição: o multiplicador e a exposição de uma rua usavam o **maior** valor entre as entradas, mas as frações de trechos diferentes são partes separadas da mesma rua (cada amostra pertence a um só trecho) e devem ser **somadas**. Agora `FC = min(1, Σ críticos)`, `FA = min(1, Σ atenção)` (com `FA ≤ 1 − FC`) e multiplicador `1 + 49 FC + 3 FA`; `exposicaoCriticaM` e `exposicaoAtencaoM` usam as mesmas frações. A especificação anterior é que estava errada. Aproximação documentada: a amostra vale para o trecho mais próximo
 - Envio de push: quando um lote falhava de vez, cada rodada (a cada 30 s) reenviava todos os lotes do alerta por até 1 hora, duplicando notificações. Agora a API lembra, em memória, quais tokens o Expo já aceitou e reenvia só os que faltam, com no máximo 3 rodadas por alerta (depois para de tentar e avisa uma vez no log). Limitação: essa memória some quando a API reinicia, e então um alerta pendente é reenviado por inteiro
 
 ### Removido

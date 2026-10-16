@@ -16,7 +16,7 @@ export interface ExposicaoBruta {
   versao: number;
   grafo: { nos: number; arestas: number; sha256?: string };
   rios?: { sha256: string };
-  parametros: { passoM: number; faixasM: readonly number[] };
+  parametros: { passoM: number; faixasM: readonly number[]; trechoMaxM?: number };
   segmentos: { id: number; rio: string; osmWayId: number; coberto: boolean }[];
   entradas: readonly (readonly number[])[];
 }

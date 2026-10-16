@@ -7,6 +7,13 @@
  * PRINCÍPIO: o que o mapa mostra em vermelho é EXATAMENTE o que a rota evita. Por isso há uma
  * única fonte, `estadoDosSegmentos`, usada para colorir o mapa e para montar os multiplicadores.
  *
+ * EXPOSIÇÃO DE UMA RUA: cada amostra da rua pertence a UM trecho de rio (o mais próximo; é como
+ * tools/grafo calcula f15/f30/f50), então as frações de trechos diferentes são partes separadas
+ * da mesma rua e se SOMAM: FC = min(1, soma dos trechos em CRITICO, faixa crítica) e
+ * FA = min(1, soma dos trechos em ATENCAO, faixa de atenção), com FA limitada a 1 - FC.
+ * Multiplicador = 1 + k.critico x FC + k.atencao x FA. Aproximação: uma amostra a 10 m de um
+ * trecho em atenção e a 30 m de outro em crítico conta só para o primeiro (o mais próximo).
+ *
  * Tudo aqui é lógica pura (sem relógio, sem rede, sem tela). A hora vem de quem chama.
  */
 import type { Roteador } from '@acquascan/roteamento';
@@ -265,23 +272,29 @@ export class Desvio {
     if (temRisco) {
       for (const a of this.arestasComEntrada) {
         let bloqueia = false;
+        // As amostras de uma rua pertencem cada uma a UM trecho de rio (o mais próximo), então as
+        // frações de trechos diferentes são partes separadas da rua e se SOMAM (limitadas a 1).
+        let somaCritica = 0;
+        let somaAtencao = 0;
         for (let i = this.entIni[a]!; i < this.entIni[a + 1]!; i++) {
           const estado = estadoPorSegmento[this.entSeg[i]!];
           const cruza = this.entCruza[i] === 1;
           if (estado === 'CRITICO') {
-            const f = this.entFracCritica[i]!;
-            fracCritica[a] = Math.max(fracCritica[a]!, f);
+            somaCritica += this.entFracCritica[i]!;
             if (cruza) travCritica[a] = 1;
             if (cruza && critico.bloqueiaTravessia) bloqueia = true;
-            multFinito[a] = Math.max(multFinito[a]!, 1 + critico.k * f);
           } else if (estado === 'ATENCAO') {
-            const f = this.entFracAtencao[i]!;
-            fracAtencao[a] = Math.max(fracAtencao[a]!, f);
+            somaAtencao += this.entFracAtencao[i]!;
             if (cruza) travAtencao[a] = 1;
             if (cruza && atencao.bloqueiaTravessia) bloqueia = true;
-            multFinito[a] = Math.max(multFinito[a]!, 1 + atencao.k * f);
           }
         }
+        const fc = Math.min(1, somaCritica);
+        // A rua não pode ter mais de 100% exposta: o que passar de 1 é tirado da atenção.
+        const fa = Math.min(1 - fc, Math.min(1, somaAtencao));
+        fracCritica[a] = fc;
+        fracAtencao[a] = fa;
+        multFinito[a] = 1 + critico.k * fc + atencao.k * fa;
         if (bloqueia) bloqueadas.push(a);
       }
     }

@@ -166,13 +166,23 @@ export function criarMundo(config: {
   const entradas: number[][] = [];
   caminhos.forEach((caminho, aresta) => {
     const amostras = amostrar(caminho, 5);
-    defRios.forEach((rio, s) => {
-      const d = amostras.map((pt) => {
+    // Distância de cada amostra a cada rio; cada amostra pertence ao rio MAIS PRÓXIMO (como em
+    // tools/grafo), então as frações de rios diferentes são disjuntas.
+    const dist2 = defRios.map((rio) =>
+      amostras.map((pt) => {
         let m = Infinity;
         for (let k = 1; k < rio.pontos.length; k++)
           m = Math.min(m, distPontoSeg(pt, rio.pontos[k - 1]!, rio.pontos[k]!));
         return m;
-      });
+      }),
+    );
+    const dono = amostras.map((_, i) => {
+      let melhor = 0;
+      for (let s = 1; s < defRios.length; s++) if (dist2[s]![i]! < dist2[melhor]![i]!) melhor = s;
+      return melhor;
+    });
+    defRios.forEach((rio, s) => {
+      const d = dist2[s]!;
       let cruza = false;
       for (let i = 1; i < caminho.length && !cruza; i++) {
         for (let k = 1; k < rio.pontos.length && !cruza; k++) {
@@ -181,7 +191,7 @@ export function criarMundo(config: {
       }
       const distMin = Math.min(...d);
       if (!cruza && distMin > 50) return;
-      const fr = (f: number) => d.filter((v) => v <= f).length / d.length;
+      const fr = (f: number) => d.filter((v, i) => dono[i] === s && v <= f).length / d.length;
       entradas.push([aresta, s + 1, cruza ? 1 : 0, Math.round(distMin), fr(15), fr(30), fr(50)]);
     });
   });

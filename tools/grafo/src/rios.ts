@@ -496,7 +496,7 @@ export function extrairRios(elementos: readonly ElementoOsm[], opcoes: OpcoesRio
 }
 
 /** GeoJSON (FeatureCollection de LineString) dos segmentos. As coordenadas do GeoJSON são [lon, lat]. */
-export function paraGeoJson(segmentos: readonly SegmentoRio[]) {
+export function paraGeoJson(segmentos: readonly (SegmentoRio & { indice?: number })[]) {
   return {
     type: 'FeatureCollection' as const,
     features: segmentos.map((s) => ({
@@ -514,6 +514,7 @@ export function paraGeoJson(segmentos: readonly SegmentoRio[]) {
         covered: s.covered,
         canal: s.canal,
         comprimentoM: s.comprimentoM,
+        ...(s.indice !== undefined ? { indice: s.indice } : {}),
       },
       geometry: {
         type: 'LineString' as const,

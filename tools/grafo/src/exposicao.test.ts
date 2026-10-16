@@ -399,6 +399,7 @@ describe('arquivo de saída', () => {
     geradoEm: new Date('2026-10-16T12:00:00Z'),
     grafo: { nos: 1, arestas: 2, sha256: 'abc123' },
     rios: { sha256: 'def456' },
+    trechoMaxM: 250,
     segmentos,
     resultado,
   });
@@ -408,7 +409,7 @@ describe('arquivo de saída', () => {
     expect(arquivo.geradoEm).toBe('2026-10-16T12:00:00.000Z');
     expect(arquivo.grafo).toEqual({ nos: 1, arestas: 2, sha256: 'abc123' });
     expect(arquivo.rios).toEqual({ sha256: 'def456' });
-    expect(arquivo.parametros).toEqual({ passoM: 5, faixasM: [15, 30, 50] });
+    expect(arquivo.parametros).toEqual({ passoM: 5, faixasM: [15, 30, 50], trechoMaxM: 250 });
     expect(arquivo.segmentos).toEqual([{ id: 0, rio: 'Piabanha', osmWayId: 1000, coberto: true }]);
   });
 

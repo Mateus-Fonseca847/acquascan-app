@@ -79,8 +79,8 @@ O caminho a pé até um ponto de apoio é calculado **no próprio aparelho**, se
 
 1. **Estado das estações**: a última leitura de cada estação (como a API devolve) e a hora de agora.
 2. **Estado efetivo**: leitura fresca (até 20 min) vale como está; CRITICO ou ATENCAO antigo continua valendo por até 6 h (**falha segura**); o resto vira `DESCONHECIDO`, sem penalidade.
-3. **Estado de cada trecho de rio**: o da estação mais próxima do mesmo rio, até 1000 m; fora disso, "sem monitoramento". É a **mesma função que colore o mapa**.
-4. **Multiplicador por rua**: o máximo, entre os rios que a tocam, de `1 + k × fração exposta` (crítico: faixa de 50 m, `k` 49; atenção: faixa de 15 m, `k` 3), com uma fração mínima para quem cruza o rio.
+3. **Estado de cada trecho de rio**: os rios são fatiados em trechos de até 250 m (`tools/grafo`); cada trecho tem o estado da estação mais próxima do mesmo rio, até 1000 m, e fora disso é "sem monitoramento". É a **mesma função que colore o mapa**.
+4. **Multiplicador por rua**: as frações dos trechos que a rua toca são **somadas** por estado (cada amostra da rua pertence a um só trecho): `1 + 49 × FC + 3 × FA`, com `FC` e `FA` limitadas a 1 no total (crítico: faixa de 50 m; atenção: faixa de 15 m) e uma fração mínima para quem cruza o rio.
 5. **Duas passadas**: a estrita bloqueia (`Infinity`) as ruas que cruzam rio crítico; se não houver rota, a de reserva as permite com penalidade, e o resultado vem como `menos_exposta` com aviso.
 
 O resultado traz a rota recomendada, a mais curta quando ela for bem mais exposta, os avisos e os estados usados. Os rios sem estação não são evitados: o app deve avisar que o desvio vale apenas para os rios monitorados. Os números da política são provisórios (veja [decisoes.md](decisoes.md)).

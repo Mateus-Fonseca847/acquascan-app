@@ -14,6 +14,8 @@ export interface DadosDoRelatorioRios {
   download: { bytes: number; doCache: boolean };
   resultado: ResultadoRios;
   saida: { bytes: number; bytesGzip: number };
+  /** Trechos em que os segmentos foram fatiados (veja trechos.ts), por rio. */
+  trechos?: { maxM: number; porRio: { rio: string; trechos: number; km: number }[] };
 }
 
 const num = (n: number) => n.toLocaleString('pt-BR');
@@ -114,9 +116,22 @@ export function gerarRelatorioRios(d: DadosDoRelatorioRios): string {
     }
   }
 
+  if (d.trechos) {
+    linhas.push(
+      '',
+      '## 3. Trechos',
+      '',
+      `Cada segmento (way) é fatiado em trechos iguais de no máximo ${num(d.trechos.maxM)} m; o trecho é a unidade de monitoramento e de exposição.`,
+      '',
+      '| Rio | Trechos | km |',
+      '| --- | ---: | ---: |',
+      ...d.trechos.porRio.map((t) => `| ${t.rio} | ${num(t.trechos)} | ${num(t.km)} |`),
+    );
+  }
+
   linhas.push(
     '',
-    '## 3. Arquivo de saída',
+    `## ${d.trechos ? 4 : 3}. Arquivo de saída`,
     '',
     `- GeoJSON: ${formatarBytes(d.saida.bytes)}`,
     `- GeoJSON com gzip: ${formatarBytes(d.saida.bytesGzip)}`,

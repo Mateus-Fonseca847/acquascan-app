@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { caminhoDoCache } from './baixar';
 import { analisarCobertura, type WaterwayParaCobertura } from './cobertura';
-import { BBOX_PETROPOLIS, RIOS_ALVO } from './config';
+import { BBOX_PETROPOLIS, RIOS_ALVO, TRECHO_MAX_M } from './config';
 import { montarConsultaRios } from './consulta-rios';
 import type { Grafo } from './construir';
 import {
@@ -90,6 +90,7 @@ const arquivo = montarArquivoExposicao({
   geradoEm: new Date(),
   grafo: { nos: grafo.nos.length, arestas: grafo.arestas.length, sha256 },
   rios: { sha256: shaRios },
+  trechoMaxM: TRECHO_MAX_M,
   segmentos,
   resultado,
 });
