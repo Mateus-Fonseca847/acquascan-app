@@ -9,6 +9,19 @@ No celular, `localhost` aponta para o próprio celular. Em `apps/mobile/.env`, u
 3. Abra `http://SEU_IP:3333/saude` no navegador do celular. Se não abrir, o firewall do computador está bloqueando a porta 3333.
 4. Depois de mudar o `.env`, reinicie o Expo (`pnpm dev:mobile`).
 
+### O app fica carregando e depois mostra que o servidor demorou demais
+
+O app espera 10 segundos por cada tentativa e tenta uma segunda vez; se a API não responder, aparece "O servidor demorou demais para responder" com o botão **Tentar de novo** (antes, o app ficava carregando para sempre). As causas mais comuns:
+
+1. **IP errado no `.env`.** O `apps/mobile/.env.example` traz só um **exemplo** (`192.168.0.10`); o IP do seu computador provavelmente é outro. Confira com `ipconfig`, ajuste `EXPO_PUBLIC_API_URL` e reinicie o Expo com `pnpm dev:mobile -- --clear` (o valor é embutido no app quando o Expo inicia, então só mudar o arquivo não basta).
+2. **Porta 3333 bloqueada no firewall do Windows.** Teste no navegador **do celular**: abra `http://SEU_IP:3333/saude`. Se aparecer `{"status":"ok",...}`, a rede e o firewall estão certos e o problema é o IP ou o Expo desatualizado. Se não abrir (e o mesmo endereço abre no computador), libere a porta. Em um PowerShell **como administrador**:
+
+```powershell
+New-NetFirewallRule -DisplayName "AcquaScan API 3333" -Direction Inbound -Protocol TCP -LocalPort 3333 -Action Allow -Profile Private
+```
+
+> **Atenção:** a regra vale só para redes classificadas como **Privadas**. Se o Windows classificou o seu Wi-Fi ou cabo como **Pública**, a regra não se aplica. Veja a classificação com `Get-NetConnectionProfile` e, se for uma rede de confiança (a sua casa, por exemplo), mude para Privada em Configurações > Rede e Internet > propriedades da conexão. Não faça isso em redes públicas.
+
 ## `Cannot find module '../generated/prisma/client'`
 
 O Prisma Client não foi gerado. Rode `pnpm --filter @acquascan/api db:generate`.
