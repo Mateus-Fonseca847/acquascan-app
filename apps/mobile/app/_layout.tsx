@@ -7,8 +7,10 @@ import { ProvedorSessao, useSessao } from '@/contexts/Sessao';
 import { cores } from '@/theme';
 
 export default function LayoutRaiz() {
+  // retry: 1 porque cada tentativa pode levar 10 s (tempo limite de api.ts): com 3 tentativas o
+  // erro só apareceria depois de ~40 s.
   const [queryClient] = useState(
-    () => new QueryClient({ defaultOptions: { queries: { retry: 2 } } }),
+    () => new QueryClient({ defaultOptions: { queries: { retry: 1 } } }),
   );
 
   return (
