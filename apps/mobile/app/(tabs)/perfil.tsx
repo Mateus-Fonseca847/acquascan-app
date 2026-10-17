@@ -52,6 +52,7 @@ export default function TelaPerfil() {
           carregando={saindo}
           onPress={confirmarSaida}
         />
+        <BotaoTesteRoteamento />
       </View>
     );
   }
@@ -64,7 +65,20 @@ export default function TelaPerfil() {
       </Text>
       <Botao rotulo="Entrar" onPress={() => router.push('/login')} />
       <Botao rotulo="Criar conta" variante="secundario" onPress={() => router.push('/cadastro')} />
+      <BotaoTesteRoteamento />
     </View>
+  );
+}
+
+/** Atalho da prova de roteamento (R7a): só aparece em desenvolvimento. */
+function BotaoTesteRoteamento() {
+  if (!__DEV__) return null;
+  return (
+    <Botao
+      rotulo="Teste de roteamento"
+      variante="secundario"
+      onPress={() => router.push('/rota-teste')}
+    />
   );
 }
 

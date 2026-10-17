@@ -52,6 +52,44 @@ O alias `@/` aponta para `src/` (ex.: `import { cores } from '@/theme'`).
 - Nada de senha, token ou e-mail em `console.log` nem em mensagens de erro.
 - Pendente: tela de exclusão de conta (`excluirConta` já existe no provedor) e remoção do token de push ao sair.
 
+## Roteamento no celular: dados e tela de prova (R7a)
+
+O app usa `@acquascan/roteamento` e `@acquascan/desvio` (workspaces). A prova de viabilidade carrega o grafo, os rios e a exposição **dentro do app**, roda o roteador e o desvio no Hermes e mede os tempos. Não há tela final de rota: o redesenho do app vem depois.
+
+### Gerar os dados
+
+Os arquivos vêm de `tools/grafo/saida/` e ficam **fora do git** (`apps/mobile/assets/roteamento/` está no `.gitignore`: são derivados do OpenStreetMap, e a licença ODbL pede atribuição; se serão versionados ainda é uma decisão em aberto, veja [creditos-dados.md](../../docs/creditos-dados.md)).
+
+```bash
+pnpm grafo:construir && pnpm grafo:rios && pnpm grafo:exposicao   # só se ainda não gerou
+pnpm dados:app
+```
+
+O `pnpm dados:app` confere que os três arquivos são da mesma geração (o `sha256` do grafo e o dos rios registrados na exposição, e o número de arestas); se não forem, falha e manda rodar os três comandos em sequência. Depois copia `grafo-petropolis.json`, `exposicao-petropolis.json` e os rios (como `rios-petropolis.json`: o Metro só carrega dados `.json`) para `assets/roteamento/` e grava `versao.json` com os três hashes e a data. Reinicie o Metro com `pnpm dev:mobile -- --clear` depois de gerar.
+
+### Carregamento preguiçoso
+
+`src/roteamento/dados.ts` expõe `carregarRoteamento(estacoes)`, que devolve `{ roteador, desvio, tempos, ... }`. Os `require` dos três JSON ficam **dentro das funções** (nada é lido na abertura do app) e o resultado fica em cache no módulo (`criarRoteador` e `criarDesvio` rodam uma vez). Cada `require` está em um `try/catch`, que o Metro trata como dependência opcional: sem os arquivos, o bundle e o typecheck **não quebram**, e o erro (em português, mandando rodar `pnpm dados:app`) só aparece quando alguém tenta carregar.
+
+**Caminho adotado: `require` de JSON.** É o mais simples, não precisa de dependência nem de `metro.config.js`, e o Metro empacotou sem problemas (`expo export --platform android` compilou o bytecode Hermes: bundle de 3,8 MB sem os dados e 5,1 MB com eles). O que o export **não** mede é o tempo de carga no aparelho. Se a tela de prova mostrar um tempo de "ler e interpretar" alto (ver abaixo), a alternativa é `expo-asset` mais leitura do arquivo (o Expo já instala `expo-asset`, mas ela exigiria o arquivo como asset, isto é, uma extensão que o Metro trate como asset, e `expo-file-system` para ler: dependências diretas que deveriam ser decididas antes). O Metro resolveu `@acquascan/roteamento` e `@acquascan/desvio` sem `metro.config.js`.
+
+### Tela de prova
+
+Só em desenvolvimento (`__DEV__`): Perfil, botão **Teste de roteamento** (rota `app/(dev)/rota-teste.tsx`; em build de produção o botão some e a rota não é registrada). Toque em **Rodar a prova**; a tela pode travar por alguns segundos enquanto mede. Ela:
+
+- carrega os dados e mostra os **tempos de carga** (ler e interpretar os arquivos, `criarRoteador`, `criarDesvio`);
+- cria 3 estações hipotéticas **derivadas do GeoJSON** (duas no Piabanha, a 25% e 75% do comprimento, e uma no Quitandinha, a 50%; cada uma no ponto médio do trecho que cai nessa fração);
+- roda **100 rotas** entre vértices aleatórios do grafo (semente 20261016, mostrada na tela) em dois modos, **sem risco** e **rios em CRÍTICO**, e mostra a mediana, o p95 e o máximo do `rotear` e do `gerarPassos`, quantas rotas mudaram (a recomendada difere da mais curta) e a exposição crítica média;
+- desenha **uma** rota no mapa (a primeira do modo crítico) e mostra o tempo de montar a polilinha;
+- lista o texto dos **10 primeiros passos** dessa rota;
+- escreve no console **uma linha** `[R7a] ...` com todos os números, fácil de copiar.
+
+**Como ler os números.** `rotear` inclui o roteador e o desvio (no modo crítico são duas buscas: a mais curta e a segura). Referência no Node deste computador, para comparar: carga ~25 ms de leitura, ~22 ms de `criarRoteador` e ~4 ms de `criarDesvio`; `rotear` com mediana de 0,3 ms (sem risco) e 0,6 ms (crítico), p95 abaixo de 1,6 ms; `gerarPassos` com mediana de ~0,15 ms; 42 das 100 rotas mudam no modo crítico. No celular espere números maiores (Hermes e CPU móvel). Para uma tela de rota, o que importa é a carga (acontece uma vez) e o p95 do `rotear` ficarem bem abaixo de ~100 ms.
+
+### Funções puras e o que fica sem teste automático
+
+A escolha das estações hipotéticas, o sorteio dos pares e as estatísticas estão em `src/roteamento/puro.ts` (só `import type`), e a conferência dos hashes está em `tools/grafo/src/dados-app.ts`. Todas têm teste no vitest de `tools/grafo` (`prova-app.test.ts` importa `puro.ts` daqui). **Sem teste automático:** `dados.ts` (depende de `require` do Metro), a tela `rota-teste.tsx` e o botão do Perfil: valide no Expo Go.
+
 ## Testes
 
 O app ainda não tem runner de testes. As regras puras (classificação de erros, quando a sessão expira, estado inicial) ficam em `src/services/regras.ts`, prontas para testar quando houver um. Enquanto isso, valide manualmente no Expo Go com a API no ar.

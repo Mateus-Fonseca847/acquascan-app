@@ -27,6 +27,10 @@ expo-env.d.ts
 tools/grafo/cache/
 tools/grafo/saida/
 
+# Dados de roteamento copiados para o app por `pnpm dados:app` (derivados do OSM, licença ODbL;
+# se serão versionados ainda é decisão em aberto)
+apps/mobile/assets/roteamento/
+
 # Logs e sistema
 *.log
 .DS_Store

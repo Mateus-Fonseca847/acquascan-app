@@ -107,17 +107,31 @@ Cada `Passo` tem `tipo` (`partida`, `siga`, `curva`, `travessia`, `chegada`), `m
 4. Manobras separadas por menos de 15 m viram uma só (os ângulos somam e a manobra é reclassificada). Dois "continue" a menos de 15 m um do outro também: fica o segundo.
 5. Encaixe da origem maior que 30 m: primeiro passo "Vá até a Rua X (50 m)". Encaixe do destino maior que 30 m: "O destino fica a 50 m da Rua X" antes da chegada. Esses dois passos levam o próprio encaixe em `distanciaM`; a soma das `distanciaM` dos demais passos é `distanciaRedeM` (tolerância de 1 m).
 
-| \|Δ\| (graus) | Manobra   | Texto                                              |
-| ------------- | --------- | -------------------------------------------------- |
-| menos de 25   | em frente | só se o nome muda: "Continue pela Rua Y"           |
-| 25 a 60       | leve      | "Vire levemente à direita/esquerda na Rua X"       |
-| 60 a 120      | normal    | "Vire à direita/esquerda na Rua X"                 |
-| 120 a 160     | fechada   | "Faça a curva fechada à direita/esquerda na Rua X" |
-| mais de 160   | retorno   | "Retorne e siga pela Rua X"                        |
+| \|Δ\| (graus) | Manobra   | Texto                                                                               |
+| ------------- | --------- | ----------------------------------------------------------------------------------- |
+| menos de 25   | em frente | só se o nome muda: "Continue pela Rua Y"                                            |
+| 25 a 60       | leve      | "Vire levemente à direita/esquerda na Rua X" (sem nome: "Siga levemente à direita") |
+| 60 a 120      | normal    | "Vire à direita/esquerda na Rua X"                                                  |
+| 120 a 160     | fechada   | "Faça a curva fechada à direita/esquerda na Rua X"                                  |
+| mais de 160   | retorno   | "Retorne e siga pela Rua X"                                                         |
 
 Os limites são fechados no menor valor (25 já é leve; 60 já é normal) e o retorno começa acima de 160.
 
-**Textos.** Partida: "Siga para o norte pela Rua do Imperador" (oito pontos cardeais pelo rumo inicial). Ponte: "Atravesse a ponte"; escada: "Pegue a escadaria"; túnel: "Siga pelo túnel"; no fim deles, "Continue pela Rua Y". A preposição vem do tipo do nome: Rua, Avenida, Travessa, Alameda, Estrada, Praça, Ladeira, Servidão, Rodovia, Via e Passarela são femininos (na, pela, à); Beco, Caminho, Largo, Viaduto e Túnel, masculinos (no, pelo); qualquer outro nome usa "em" e "por". Sem nome, descreve pela classe: `footway` "passagem de pedestres", `steps` "escadaria", `path` e `track` "caminho", `service` "via de serviço", o resto "via".
+**Textos.** Partida: "Siga para o norte pela Rua do Imperador" (oito pontos cardeais pelo rumo inicial). Ponte: "Atravesse a ponte"; escada: "Pegue a escadaria"; túnel: "Siga pelo túnel"; no fim deles, "Continue pela Rua Y". Sem nome, descreve pela classe: `footway` "passagem de pedestres", `steps` "escadaria", `path` e `track` "caminho", `service` "via de serviço", o resto "via".
+
+**Curva em via sem nome** não diz "na via": curva leve vira "Siga levemente à esquerda", normal vira "Vire à direita" e fechada, "Faça a curva fechada à direita". Os textos de "siga" e "continue" continuam com a descrição pela classe ("Continue pela passagem de pedestres"), e o retorno também ("Retorne e siga pela passagem de pedestres").
+
+**Preposições.** Vêm da primeira palavra do nome, sem acento e sem diferença de maiúsculas ("PRAÇA", "Praça" e "praca" são iguais), numa **tabela única**, `TIPOS_DE_VIA` em `src/textos.ts` (será revisada com a equipe; incluir um tipo é uma linha):
+
+| Gênero         | Forma                   | Primeira palavra                                                                                                                                                             |
+| -------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feminino       | na, pela, à ("da", "a") | Rua, Avenida, Travessa, Alameda, Estrada, Praça, Ladeira, Servidão, Rodovia, Via, Passarela, Ponte, Vila, Viela, Vereda, Trilha, Passagem, Escadaria, Rampa, Marginal, Linha |
+| Masculino      | no, pelo ("do", "o")    | Beco, Caminho, Largo, Viaduto, Túnel, Parque, Jardim, Acesso, Corredor, Pátio, Morro, Campo                                                                                  |
+| Qualquer outro | em, por                 | "em Condomínio Chácara Flora", "por Bosque dos Namorados"                                                                                                                    |
+
+Só a primeira palavra conta: "Bosque da Rua Alta" e "Ruas Unidas" não casam com "Rua".
+
+**Travessia curta.** Um passo de `travessia` com menos de 15 m até o passo seguinte (por exemplo "Atravesse a ponte" logo seguido de "Continue pela Praça...") é **fundido no seguinte**: o texto do seguinte permanece, os avisos se somam e a distância dele passa para o passo anterior, então a soma das `distanciaM` continua igual a `distanciaRedeM`. Exceção: o último passo antes da chegada fica. A regra de manobras a menos de 15 m continua valendo.
 
 Utilitários exportados: `formatarDistancia` (menos de 100 m arredonda a 5 m; até 1000 m, a 10 m; acima, "1,2 km"), `formatarDuracao` ("menos de 1 min", "12 min a pé", "1 h 05 min") e `rumoCardeal(graus)`.
 

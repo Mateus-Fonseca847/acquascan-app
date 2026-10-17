@@ -227,6 +227,12 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@acquascan/desvio':
+        specifier: workspace:*
+        version: link:../../packages/desvio
+      '@acquascan/roteamento':
+        specifier: workspace:*
+        version: link:../../packages/roteamento
       '@acquascan/shared':
         specifier: workspace:*
         version: link:../../packages/shared

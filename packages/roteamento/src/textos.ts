@@ -49,50 +49,84 @@ export function normalizarTexto(texto: string): string {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-const FEMININOS = new Set([
-  'rua',
-  'avenida',
-  'travessa',
-  'alameda',
-  'estrada',
-  'praca',
-  'ladeira',
-  'servidao',
-  'rodovia',
-  'via',
-  'passarela',
-]);
-const MASCULINOS = new Set(['beco', 'caminho', 'largo', 'viaduto', 'tunel']);
+/**
+ * TABELA ÚNICA dos tipos de via (primeira palavra do nome) e do gênero que a preposição usa.
+ * A comparação é pela primeira palavra do nome SEM acento e SEM diferença de maiúsculas, então as
+ * chaves abaixo estão normalizadas ("praca" vale para "Praça" e "PRAÇA"). Quem não está aqui é
+ * neutro e usa "em" e "por" ("em Bosque dos Namorados"). Esta lista será revisada com a equipe:
+ * para incluir um tipo, basta uma linha.
+ *
+ * - 'f' (feminino): na, pela, à. - 'm' (masculino): no, pelo.
+ */
+export const TIPOS_DE_VIA: Readonly<Record<string, 'f' | 'm'>> = {
+  // femininos
+  rua: 'f',
+  avenida: 'f',
+  travessa: 'f',
+  alameda: 'f',
+  estrada: 'f',
+  praca: 'f',
+  ladeira: 'f',
+  servidao: 'f',
+  rodovia: 'f',
+  via: 'f',
+  passarela: 'f',
+  ponte: 'f',
+  vila: 'f',
+  viela: 'f',
+  vereda: 'f',
+  trilha: 'f',
+  passagem: 'f',
+  escadaria: 'f',
+  rampa: 'f',
+  marginal: 'f',
+  linha: 'f',
+  // masculinos
+  beco: 'm',
+  caminho: 'm',
+  largo: 'm',
+  viaduto: 'm',
+  tunel: 'm',
+  parque: 'm',
+  jardim: 'm',
+  acesso: 'm',
+  corredor: 'm',
+  patio: 'm',
+  morro: 'm',
+  campo: 'm',
+};
 
-/** O gênero pelo tipo do nome (primeira palavra). Fora das listas: neutro. */
+/** O gênero pelo tipo do nome (primeira palavra). Fora da tabela: neutro. */
 export function generoDoNome(nome: string): Genero {
   const primeira = normalizarTexto(nome).split(' ')[0] ?? '';
-  if (FEMININOS.has(primeira)) return 'f';
-  if (MASCULINOS.has(primeira)) return 'm';
-  return 'n';
+  return Object.prototype.hasOwnProperty.call(TIPOS_DE_VIA, primeira)
+    ? TIPOS_DE_VIA[primeira]!
+    : 'n';
 }
 
 /** Como se refere a uma via: o nome, ou uma descrição pela classe quando não tem nome. */
 export interface ReferenciaVia {
   texto: string;
   genero: Genero;
+  /** A via não tem nome: o texto é uma descrição pela classe ("passagem de pedestres"). */
+  semNome: boolean;
 }
 
 export function referenciaDaVia(nome: string | null, classe: string): ReferenciaVia {
   if (nome !== null && nome.trim() !== '')
-    return { texto: nome.trim(), genero: generoDoNome(nome) };
+    return { texto: nome.trim(), genero: generoDoNome(nome), semNome: false };
   switch (classe) {
     case 'footway':
-      return { texto: 'passagem de pedestres', genero: 'f' };
+      return { texto: 'passagem de pedestres', genero: 'f', semNome: true };
     case 'steps':
-      return { texto: 'escadaria', genero: 'f' };
+      return { texto: 'escadaria', genero: 'f', semNome: true };
     case 'path':
     case 'track':
-      return { texto: 'caminho', genero: 'm' };
+      return { texto: 'caminho', genero: 'm', semNome: true };
     case 'service':
-      return { texto: 'via de serviço', genero: 'f' };
+      return { texto: 'via de serviço', genero: 'f', semNome: true };
     default:
-      return { texto: 'via', genero: 'f' };
+      return { texto: 'via', genero: 'f', semNome: true };
   }
 }
 

@@ -51,6 +51,9 @@ function Navegacao() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="estacao/[id]" options={{ title: 'Estação' }} />
       </Stack.Protected>
+      <Stack.Protected guard={entrou && __DEV__}>
+        <Stack.Screen name="(dev)/rota-teste" options={{ title: 'Teste de roteamento' }} />
+      </Stack.Protected>
       <Stack.Protected guard={pronto && estado !== 'logado'}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack.Protected>

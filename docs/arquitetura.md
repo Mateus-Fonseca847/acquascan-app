@@ -87,6 +87,8 @@ O resultado traz a rota recomendada, a mais curta quando ela for bem mais expost
 
 **Instruções e acompanhamento.** Com a rota calculada, o mesmo pacote gera as **instruções de curva** (`gerarPassos`: "Vire à direita na Avenida Koeler", com distância, avisos de escada, trilha, ponte e túnel, e o ponto de cada manobra) e acompanha a pessoa no caminho (`acompanhar`: dada a posição do GPS, diz o passo atual, quanto falta e se ela saiu da rota). As duas são funções puras; quando a pessoa sai da rota, a tela chama o `rotear` de novo. Rotatórias não são reconhecidas e o texto das preposições é heurístico.
 
+**Dados no app e carregamento.** Os três arquivos (grafo, rios e exposição, ~2 MB) são gerados por `tools/grafo` e copiados por `pnpm dados:app` para `apps/mobile/assets/roteamento/` (fora do git por enquanto, por causa da licença ODbL do OSM), depois de conferir que são da mesma geração. O app os carrega de forma **preguiçosa**: os `require` ficam dentro de `carregarRoteamento` (`src/roteamento/dados.ts`), então nada é lido na abertura; o roteador e o desvio são criados uma vez e ficam em cache. A tela de prova de desenvolvimento (Perfil, `__DEV__`) mede os tempos reais no Hermes.
+
 O pacote roda no Hermes (o motor do app) e no Node, então `src/` não usa nenhuma API do Node; um teste garante isso. A API do AcquaScan **não participa** do cálculo de rotas. A justificativa está em [decisoes.md](decisoes.md).
 
 ## Ambientes

@@ -41,6 +41,10 @@ describe.skipIf(!existsSync(arquivo))('instruções no grafo real de Petrópolis
         const b = passos[i]!;
         expect(b.indiceNaLinha).toBeGreaterThanOrEqual(a.indiceNaLinha);
         expect(b.acumuladaM).toBeGreaterThanOrEqual(a.acumuladaM - 1e-6);
+        // travessia curta (menos de 15 m) só sobra como último passo antes da chegada
+        if (a.tipo === 'travessia' && b.acumuladaM - a.acumuladaM < 15) {
+          expect(b.tipo === 'chegada' || b.texto.startsWith('O destino fica')).toBe(true);
+        }
         // nenhum passo duplicado (mesmo texto no mesmo lugar)
         expect(!(a.texto === b.texto && a.acumuladaM === b.acumuladaM)).toBe(true);
         // nenhum "em frente" seguido de outro a menos de 15 m (ruído de trecho minúsculo)

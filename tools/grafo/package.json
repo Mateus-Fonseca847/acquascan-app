@@ -8,6 +8,7 @@
     "construir": "tsx src/main.ts",
     "rios": "tsx src/main-rios.ts",
     "exposicao": "tsx src/main-exposicao.ts",
+    "dados-app": "tsx src/main-dados-app.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

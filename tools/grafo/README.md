@@ -195,6 +195,10 @@ O relatório também lista os **ways sem nome** cuja ponta toca o rio alvo e que
 - **`covered=yes`:** é registrado, mas só `tunnel` conta como coberto.
 - **O OSM pode estar incompleto ou impreciso.** A hidrografia de Petrópolis tem trechos quebrados, e este extrato não tem nenhuma relação de rio com nome, então o nome depende de cada way. Não há larguras, cotas, nem o estado dos rios: esta etapa só entrega as linhas.
 
+### Dados para o app (`pnpm dados:app`)
+
+Copia o grafo, os rios e a exposição de `saida/` para `apps/mobile/assets/roteamento/` (ignorado pelo git por enquanto: são derivados do OSM e a licença ODbL pede atribuição). Antes de copiar, confere que os arquivos são da mesma geração: o `sha256` do grafo e o dos rios registrados na exposição têm de bater com os arquivos, e o número de arestas também; senão falha e manda rodar `pnpm grafo:construir`, `pnpm grafo:rios` e `pnpm grafo:exposicao` em sequência. Os rios vão como `rios-petropolis.json` (o Metro só carrega dados `.json`). Grava também `versao.json` com os três hashes e a data. A conferência é uma função pura (`src/dados-app.ts`) com testes.
+
 ### Primeira execução (Petrópolis, 16/10/2026)
 
 | Medida         | Valor                                           |

@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@acquascan/desvio": "workspace:*",
+    "@acquascan/roteamento": "workspace:*",
     "@acquascan/shared": "workspace:*",
     "@expo/vector-icons": "^15.0.2",
     "@tanstack/react-query": "5.104.0",

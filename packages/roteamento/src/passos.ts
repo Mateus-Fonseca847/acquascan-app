@@ -78,6 +78,8 @@ const JUNTAR_MANOBRAS_M = 15;
 const ENCAIXE_COM_PASSO_M = 30;
 /** Trechos menores que isto (encaixe exatamente num nó) não contam para a unidade. */
 const TRECHO_MINIMO_M = 0.5;
+/** Travessias (ponte, escada, túnel) com menos disto até o passo seguinte são fundidas nele. */
+const TRAVESSIA_CURTA_M = 15;
 
 interface Unidade {
   chave: string;
@@ -162,20 +164,21 @@ export function classificarManobra(angulo: number): Manobra {
 }
 
 function textoDaCurva(manobra: Manobra, ref: ReferenciaVia): string {
-  const em = comPreposicao('em', ref);
+  // Rua sem nome: não se diz "na via"; a instrução é só a manobra.
+  const em = ref.semNome ? '' : ` ${comPreposicao('em', ref)}`;
   switch (manobra) {
     case 'leve_direita':
-      return `Vire levemente à direita ${em}`;
+      return ref.semNome ? 'Siga levemente à direita' : `Vire levemente à direita${em}`;
     case 'direita':
-      return `Vire à direita ${em}`;
+      return `Vire à direita${em}`;
     case 'fechada_direita':
-      return `Faça a curva fechada à direita ${em}`;
+      return `Faça a curva fechada à direita${em}`;
     case 'leve_esquerda':
-      return `Vire levemente à esquerda ${em}`;
+      return ref.semNome ? 'Siga levemente à esquerda' : `Vire levemente à esquerda${em}`;
     case 'esquerda':
-      return `Vire à esquerda ${em}`;
+      return `Vire à esquerda${em}`;
     case 'fechada_esquerda':
-      return `Faça a curva fechada à esquerda ${em}`;
+      return `Faça a curva fechada à esquerda${em}`;
     case 'retorno':
       return `Retorne e siga ${comPreposicao('por', ref)}`;
     case 'em_frente':
@@ -191,6 +194,13 @@ function avisosDaUnidade(u: Unidade): AvisoPasso[] {
   if (u.tunel) avisos.push('TUNEL');
   return avisos;
 }
+
+const somarAvisos = (a: readonly AvisoPasso[], b: readonly AvisoPasso[]): AvisoPasso[] => [
+  ...a,
+  ...b.filter((x) => !a.includes(x)),
+];
+
+const ehPassoDeDestino = (p: { texto: string }) => p.texto.startsWith('O destino fica');
 
 const refDaUnidade = (u: Unidade) => referenciaDaVia(u.nome, u.classe);
 
@@ -435,10 +445,32 @@ export function gerarPassos(
     );
   });
 
+  // Travessia curta (menos de 15 m até o passo seguinte, por exemplo "Atravesse a ponte" logo
+  // seguido de "Continue pela Praça..."): é fundida no passo seguinte, que mantém o texto e ganha
+  // os avisos. A distância dela passa para o passo anterior (distanciaM é recalculado abaixo).
+  // Exceção: o último passo antes da chegada fica.
+  const fundido: typeof enxuto = [];
+  let avisosPendentes: AvisoPasso[] = [];
+  enxuto.forEach((p, i) => {
+    const proximo = enxuto[i + 1];
+    const antesDaChegada =
+      proximo === undefined || proximo.tipo === 'chegada' || ehPassoDeDestino(proximo);
+    if (
+      p.tipo === 'travessia' &&
+      !antesDaChegada &&
+      proximo.acumuladaM - p.acumuladaM < TRAVESSIA_CURTA_M
+    ) {
+      avisosPendentes = somarAvisos(avisosPendentes, p.avisos);
+      return;
+    }
+    fundido.push({ ...p, avisos: somarAvisos(avisosPendentes, p.avisos) });
+    avisosPendentes = [];
+  });
+
   // distanciaM: do passo até o seguinte. Os passos de encaixe levam a própria distância de
   // encaixe (da origem até a rede; da rede até o destino).
-  return enxuto.map((p, i) => {
-    const proximo = enxuto[i + 1];
+  return fundido.map((p, i) => {
+    const proximo = fundido[i + 1];
     let distanciaM = proximo ? Math.max(0, proximo.acumuladaM - p.acumuladaM) : 0;
     if (p.tipo === 'siga' && p.manobra === null && p.texto.startsWith('Vá até')) {
       distanciaM = rota.encaixeOrigemM;

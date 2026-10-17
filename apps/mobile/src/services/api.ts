@@ -43,24 +43,28 @@ interface Opcoes {
   autenticada?: boolean;
 }
 
-async function requisitar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
-  const { metodo = 'GET', corpo, autenticada = false } = opcoes;
-  const tokenDaChamada = autenticada ? tokenAtual : null;
 
-  const headers: Record<string, string> = {};
-  if (corpo !== undefined) headers['Content-Type'] = 'application/json';
-  if (tokenDaChamada) headers.Authorization = `Bearer ${tokenDaChamada}`;
+async function requisitar<T>(caminho: string, init?: RequestInit): Promise<T> {
+  const controlador = new AbortController();
+  const temporizador = setTimeout(() => controlador.abort(), TEMPO_LIMITE_MS);
 
   let resposta: Response;
   try {
     resposta = await fetch(`${env.apiUrl}${caminho}`, {
-      method: metodo,
-      headers,
-      body: corpo === undefined ? undefined : JSON.stringify(corpo),
-      signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
+      ...init,
+      signal: controlador.signal,
+      headers: { 'Content-Type': 'application/json', ...init?.headers },
     });
-  } catch {
-    throw erroDeRede();
+  } catch (erro) {
+    const estourou = erro instanceof Error && erro.name === 'AbortError';
+    throw new ErroApi(
+      0,
+      estourou
+        ? 'O servidor demorou demais para responder. Confira se o celular e o computador estão na mesma rede Wi-Fi e tente de novo.'
+        : 'Sem conexão com o servidor. Verifique a internet e tente de novo.',
+    );
+  } finally {
+    clearTimeout(temporizador);
   }
 
   if (!resposta.ok) {
