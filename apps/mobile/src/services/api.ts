@@ -17,7 +17,7 @@ import type {
   PrevisaoDia,
 } from '@acquascan/shared';
 import { env } from '@/config/env';
-import { deveExpirarSessao, erroDeRede, erroDeResposta } from './regras';
+import { deveExpirarSessao, ErroApi, erroDeResposta } from './regras';
 
 export { ErroApi } from './regras';
 
@@ -43,17 +43,24 @@ interface Opcoes {
   autenticada?: boolean;
 }
 
+async function requisitar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
+  const { metodo = 'GET', corpo, autenticada = false } = opcoes;
+  const tokenDaChamada = autenticada ? tokenAtual : null;
 
-async function requisitar<T>(caminho: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (corpo !== undefined) headers['Content-Type'] = 'application/json';
+  if (tokenDaChamada) headers.Authorization = `Bearer ${tokenDaChamada}`;
+
   const controlador = new AbortController();
   const temporizador = setTimeout(() => controlador.abort(), TEMPO_LIMITE_MS);
 
   let resposta: Response;
   try {
     resposta = await fetch(`${env.apiUrl}${caminho}`, {
-      ...init,
+      method: metodo,
+      headers,
+      body: corpo === undefined ? undefined : JSON.stringify(corpo),
       signal: controlador.signal,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
     });
   } catch (erro) {
     const estourou = erro instanceof Error && erro.name === 'AbortError';
