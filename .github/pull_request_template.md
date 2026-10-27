@@ -1,6 +1,6 @@
 ## Cartão
 
-<!-- ID do cartão (ex.: APP-03, BE-01, RT-01) e link para a issue, se houver -->
+<!-- ID do cartão (ex.: FE-03, BE-01, RT-01) e link para a issue, se houver -->
 
 ## O que mudou
 
@@ -19,13 +19,13 @@
 
 ## Como testar
 
-<!-- Roteiro curto. App: celular de verdade, com o que abrir e o que esperar. API: comandos e resultado -->
+<!-- Roteiro curto. Frontend: celular de verdade, com o que abrir e o que esperar. API: comandos e resultado -->
 
-## Capturas de tela (só app)
+## Capturas de tela (só frontend)
 
 <!-- Cada estado: carregando, vazio, erro, sem internet e o caminho feliz -->
 
-## Diferenças em relação ao Figma (só app)
+## Diferenças em relação ao Figma (só frontend)
 
 <!-- O que ficou diferente e por quê. Se seguiu uma decisão de contexto-e-decisoes.md, cite -->
 
@@ -42,8 +42,8 @@
 ## Checklist do revisor
 
 - [ ] O diff cumpre o cartão e não faz mais do que ele pede
-- [ ] Estado do rio com cor + ícone + texto; fonte de 16 px; alvos de 44 px; erro com "Tentar de novo" (app)
-- [ ] Só 401 de chamada autenticada desloga (app); 403 e falha de rede não
+- [ ] Estado do rio com cor + ícone + texto; fonte de 16 px; alvos de 44 px; erro com "Tentar de novo" (frontend)
+- [ ] Só 401 de chamada autenticada desloga (frontend); 403 e falha de rede não
 - [ ] Nenhum dado inventado (capacidade, contato, coordenada) e nenhuma promessa de segurança
 - [ ] Testes cobrem os casos de erro, não só o caminho feliz
 - [ ] Docs coerentes com o código

@@ -7,15 +7,15 @@ nível, estado (Estável, Atenção, Crítico) e a estimativa de tempo até tran
 mostra os rios, a previsão do tempo, os pontos de apoio e, em breve, rotas a pé até um apoio **evitando rios
 em estado crítico**. Tudo precisa funcionar também com pouca conexão.
 
-Quem decide: **Mateus** (produto e backend). O dev do app decide a implementação das telas dentro das
+Quem decide: **Mateus** (produto e backend). O dev frontend decide a implementação das telas dentro das
 decisões abaixo. Em dúvida, abra uma issue com o rótulo `decisao`.
 
 ## 2. Arquitetura em resumo
 
 - **API** (Fastify 5, Prisma, PostgreSQL com PostGIS): estações, leituras, alertas, usuários, push, previsão
   (Open-Meteo, com cache), pontos de apoio, cidades.
-- **App** (Expo SDK 57, Expo Router, TanStack Query): consome a API; sessão no SecureStore.
-- **Regras compartilhadas** (`packages/shared`): níveis, estados e esquemas, usados pela API e pelo app.
+- **Frontend** (Expo SDK 57, Expo Router, TanStack Query): consome a API; sessão no SecureStore.
+- **Regras compartilhadas** (`packages/shared`): níveis, estados e esquemas, usados pela API e pelo frontend.
 - **Roteamento no celular** (`packages/roteamento`, `packages/desvio`): grafo de ruas do OpenStreetMap
   embutido no app, A\* próprio, desvio de rios em estado crítico a partir de dados estáticos de exposição e do
   estado dinâmico das estações. Não depende de servidor de rotas.
@@ -25,15 +25,15 @@ decisões abaixo. Em dúvida, abra uma issue com o rótulo `decisao`.
 
 **Feito:** leituras e estações, alertas, previsão, pontos de apoio por distância, cidades; cadastro, login
 (JWT de 7 dias), perfil, exclusão de conta, tokens de push, envio de push (desligado por padrão), recibos,
-cooldown, limite de tentativas; sessão no app (login, cadastro, visitante); grafo de ruas, rios, exposição,
+cooldown, limite de tentativas; sessão no frontend (login, cadastro, visitante); grafo de ruas, rios, exposição,
 A\*, instruções de curva e política de desvio; prova de viabilidade medida num Galaxy A17 no Expo Go (carga
 de 1,2 s e p95 do `rotear` de 45 ms com os dois rios críticos).
 
 **Conhecido e em aberto:**
 
-- A aba Rios do app fica em "Carregando" quando o celular não alcança a API (`APP-00` investiga).
+- A aba Rios do app fica em "Carregando" quando o celular não alcança a API (`FE-00` investiga).
 - O mapa aparece preto no Android com o Expo Go (`react-native-maps`). A biblioteca de mapa **não está
-  decidida** (`APP-00` investiga e recomenda).
+  decidida** (`FE-00` investiga e recomenda).
 - Push nunca foi testado num aparelho. Não funciona no Expo Go: exige development build.
 - O seed é fictício: 2 estações, 3 pontos de apoio. Coordenadas reais ainda não existem.
 - `docs/privacidade.md` ainda tem `[PREENCHER]`. Política de Privacidade e Termos de Uso precisam de revisão
@@ -96,13 +96,13 @@ O app deve dizer isso nos textos legais e não prometer o contrário:
 
 ## 7. Pendências externas (não bloqueiam o código, mas bloqueiam recursos)
 
-| Pendência                                                                                                                                     | Quem resolve                        | Bloqueia                                  |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ----------------------------------------- |
-| Dados oficiais da Defesa Civil (pontos de apoio 2024, rotas de fuga, ilhas de segurança, áreas de risco) e validação das constantes do desvio | Mateus                              | `BE-05`, `RT-04`                          |
-| Domínio e provedor de e-mail                                                                                                                  | Mateus                              | `BE-08` (recuperar senha)                 |
-| Conta Apple Developer (paga) e projeto Firebase; development build                                                                            | Mateus                              | `APP-16` (push)                           |
-| Decisão da biblioteca de mapa                                                                                                                 | Mateus, com o relatório do `APP-00` | `APP-04`, `APP-17`, `APP-18`              |
-| Hospedagem da API                                                                                                                             | Mateus                              | `BE-10`                                   |
-| Coordenadas reais das estações                                                                                                                | Mateus                              | seed realista, `APP-17`                   |
-| Textos legais revisados                                                                                                                       | Mateus                              | `APP-10` (Privacidade e termos)           |
-| Ajustes e exportações do Figma                                                                                                                | Designer                            | `APP-03` em diante (ilustrações e ícones) |
+| Pendência                                                                                                                                     | Quem resolve                       | Bloqueia                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------- |
+| Dados oficiais da Defesa Civil (pontos de apoio 2024, rotas de fuga, ilhas de segurança, áreas de risco) e validação das constantes do desvio | Mateus                             | `BE-05`, `RT-04`                         |
+| Domínio e provedor de e-mail                                                                                                                  | Mateus                             | `BE-08` (recuperar senha)                |
+| Conta Apple Developer (paga) e projeto Firebase; development build                                                                            | Mateus                             | `FE-16` (push)                           |
+| Decisão da biblioteca de mapa                                                                                                                 | Mateus, com o relatório do `FE-00` | `FE-04`, `FE-17`, `FE-18`                |
+| Hospedagem da API                                                                                                                             | Mateus                             | `BE-10`                                  |
+| Coordenadas reais das estações                                                                                                                | Mateus                             | seed realista, `FE-17`                   |
+| Textos legais revisados                                                                                                                       | Mateus                             | `FE-10` (Privacidade e termos)           |
+| Ajustes e exportações do Figma                                                                                                                | Designer                           | `FE-03` em diante (ilustrações e ícones) |
