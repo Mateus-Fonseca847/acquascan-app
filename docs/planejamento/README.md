@@ -1,4 +1,4 @@
-# Planejamento do AcquaScan
+# Planejamento do AquaScan
 
 Esta pasta é o plano de trabalho compartilhado entre quem cuida do **backend, dados e roteamento** e quem
 cuida do **frontend**. Cada lado tem o seu Claude Code, e os dois seguem o mesmo `CLAUDE.md`.

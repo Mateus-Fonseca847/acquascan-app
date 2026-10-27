@@ -1,4 +1,4 @@
-# AcquaScan: instruções para o Claude Code
+# AquaScan: instruções para o Claude Code
 
 App de alerta de enchentes para Petrópolis (RJ). Projeto acadêmico e de utilidade pública. Um erro aqui pode
 colocar alguém em risco: na dúvida, seja conservador e pergunte.

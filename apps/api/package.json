@@ -2,7 +2,7 @@
   "name": "@acquascan/api",
   "version": "0.1.0",
   "private": true,
-  "description": "API do AcquaScan: recebe leituras das estações, calcula o estado dos rios e serve o app",
+  "description": "API do AquaScan: recebe leituras das estações, calcula o estado dos rios e serve o app",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",

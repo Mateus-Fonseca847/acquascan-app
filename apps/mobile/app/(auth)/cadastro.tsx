@@ -109,7 +109,7 @@ export default function TelaCadastro() {
           accessibilityLabel="Aceito o uso dos meus dados"
         />
         <Text style={styles.consentimentoTexto}>
-          Aceito que o AcquaScan use a minha cidade para enviar alertas da minha região e meus dados
+          Aceito que o AquaScan use a minha cidade para enviar alertas da minha região e meus dados
           de contato apenas para avisos de segurança. Posso excluir minha conta a qualquer momento.
         </Text>
       </View>

@@ -1,6 +1,6 @@
 # Changelog
 
-Todas as mudanças relevantes do aplicativo AcquaScan (API, app mobile, pacote compartilhado e simulador).
+Todas as mudanças relevantes do aplicativo AquaScan (API, app mobile, pacote compartilhado e simulador).
 
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/). Mudanças ainda não lançadas ficam em **Não lançado**. Uma versão só recebe tag depois de validada em [docs/validacao.md](docs/validacao.md).
 
@@ -8,6 +8,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Alterado
 
+- Nome do projeto padronizado como AquaScan em toda a documentação
 - `tools/grafo`: `pnpm grafo:exposicao` passou a gravar `rios: { sha256 }` (hash do `rios-petropolis.geojson`) em `exposicao-petropolis.json`, para detectar rios e exposição de gerações diferentes. `tools/grafo` agora depende de `@acquascan/shared` (workspace)
 - A normalização de nome de rio (`normalizarNome`) saiu de `tools/grafo/src/nomes.ts` para `@acquascan/shared` (`src/rios.ts`, com testes); `nomes.ts` reexporta a função e os comandos e testes do grafo seguem iguais
 

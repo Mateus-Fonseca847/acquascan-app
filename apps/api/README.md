@@ -1,6 +1,6 @@
 # @acquascan/api
 
-A API é o centro do sistema AcquaScan. Ela recebe as medições das estações, calcula o estado de cada rio, guarda tudo no banco de dados e entrega essas informações para o app.
+A API é o centro do sistema AquaScan. Ela recebe as medições das estações, calcula o estado de cada rio, guarda tudo no banco de dados e entrega essas informações para o app.
 
 ```
 ESP32 (ou simulador) ──POST /leituras──▶  API  ◀──GET /estacoes, /previsao...── App
@@ -112,7 +112,7 @@ O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que
 
 Depois de gravar o alerta, `registrarAlerta` dispara o envio das notificações push (módulo `push`, abaixo) **sem esperar por ele**. O alerta com `enviadoEm` vazio é a caixa de saída do envio.
 
-### `cidades`: onde o AcquaScan atende
+### `cidades`: onde o AquaScan atende
 
 **Endpoint:** `GET /cidades` (público)
 

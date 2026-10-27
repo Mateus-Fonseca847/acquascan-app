@@ -2,7 +2,7 @@
   "name": "@acquascan/mobile",
   "version": "0.1.0",
   "private": true,
-  "description": "App AcquaScan (React Native + Expo)",
+  "description": "App AquaScan (React Native + Expo)",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",

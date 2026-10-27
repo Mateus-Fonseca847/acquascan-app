@@ -2,7 +2,7 @@
   "name": "acquascan-app",
   "version": "0.1.0",
   "private": true,
-  "description": "Aplicativo AcquaScan: API, banco de dados e app mobile para monitoramento dos rios de Petrópolis",
+  "description": "Aplicativo AquaScan: API, banco de dados e app mobile para monitoramento dos rios de Petrópolis",
   "packageManager": "pnpm@12.8.1",
   "engines": {
     "node": ">=22"

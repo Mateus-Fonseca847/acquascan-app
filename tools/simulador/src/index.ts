@@ -61,7 +61,7 @@ async function enviar(n: number) {
 }
 
 console.info(
-  `Simulador AcquaScan: cenário "${CENARIO}", a cada ${INTERVALO_MS / 1000} s → ${API_URL}`,
+  `Simulador AquaScan: cenário "${CENARIO}", a cada ${INTERVALO_MS / 1000} s → ${API_URL}`,
 );
 console.info('Ctrl+C para parar.\n');
 
