@@ -1,8 +1,8 @@
 /**
  * Tipos públicos da política de desvio de rios.
  */
-import type { LatLng, RotaEncontrada } from '@acquascan/roteamento';
-import type { Estado } from '@acquascan/shared';
+import type { LatLng, RotaEncontrada } from '@aquascan/roteamento';
+import type { Estado } from '@aquascan/shared';
 
 export type { Estado, LatLng, RotaEncontrada };
 

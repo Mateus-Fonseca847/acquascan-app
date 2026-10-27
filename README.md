@@ -1,8 +1,8 @@
-# AcquaScan · Aplicativo
+# AquaScan · Aplicativo
 
-> API, banco de dados e app mobile do AcquaScan: o nível dos rios de Petrópolis no celular, com alertas quando o risco aumenta.
+> API, banco de dados e app mobile do AquaScan: o nível dos rios de Petrópolis no celular, com alertas quando o risco aumenta.
 
-Este repositório contém o software do projeto. O firmware das estações está no [repositório do ESP32](https://github.com/Tidxlz/Monitoramento-Fluxo-de--gua-ESP32), e o Business Model Canvas do projeto para a Supernova SEBRAE fica no repositório [Acquascan-BMC](https://github.com/Mateus-Fonseca847/acquascan-BMC).
+Este repositório contém o software do projeto. O firmware das estações está no [repositório do ESP32](https://github.com/Tidxlz/Monitoramento-Fluxo-de--gua-ESP32), e o Business Model Canvas do projeto para a Supernova SEBRAE fica no repositório [aquascan-BMC](https://github.com/Mateus-Fonseca847/aquascan-BMC).
 
 > **Status:** v0.1.0 em desenvolvimento. A API recebe leituras, calcula o estado dos rios e registra alertas; o app mostra mapa, detalhe das estações, previsão e pontos de apoio. Cadastro, pesquisa por rua e notificações push ainda não foram implementados ([roadmap](#roadmap)).
 
@@ -38,7 +38,7 @@ Justificativas: [docs/decisoes.md](docs/decisoes.md).
 ## Estrutura
 
 ```
-acquascan-app/
+aquascan-app/
 ├── apps/
 │   ├── api/              ← API (Fastify + Prisma)
 │   └── mobile/           ← App (Expo)

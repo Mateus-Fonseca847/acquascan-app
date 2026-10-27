@@ -1,5 +1,5 @@
 {
-  "name": "@acquascan/simulador",
+  "name": "@aquascan/simulador",
   "version": "0.1.0",
   "private": true,
   "description": "Envia leituras falsas para a API, imitando uma estação ESP32",
@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@acquascan/shared": "workspace:*",
+    "@aquascan/shared": "workspace:*",
     "dotenv": "18.0.4"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-// Modelo de dados do AcquaScan. Documentação: docs/banco-de-dados.md
+// Modelo de dados do AquaScan. Documentação: docs/banco-de-dados.md
 //
 // Convenção: campos em camelCase no código, tabelas e colunas em snake_case
 // no banco (@map). Consultas SQL diretas ($queryRaw) usam os nomes do banco.

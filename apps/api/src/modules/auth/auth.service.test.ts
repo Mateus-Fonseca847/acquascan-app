@@ -1,4 +1,4 @@
-import type { CadastroEntrada } from '@acquascan/shared';
+import type { CadastroEntrada } from '@aquascan/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/prisma/client';
 import { ErroHttp } from '../../lib/erros';

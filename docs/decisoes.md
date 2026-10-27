@@ -14,14 +14,14 @@ O app precisa mostrar o caminho a pé até um ponto de apoio e, no futuro, **des
 
 ### Decisão
 
-Calcular a rota **no próprio celular**, com um **A\* escrito no projeto** (`@acquascan/roteamento`) sobre um grafo de ruas gerado a partir do OpenStreetMap. O estado dos rios entra como **multiplicadores de custo por aresta** (`>= 1`, `Infinity` bloqueia): o roteador soma `comprimento × multiplicador`, devolve o multiplicador usado em cada trecho e **não decide política de segurança**; quem chama calcula a exposição.
+Calcular a rota **no próprio celular**, com um **A\* escrito no projeto** (`@aquascan/roteamento`) sobre um grafo de ruas gerado a partir do OpenStreetMap. O estado dos rios entra como **multiplicadores de custo por aresta** (`>= 1`, `Infinity` bloqueia): o roteador soma `comprimento × multiplicador`, devolve o multiplicador usado em cada trecho e **não decide política de segurança**; quem chama calcula a exposição.
 
 ### Alternativas consideradas
 
 | Alternativa                                                           | Por que não                                                                                                                                                     |
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Serviço externo de rotas (OSRM, OpenRouteService, Google e similares) | Exige internet no pior momento; manda a localização da pessoa a terceiros; costuma ter limites de uso e custo; e raramente aceita custos por aresta nossos      |
-| Calcular a rota na API do AcquaScan                                   | Também exige internet, e a API passaria a ser um ponto único de falha justo no desastre                                                                         |
+| Calcular a rota na API do AquaScan                                    | Também exige internet, e a API passaria a ser um ponto único de falha justo no desastre                                                                         |
 | Biblioteca de grafos/rotas de terceiros                               | Dependência pesada para uma tarefa pequena; mais difícil de garantir que roda no Hermes e de controlar o custo por aresta                                       |
 | Dijkstra em vez de A\*                                                | Funciona, mas expande ~3 vezes mais nós no grafo real; ele fica no pacote só como referência de teste                                                           |
 | Bloquear de vez (`Infinity`) as ruas de risco                         | Deixa a pessoa **sem rota** se já estiver dentro da zona de risco. Por isso o contrato prevê valores enormes (ex.: 1000), que quase bloqueiam mas mantêm a rota |
@@ -46,7 +46,7 @@ O roteador não decide segurança: só soma `comprimento × multiplicador`. Falt
 
 ### Decisão
 
-Um pacote de lógica pura, `@acquascan/desvio`. **Princípio: o que o mapa mostra em vermelho é exatamente o que a rota evita**, então há uma única função, `estadoDosSegmentos`, para colorir o mapa e montar os multiplicadores. Cada trecho de rio é governado pela estação mais próxima do mesmo rio dentro de `distanciaTrechoM`; sem estação por perto, o trecho é "sem monitoramento" e não recebe desvio. Estado ruim antigo é mantido por **falha segura**. O desvio usa duas passadas: a estrita bloqueia as travessias de rio crítico; se não houver rota, a de reserva as permite com penalidade (`menos_exposta`).
+Um pacote de lógica pura, `@aquascan/desvio`. **Princípio: o que o mapa mostra em vermelho é exatamente o que a rota evita**, então há uma única função, `estadoDosSegmentos`, para colorir o mapa e montar os multiplicadores. Cada trecho de rio é governado pela estação mais próxima do mesmo rio dentro de `distanciaTrechoM`; sem estação por perto, o trecho é "sem monitoramento" e não recebe desvio. Estado ruim antigo é mantido por **falha segura**. O desvio usa duas passadas: a estrita bloqueia as travessias de rio crítico; se não houver rota, a de reserva as permite com penalidade (`menos_exposta`).
 
 | Constante                    | Valor                                  |
 | ---------------------------- | -------------------------------------- |

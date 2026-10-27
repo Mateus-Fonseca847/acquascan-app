@@ -148,7 +148,7 @@ Regras:
 
 - Nunca edite uma migração que já foi para a `main`. Crie uma nova.
 - A primeira migração (`init`) é criada no primeiro `pnpm db:migrate` e deve ser commitada.
-- Em produção, use `pnpm --filter @acquascan/api db:deploy`, que só aplica migrações existentes.
+- Em produção, use `pnpm --filter @aquascan/api db:deploy`, que só aplica migrações existentes.
 
 ## Dados de desenvolvimento
 

@@ -1,4 +1,4 @@
-import type { PontoApoio } from '@acquascan/shared';
+import type { PontoApoio } from '@aquascan/shared';
 import { FlatList, Linking, StyleSheet, Text, View } from 'react-native';
 import { Botao } from '@/components/Botao';
 import { Mensagem } from '@/components/Mensagem';

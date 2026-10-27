@@ -1,4 +1,4 @@
-import { pushTokenEntradaSchema } from '@acquascan/shared';
+import { pushTokenEntradaSchema } from '@aquascan/shared';
 import type { FastifyInstance } from 'fastify';
 import { autenticarUsuario } from '../../plugins/autenticar-usuario';
 import { registrarPushToken, removerPushToken } from './push-tokens.service';

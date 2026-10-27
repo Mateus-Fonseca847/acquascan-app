@@ -1,6 +1,6 @@
 # Changelog
 
-Todas as mudanças relevantes do aplicativo AcquaScan (API, app mobile, pacote compartilhado e simulador).
+Todas as mudanças relevantes do aplicativo AquaScan (API, app mobile, pacote compartilhado e simulador).
 
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/). Mudanças ainda não lançadas ficam em **Não lançado**. Uma versão só recebe tag depois de validada em [docs/validacao.md](docs/validacao.md).
 
@@ -8,10 +8,11 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Alterado
 
-- `tools/grafo`: `pnpm grafo:exposicao` passou a gravar `rios: { sha256 }` (hash do `rios-petropolis.geojson`) em `exposicao-petropolis.json`, para detectar rios e exposição de gerações diferentes. `tools/grafo` agora depende de `@acquascan/shared` (workspace)
-- A normalização de nome de rio (`normalizarNome`) saiu de `tools/grafo/src/nomes.ts` para `@acquascan/shared` (`src/rios.ts`, com testes); `nomes.ts` reexporta a função e os comandos e testes do grafo seguem iguais
+- Nome do projeto padronizado como AquaScan em toda a documentação
+- `tools/grafo`: `pnpm grafo:exposicao` passou a gravar `rios: { sha256 }` (hash do `rios-petropolis.geojson`) em `exposicao-petropolis.json`, para detectar rios e exposição de gerações diferentes. `tools/grafo` agora depende de `@aquascan/shared` (workspace)
+- A normalização de nome de rio (`normalizarNome`) saiu de `tools/grafo/src/nomes.ts` para `@aquascan/shared` (`src/rios.ts`, com testes); `nomes.ts` reexporta a função e os comandos e testes do grafo seguem iguais
 
-- Cadastro (RF01): o usuário escolhe a **cidade** (`cidadeId`, lista de `GET /cidades`) no lugar do CEP, no esquema de `@acquascan/shared`, na API e na tela do app. A tela agora envia o cadastro à API
+- Cadastro (RF01): o usuário escolhe a **cidade** (`cidadeId`, lista de `GET /cidades`) no lugar do CEP, no esquema de `@aquascan/shared`, na API e na tela do app. A tela agora envia o cadastro à API
 - `usuarios.cidade_id` passou a ser obrigatório (migração `cadastro_por_cidade`)
 - O log de cada requisição passa a trazer só método e caminho, sem host, IP nem query string (`lib/log.ts`). Antes o Fastify registrava `remoteAddress`, `remotePort` e a URL completa
 - Erros de requisição causados pelo cliente que o próprio Fastify detecta (como JSON malformado) passam a responder 400 `Requisição inválida`, em vez de 500 com registro no log
@@ -27,7 +28,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ### Removido
 
 - CEP, latitude e longitude do usuário: campos do cadastro, colunas `usuarios.cep`, `latitude` e `longitude` (apagadas na migração `cadastro_por_cidade`) e a consulta de CEP na BrasilAPI (`lib/cep.ts`), por minimização de dados (LGPD) e para o cadastro não depender de serviço externo
-- Telefone do cadastro de usuário (campo no app, validação em `@acquascan/shared` e coluna `usuarios.telefone` via migração `remove_telefone_usuario`), por não ter finalidade e em respeito ao princípio da minimização da LGPD
+- Telefone do cadastro de usuário (campo no app, validação em `@aquascan/shared` e coluna `usuarios.telefone` via migração `remove_telefone_usuario`), por não ter finalidade e em respeito ao princípio da minimização da LGPD
 
 ### Adicionado
 
@@ -36,7 +37,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Comando `pnpm dados:app`: confere que grafo, rios e exposição são da mesma geração (`sha256` do grafo e dos rios registrados na exposição, e número de arestas) e os copia para `apps/mobile/assets/roteamento/` (ignorado pelo git por enquanto: derivados do OSM, licença ODbL), com `versao.json` (três hashes e data)
 - `src/roteamento/dados.ts` no app: `carregarRoteamento(estacoes)` com carregamento preguiçoso (`require` dentro da função, dependência opcional do Metro: o typecheck e o bundle não quebram sem os arquivos) e cache; devolve `{ roteador, desvio, tempos }`
 - Tela de prova só em desenvolvimento (`app/(dev)/rota-teste.tsx`, botão "Teste de roteamento" no Perfil com `__DEV__`): tempos de carga, 100 rotas em dois modos (sem risco e rios em CRÍTICO) com mediana, p95 e máximo do `rotear` e do `gerarPassos`, uma rota no mapa e os 10 primeiros passos; também escreve uma linha `[R7a]` no console
-- O app passa a depender dos workspaces `@acquascan/roteamento` e `@acquascan/desvio`. Funções puras (`src/roteamento/puro.ts`, `tools/grafo/src/dados-app.ts`) com testes no vitest de `tools/grafo`; a tela e o `dados.ts` ficam sem teste automático (o app não tem runner)
+- O app passa a depender dos workspaces `@aquascan/roteamento` e `@aquascan/desvio`. Funções puras (`src/roteamento/puro.ts`, `tools/grafo/src/dados-app.ts`) com testes no vitest de `tools/grafo`; a tela e o `dados.ts` ficam sem teste automático (o app não tem runner)
   **Instruções de curva e acompanhamento** (`packages/roteamento`, quinta etapa do roteamento; só lógica pura, sem mudar API, app, banco, `packages/desvio` nem `tools/`)
 
 - `gerarPassos(rota, atributos, { nomeDestino? })`: instruções em português ("Siga para o norte pela Rua X", "Vire à direita na Avenida Y", "Atravesse a ponte", "Você chegou: ..."), com ângulo pelo rumo médio de 15 m, agrupamento por nome, suavização de manobras a menos de 15 m, avisos `ESCADA`, `TRILHA`, `PONTE` e `TUNEL`, passos de encaixe maior que 30 m e preposição pelo tipo do nome
@@ -45,7 +46,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes sem rede com geometrias sintéticas e, se `tools/grafo/saida` existir, 300 pares no grafo real. Limitações: rotatórias viram curvas comuns e as preposições são heurísticas
   **Desvio de rios** (`packages/desvio`, quarta etapa do roteamento; só lógica pura, sem mudar API, app, banco nem `packages/roteamento`)
 
-- Pacote `@acquascan/desvio`: `criarDesvio({ roteador, exposicao, rios }, estacoes, politica?)` valida os dados (erros em português) e oferece `estadosEfetivos`, `estadoDosSegmentos` (fonte única do mapa e do desvio), `rotear` (modos `sem_risco`, `segura` e `menos_exposta`, duas passadas, avisos), `escolherApoio` e `resumoCobertura`
+- Pacote `@aquascan/desvio`: `criarDesvio({ roteador, exposicao, rios }, estacoes, politica?)` valida os dados (erros em português) e oferece `estadosEfetivos`, `estadoDosSegmentos` (fonte única do mapa e do desvio), `rotear` (modos `sem_risco`, `segura` e `menos_exposta`, duas passadas, avisos), `escolherApoio` e `resumoCobertura`
 - Política `POLITICA_PADRAO` com todas as constantes comentadas e marcadas como **PROVISÓRIAS** (validar com a Defesa Civil); **falha segura**: CRITICO e ATENCAO antigos valem por até 6 h
 - Testes sem rede com mundos sintéticos, teste de propriedade (tudo ESTAVEL = rota normal), guarda de plataforma (sem Node em `src/`) e, se `tools/grafo/saida` existir, dados reais de Petrópolis
 - Documentação: `packages/desvio/README.md`, decisão em `docs/decisoes.md` e fluxo em `docs/arquitetura.md`
@@ -56,7 +57,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Sessão persistida no `expo-secure-store` (token, perfil em cache e "boas-vindas vistas"), provedor `useSessao()` com os estados `carregando`, `novo`, `visitante` e `logado`, e portão de navegação com `Stack.Protected`
 - Tela de boas-vindas com "Entrar na minha conta", "Criar conta" e "Continuar sem conta"; o visitante usa mapa, previsão e apoio sem restrição
 - Perfil mostra nome, e-mail e cidade e tem "Sair da conta" com confirmação
-- Tipos `UsuarioResumo`, `LoginResposta` e `CadastroResposta` em `@acquascan/shared`
+- Tipos `UsuarioResumo`, `LoginResposta` e `CadastroResposta` em `@aquascan/shared`
 - O app continua logado, com o perfil em cache, quando abre sem internet; só um 401 encerra a sessão
 
 **Estrutura**
@@ -90,13 +91,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - JWT com `@fastify/jwt` (HS256, `sub` com o id do usuário e validade em `JWT_EXPIRA_EM`, padrão 7 dias), com as variáveis `JWT_SECRET` e `JWT_EXPIRA_EM`
 - Plugin `autenticar-usuario`: valida o token, busca o usuário no banco e o disponibiliza em `request.usuario`
 - Limite de tentativas (`@fastify/rate-limit`, contadores em memória): login 10 por 15 min por IP + e-mail e 40 por 15 min por IP, cadastro 20 por hora por IP e exclusão de conta 5 por 15 min por IP; ao passar, 429 com `Retry-After` e cabeçalhos `x-ratelimit-*`. Números em `config/limites.ts`. Nova variável `TRUST_PROXY` (padrão `false`), necessária atrás de um proxy
-- Cooldown de push por estação (antiflapping, RF08): depois de um push, outro alerta da mesma estação dentro de `PUSH_COOLDOWN_MIN` minutos (padrão 30, estimativa a ajustar com dados reais do sensor; 0 desliga) só notifica se for mais grave (por exemplo, atenção para crítico). O alerta suprimido continua registrado e em `GET /alertas`, com a marca `alertas.push_suprimido_em` (migração `alerta_push_suprimido_em`); só a notificação não sai. Envio que falhou não inicia cooldown, e alerta sem tokens na cidade conta como enviado. `estadoMaisGrave` em `@acquascan/shared`
+- Cooldown de push por estação (antiflapping, RF08): depois de um push, outro alerta da mesma estação dentro de `PUSH_COOLDOWN_MIN` minutos (padrão 30, estimativa a ajustar com dados reais do sensor; 0 desliga) só notifica se for mais grave (por exemplo, atenção para crítico). O alerta suprimido continua registrado e em `GET /alertas`, com a marca `alertas.push_suprimido_em` (migração `alerta_push_suprimido_em`); só a notificação não sai. Envio que falhou não inicia cooldown, e alerta sem tokens na cidade conta como enviado. `estadoMaisGrave` em `@aquascan/shared`
 - Conferência dos recibos (receipts) do Expo Push, segunda etapa do RF08: o envio guarda o ticket de cada mensagem aceita (tabela `push_tickets`, migração `adiciona_push_tickets`, com `ON DELETE CASCADE` para o token e o alerta) e, a cada 5 minutos, a API consulta os recibos dos tickets com 15 minutos ou mais, em lotes de até 1000 ids. Recibo `ok` apaga o ticket; `DeviceNotRegistered` apaga o push token; `InvalidCredentials` gera um único aviso por execução do processo; outros erros são contados por código, sem reenviar; recibo ausente mantém o ticket; tickets com mais de 24 horas são descartados como "sem recibo". Nova variável `EXPO_RECIBOS_URL` e constantes em `config/push.ts`. O log traz só contagens
-- Envio de notificações push quando o estado de um rio piora (RF08), pelo Expo Push Service, para os usuários da cidade da estação. Alertas são uma caixa de saída (`enviadoEm`): enviados em lotes de 100, com até 3 tentativas em 429/5xx, só os das últimas 1 hora, apagando tokens com `DeviceNotRegistered`; `enviadoEm` só é preenchido quando todos os lotes foram aceitos (pode duplicar, não perde). Roda logo após o alerta, sem atrasar o `POST /leituras`, e a cada 30 s. Variáveis `PUSH_ENVIO_ATIVO` (padrão `false`), `EXPO_PUSH_URL` e `EXPO_ACCESS_TOKEN`; `ROTULO_ESTADO` em `@acquascan/shared`. Os recibos de entrega são conferidos (veja a entrada acima)
-- Registro de tokens de push (RF08, primeira etapa; nenhuma notificação é enviada ainda): `POST` e `DELETE /usuarios/me/push-token`. O token do Expo é único e passa a ser do usuário da sessão se já existia (reatribuição), cada usuário guarda no máximo 10 (os mais antigos saem) e o `DELETE` só apaga tokens do próprio usuário, sempre com 204. Coluna `push_tokens.atualizado_em` (migração `push_token_atualizado_em`) e `pushTokenEntradaSchema` em `@acquascan/shared`. O token nunca vai para log. O app só gera o token em aparelho físico com development build, não no Expo Go
-- `GET /usuarios/me`: perfil de quem está logado (`id`, `nome`, `email`, `consentimentoEm`, `criadoEm` e `cidade`), sem a senha; tipo `Perfil` em `@acquascan/shared`
-- `DELETE /auth/conta` (LGPD): exclui a conta de quem está logado, confirmada pela senha (403 se estiver errada), e apaga também os tokens de push; responde 204, inclusive se a conta já tiver sido apagada. Esquema `excluirContaEntradaSchema` em `@acquascan/shared`
-- Cidades: tabela `cidades` (nome, UF, centro), `cidadeId` obrigatório nas estações e nos usuários (migrações `adiciona_cidades` e `cadastro_por_cidade`, que criam Petrópolis/RJ e ligam a ela as estações e os usuários existentes), tipo `Cidade` em `@acquascan/shared` e `GET /cidades`, público e em ordem alfabética
+- Envio de notificações push quando o estado de um rio piora (RF08), pelo Expo Push Service, para os usuários da cidade da estação. Alertas são uma caixa de saída (`enviadoEm`): enviados em lotes de 100, com até 3 tentativas em 429/5xx, só os das últimas 1 hora, apagando tokens com `DeviceNotRegistered`; `enviadoEm` só é preenchido quando todos os lotes foram aceitos (pode duplicar, não perde). Roda logo após o alerta, sem atrasar o `POST /leituras`, e a cada 30 s. Variáveis `PUSH_ENVIO_ATIVO` (padrão `false`), `EXPO_PUSH_URL` e `EXPO_ACCESS_TOKEN`; `ROTULO_ESTADO` em `@aquascan/shared`. Os recibos de entrega são conferidos (veja a entrada acima)
+- Registro de tokens de push (RF08, primeira etapa; nenhuma notificação é enviada ainda): `POST` e `DELETE /usuarios/me/push-token`. O token do Expo é único e passa a ser do usuário da sessão se já existia (reatribuição), cada usuário guarda no máximo 10 (os mais antigos saem) e o `DELETE` só apaga tokens do próprio usuário, sempre com 204. Coluna `push_tokens.atualizado_em` (migração `push_token_atualizado_em`) e `pushTokenEntradaSchema` em `@aquascan/shared`. O token nunca vai para log. O app só gera o token em aparelho físico com development build, não no Expo Go
+- `GET /usuarios/me`: perfil de quem está logado (`id`, `nome`, `email`, `consentimentoEm`, `criadoEm` e `cidade`), sem a senha; tipo `Perfil` em `@aquascan/shared`
+- `DELETE /auth/conta` (LGPD): exclui a conta de quem está logado, confirmada pela senha (403 se estiver errada), e apaga também os tokens de push; responde 204, inclusive se a conta já tiver sido apagada. Esquema `excluirContaEntradaSchema` em `@aquascan/shared`
+- Cidades: tabela `cidades` (nome, UF, centro), `cidadeId` obrigatório nas estações e nos usuários (migrações `adiciona_cidades` e `cadastro_por_cidade`, que criam Petrópolis/RJ e ligam a ela as estações e os usuários existentes), tipo `Cidade` em `@aquascan/shared` e `GET /cidades`, público e em ordem alfabética
 
 **Mobile**
 
@@ -125,7 +126,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 **Roteamento** (`packages/roteamento`, segunda etapa do roteamento offline; só o pacote, sem mudar API, app, banco nem `tools/grafo`)
 
-- Pacote `@acquascan/roteamento`: `criarRoteador(grafo)` valida o JSON de `tools/grafo` (erro claro em português) e monta as estruturas indexadas (grafo em CSR com typed arrays, geometrias achatadas e índice espacial em grade de ~100 m)
+- Pacote `@aquascan/roteamento`: `criarRoteador(grafo)` valida o JSON de `tools/grafo` (erro claro em português) e monta as estruturas indexadas (grafo em CSR com typed arrays, geometrias achatadas e índice espacial em grade de ~100 m)
 - `encaixar(ponto)`: o ponto mais próximo sobre qualquer aresta, com a posição ao longo dela (fração da geometria simplificada vezes o comprimento)
 - `rotear(origem, destino)`: A\* com heap binário próprio e heurística admissível, com origem e destino no meio de arestas (fontes e destinos virtuais), trajeto direto na mesma aresta, sentido único, e `trechos` com nome, classe, sentido, comprimento da parte percorrida, multiplicador e pontos orientados
 - Multiplicador de custo por aresta (`Float32Array`, `>= 1` ou `Infinity`): o ponto de extensão do futuro desvio de rios. O roteador só devolve o multiplicador usado em cada trecho; não decide política de segurança

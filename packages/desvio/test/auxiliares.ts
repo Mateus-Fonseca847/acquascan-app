@@ -8,8 +8,8 @@ import {
   type ArestaBruta,
   type GrafoBruto,
   type Roteador,
-} from '@acquascan/roteamento';
-import type { Estado } from '@acquascan/shared';
+} from '@aquascan/roteamento';
+import type { Estado } from '@aquascan/shared';
 import {
   criarDesvio,
   type Desvio,

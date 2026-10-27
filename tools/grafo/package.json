@@ -1,5 +1,5 @@
 {
-  "name": "@acquascan/grafo",
+  "name": "@aquascan/grafo",
   "version": "0.1.0",
   "private": true,
   "description": "Constrói o grafo de ruas a pé de Petrópolis a partir do OpenStreetMap (base do roteamento offline do app)",
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@acquascan/shared": "workspace:*"
+    "@aquascan/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.20.4",

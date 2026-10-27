@@ -3,7 +3,7 @@
  * O token fica no armazenamento seguro (services/sessao.ts) e em memória (services/api.ts).
  * As regras de decisão são funções puras em services/regras.ts.
  */
-import type { CadastroEntrada, Perfil } from '@acquascan/shared';
+import type { CadastroEntrada, Perfil } from '@aquascan/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,

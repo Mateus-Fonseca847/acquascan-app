@@ -1,5 +1,5 @@
 {
-  "name": "@acquascan/desvio",
+  "name": "@aquascan/desvio",
   "version": "0.1.0",
   "private": true,
   "description": "Política de desvio de rios: junta o roteador, a exposição das ruas e o estado das estações para recomendar a rota mais segura. Roda no celular (Hermes) e no Node",
@@ -14,8 +14,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@acquascan/roteamento": "workspace:*",
-    "@acquascan/shared": "workspace:*"
+    "@aquascan/roteamento": "workspace:*",
+    "@aquascan/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.20.4",

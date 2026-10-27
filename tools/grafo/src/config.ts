@@ -26,7 +26,7 @@ export const BBOX_PETROPOLIS: Bbox = {
 export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 
 /** Identifica o projeto para quem opera a Overpass (política de uso da API pública). */
-export const USER_AGENT = 'acquascan-grafo/1.0 (projeto acadêmico)';
+export const USER_AGENT = 'aquascan-grafo/1.0 (projeto acadêmico)';
 
 /** Tolerância do Douglas-Peucker na geometria das arestas, em metros. */
 export const TOLERANCIA_SIMPLIFICACAO_M = 3;

@@ -1,4 +1,4 @@
-# AcquaScan: instruções para o Claude Code
+# AquaScan: instruções para o Claude Code
 
 App de alerta de enchentes para Petrópolis (RJ). Projeto acadêmico e de utilidade pública. Um erro aqui pode
 colocar alguém em risco: na dúvida, seja conservador e pergunte.
@@ -33,7 +33,7 @@ pnpm dev:api                  pnpm dev:mobile -- --clear
 pnpm typecheck                pnpm test    pnpm format:check
 pnpm dados:app                (copia grafo, rios e exposição para o frontend)
 pnpm grafo:construir | grafo:rios | grafo:exposicao   (rodar sempre rios e exposição juntos)
-pnpm --filter @acquascan/api db:generate               (após mudar o schema)
+pnpm --filter @aquascan/api db:generate               (após mudar o schema)
 ```
 
 ## Fluxo de trabalho

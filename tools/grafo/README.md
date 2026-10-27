@@ -33,13 +33,13 @@ Overpass API ──(1 consulta, com cache)──▶ JSON bruto ──▶ caminha
 | `src/relatorio.ts`  | Métricas e o texto do relatório                                                         |
 | `src/main.ts`       | Orquestra tudo e grava os arquivos                                                      |
 
-Só `baixar.ts` usa rede e só `main.ts` grava a saída; o resto é lógica pura, testada em memória (`pnpm --filter @acquascan/grafo test`, sem rede).
+Só `baixar.ts` usa rede e só `main.ts` grava a saída; o resto é lógica pura, testada em memória (`pnpm --filter @aquascan/grafo test`, sem rede).
 
 ## O download e o cache
 
 - É **uma única consulta** à [Overpass API](https://overpass-api.de/) pública (`https://overpass-api.de/api/interpreter`), que pede todos os ways `highway` dentro da bbox e, pela recursão `>`, os nós de cada um (`out body`, formato JSON).
 - A API pública é um recurso comunitário: a ferramenta **nunca consulta em laço nem sem cache**. A primeira execução baixa (cerca de 6 MB para Petrópolis, em menos de um minuto); as seguintes só leem `tools/grafo/cache/`.
-- Identifica-se com o `User-Agent` `acquascan-grafo/1.0 (projeto acadêmico)`, tem tempo limite e, se falhar por rede, 429 ou 5xx, faz **no máximo 2 novas tentativas** (esperas de 5 s e 10 s). Outro 4xx (consulta recusada) não é repetido.
+- Identifica-se com o `User-Agent` `aquascan-grafo/1.0 (projeto acadêmico)`, tem tempo limite e, se falhar por rede, 429 ou 5xx, faz **no máximo 2 novas tentativas** (esperas de 5 s e 10 s). Outro 4xx (consulta recusada) não é repetido.
 - A Overpass às vezes responde 200 com um aviso de erro e dados **parciais** (por exemplo, consulta que estourou o tempo). Isso é tratado como falha e **nunca vai para o cache**.
 - O nome do arquivo de cache vem de um hash da consulta: mudar a bbox usa outro arquivo e baixa de novo sozinho. Para forçar um novo download com a mesma bbox, use `--atualizar`. Para limpar tudo, apague a pasta `cache/`.
 
@@ -285,7 +285,7 @@ A **cobertura do monitoramento** refaz o cruzamento com **todos** os waterways d
 ## Testes
 
 ```bash
-pnpm --filter @acquascan/grafo test
+pnpm --filter @aquascan/grafo test
 ```
 
 Sem rede, com fixtures mínimas em memória (ruas e rios): cada regra de inclusão e exclusão de `caminhavel`, haversine contra distâncias conhecidas, Douglas-Peucker (extremos mantidos, colineares removidos), compressão de nós de grau 2, interseção virando nó, descarte de ilhas, marcação de ponte e escada, `oneway:foot`, e o cache e as tentativas do download (com um `fetch` falso). Para os rios: normalização de nomes, igualdade exata (não "contém"), nome vindo da relação, flags `coberto` e `canal`, sentido preservado após simplificar, componentes e lacunas (20 m reportada, 100 m não), resposta parcial rejeitada, rio fora da lista só no relatório, e o relatório. Para a exposição: distância e interseção de segmentos (em X, toque na ponta, paralelas), o índice em grade contra a comparação de tudo com tudo, as frações (rua paralela a 10, 20 e 40 m do rio, rua que cruza em ângulo, rua meio exposta, amostra atribuída ao segmento mais próximo com soma menor ou igual a 1), o erro da projeção plana contra o haversine, os aliases e a absorção de ways sem nome (que nunca absorve way com outro nome), a estabilidade dos ids, o formato compacto do arquivo (com o sha256 do grafo e dos rios), a cobertura e o relatório.

@@ -2,7 +2,7 @@
  * Regras puras da API e da sessão (sem rede, sem armazenamento, sem React).
  * Ficam isoladas aqui para poderem ser testadas quando o app ganhar um runner de testes.
  */
-import type { Perfil } from '@acquascan/shared';
+import type { Perfil } from '@aquascan/shared';
 
 export const MENSAGEM_SEM_CONEXAO = 'Sem conexão. Verifique sua internet e tente de novo.';
 export const AVISO_SESSAO_EXPIROU = 'Sua sessão expirou. Entre de novo.';

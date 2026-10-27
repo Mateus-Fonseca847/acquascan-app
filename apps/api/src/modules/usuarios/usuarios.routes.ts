@@ -1,4 +1,4 @@
-import type { Perfil } from '@acquascan/shared';
+import type { Perfil } from '@aquascan/shared';
 import type { FastifyInstance } from 'fastify';
 import { autenticarUsuario } from '../../plugins/autenticar-usuario';
 import { buscarPerfil } from './usuarios.service';

@@ -1,4 +1,4 @@
-import type { Rio } from '@acquascan/shared';
+import type { Rio } from '@aquascan/shared';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../lib/prisma';
 import { paraEstacaoResumo } from '../estacoes/estacoes.mapper';

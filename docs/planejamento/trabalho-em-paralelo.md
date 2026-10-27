@@ -43,7 +43,7 @@ O frontend não espera a API ficar pronta. O protocolo, para cada endpoint novo:
 1. **PR de contrato** (Backend): tipos em `packages/shared` e a seção correspondente em `docs/api.md` e em
    [contratos-api.md](contratos-api.md), sem implementação. Mergeia rápido.
 2. **O frontend constrói a tela atrás de uma flag** em `apps/mobile/src/config/recursos.ts`, desligada, usando
-   dados de exemplo em `apps/mobile/src/fixtures/` tipados com os tipos de `@acquascan/shared`. Se o contrato
+   dados de exemplo em `apps/mobile/src/fixtures/` tipados com os tipos de `@aquascan/shared`. Se o contrato
    mudar, o compilador avisa.
 3. **PR de implementação** (Backend): endpoint pronto, testes, docs e status do contrato atualizado.
 4. **O frontend liga a flag** (PR de uma linha em `recursos.ts`), troca a fixture pelo hook real e testa no
@@ -59,8 +59,8 @@ Mudança que quebra o frontend precisa de aviso explícito na issue antes do mer
 2. **Trabalhar:** de preferência num `git worktree` por tarefa:
    ```
    git fetch origin
-   git worktree add ../acquascan-fe-03 -b feat/fe-03-auth-visual origin/main
-   cd ../acquascan-fe-03
+   git worktree add ../aquascan-fe-03 -b feat/fe-03-auth-visual origin/main
+   cd ../aquascan-fe-03
    pnpm install
    ```
    Copie os `.env` da pasta principal. Cada worktree tem os seus `node_modules`.

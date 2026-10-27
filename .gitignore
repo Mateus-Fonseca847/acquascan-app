@@ -6,7 +6,7 @@ node_modules/
 .env.*
 !.env.example
 
-# Prisma Client gerado (recriado com "pnpm --filter @acquascan/api db:generate")
+# Prisma Client gerado (recriado com "pnpm --filter @aquascan/api db:generate")
 apps/api/src/generated/
 
 # Expo

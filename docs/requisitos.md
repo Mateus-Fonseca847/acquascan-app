@@ -1,6 +1,6 @@
 # Requisitos
 
-Derivados do mapa mental do aplicativo (repositório acquascan-supernova, `docs/02-solucao/mapa-mental.png`). Cada requisito tem um código (RF = funcional, RNF = não funcional) para ser citado em commits, pull requests e TODOs no código.
+Derivados do mapa mental do aplicativo (repositório aquascan-supernova, `docs/02-solucao/mapa-mental.png`). Cada requisito tem um código (RF = funcional, RNF = não funcional) para ser citado em commits, pull requests e TODOs no código.
 
 ## Funcionais
 

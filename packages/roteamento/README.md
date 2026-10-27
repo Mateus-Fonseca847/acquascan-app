@@ -1,9 +1,9 @@
-# @acquascan/roteamento
+# @aquascan/roteamento
 
 Roteamento **a pé, offline**: recebe o grafo de ruas gerado por [`tools/grafo`](../../tools/grafo/README.md) e calcula o caminho entre dois pontos com **A\***. Foi escrito para rodar no celular (motor Hermes do app) e também no Node (testes e ferramentas). É a segunda etapa do roteamento offline; a quinta acrescentou as instruções de curva e o acompanhamento da rota (veja abaixo). A leitura dos rios fica em [`packages/desvio`](../desvio/README.md).
 
 ```ts
-import { criarRoteador } from '@acquascan/roteamento';
+import { criarRoteador } from '@aquascan/roteamento';
 
 const roteador = criarRoteador(grafoJson); // o conteúdo de grafo-petropolis.json
 
@@ -188,7 +188,7 @@ O celular será mais lento que o computador; vale medir lá antes de tirar concl
 ## Testes
 
 ```bash
-pnpm --filter @acquascan/roteamento test
+pnpm --filter @aquascan/roteamento test
 ```
 
 Sem rede. Cobrem: encaixe (sobre a aresta, ao lado, perto de um nó, além do limite, e contra uma busca por força bruta); rotas em grafos feitos à mão (caminho único, dois caminhos, multiplicadores 3 e 1000, `Infinity` com e sem alternativa, mesma aresta nos dois sentidos, origem igual ao destino, ilhas, junções sem vértices repetidos, sentido inverso, sentido único); validação das entradas; a guarda de plataforma; e a comparação com um **Dijkstra ingênuo** (dentro do teste) em grades aleatórias de 30×30, com 300 pares e multiplicadores aleatórios (inclusive `Infinity`), exigindo custo **igual**. Para as instruções: curvas de 90 graus (direita e esquerda), T e X, curva leve, fechada e retorno, nomes iguais e diferentes em frente, trechos unificados, manobras a menos de 15 m, ponte, escada, túnel e trilha, cada classe sem nome, encaixes grandes e pequenos, os oito pontos cardeais e suas fronteiras, formatação de distância e duração, preposições por tipo de nome e as invariantes (soma das distâncias e índices crescentes). Para o acompanhamento: caminhada com ruído de 8 m (PRNG semeado) que termina em `chegou` sem nunca marcar `foraDaRota`, desvio de 100 m (só na terceira amostra), rota que passa duas vezes perto do mesmo ponto e GPS que recua 15 m. Se `tools/grafo/saida/grafo-petropolis.json` existir, o grafo real também é conferido (e 300 pares aleatórios têm as invariantes das instruções verificadas) (200 pares sem `sem_caminho`, e 100 com multiplicadores); sem o arquivo (como no CI), essa parte é pulada.

@@ -1,4 +1,4 @@
-import { leituraEntradaSchema } from '@acquascan/shared';
+import { leituraEntradaSchema } from '@aquascan/shared';
 import type { FastifyInstance } from 'fastify';
 import { autenticarEstacao } from '../../plugins/autenticar-estacao';
 import { registrarLeitura } from './leituras.service';

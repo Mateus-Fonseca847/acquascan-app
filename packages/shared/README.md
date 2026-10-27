@@ -1,4 +1,4 @@
-# @acquascan/shared
+# @aquascan/shared
 
 Código usado ao mesmo tempo pela API, pelo app e pelo simulador. Mudar algo aqui afeta os três.
 
@@ -10,7 +10,7 @@ Código usado ao mesmo tempo pela API, pelo app e pelo simulador. Mudar algo aqu
 | `src/tipos.ts`    | Formato das respostas da API                                                          |
 
 ```bash
-pnpm --filter @acquascan/shared test
+pnpm --filter @aquascan/shared test
 ```
 
 Toda regra nova em `estado.ts` ou `chuva.ts` deve vir com teste.

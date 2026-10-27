@@ -3,7 +3,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { criarRoteador } from '@acquascan/roteamento';
+import { criarRoteador } from '@aquascan/roteamento';
 import { describe, expect, it } from 'vitest';
 import { criarDesvio, type RiosGeoJson } from './index';
 

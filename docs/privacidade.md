@@ -1,6 +1,6 @@
 # Privacidade e LGPD
 
-O AcquaScan coleta dados pessoais no cadastro. A Lei Geral de Proteção de Dados (Lei 13.709/2018) exige finalidade clara, coleta mínima, consentimento e direito de exclusão.
+O AquaScan coleta dados pessoais no cadastro. A Lei Geral de Proteção de Dados (Lei 13.709/2018) exige finalidade clara, coleta mínima, consentimento e direito de exclusão.
 
 ## Dados coletados
 
@@ -20,7 +20,7 @@ O token de push identifica o **aparelho** do usuário, e por isso é tratado com
 - fica em `push_tokens`, ligado à conta, e **sai junto com ela** na exclusão da conta;
 - se outra pessoa entrar no mesmo aparelho, o token é **reatribuído** a quem entrou: o dono anterior deixa de receber alertas ali;
 - cada usuário guarda no máximo 10 aparelhos (os mais antigos saem primeiro);
-- nunca aparece em log, resposta ou mensagem de erro, e só é usado para enviar os alertas do AcquaScan.
+- nunca aparece em log, resposta ou mensagem de erro, e só é usado para enviar os alertas do AquaScan.
 
 O app só consegue gerar o token em aparelho físico com development build (não no Expo Go).
 
@@ -34,7 +34,7 @@ Ao entrar, o app guarda no **armazenamento seguro do aparelho** (Keychain no iOS
 
 ## Minimização
 
-O AcquaScan não guarda telefone, CEP, endereço nem a localização exata do usuário: só a cidade, que basta para escolher os alertas. A cidade vem de uma lista da própria API, então nenhum dado do usuário é enviado a serviços de terceiros no cadastro.
+O AquaScan não guarda telefone, CEP, endereço nem a localização exata do usuário: só a cidade, que basta para escolher os alertas. A cidade vem de uma lista da própria API, então nenhum dado do usuário é enviado a serviços de terceiros no cadastro.
 
 ## Como funciona a exclusão da conta
 
@@ -47,7 +47,7 @@ Não são apagados os dados que não pertencem ao usuário: a cidade, as estaç�
 
 ## Regras de implementação
 
-- **Consentimento:** o cadastro só é aceito com `consentimento: true` (validado em `@acquascan/shared`) e a data é salva em `consentimento_em`.
+- **Consentimento:** o cadastro só é aceito com `consentimento: true` (validado em `@aquascan/shared`) e a data é salva em `consentimento_em`.
 - **Senhas:** sempre com hash lento (scrypt ou argon2). Nunca em texto, nunca em log.
 - **Exclusão:** `DELETE /auth/conta` apaga a conta do usuário logado (ver abaixo). O app ainda não tem o botão: a exclusão já funciona na API.
 - **Logs:** não registrar e-mail, nome, senha, token de push, IP, query string nem o corpo das requisições nos logs da API (o log traz só método e caminho). Nem o envio de notificações registra tokens ou mensagens: só contagens. O IP e o e-mail usados no limite de tentativas ficam apenas na memória da API, como chave do contador, e somem quando ela reinicia.

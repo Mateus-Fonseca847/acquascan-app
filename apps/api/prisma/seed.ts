@@ -7,7 +7,7 @@
  * Executar: pnpm db:seed (na raiz)
  */
 import 'dotenv/config';
-import { avaliarLeitura } from '@acquascan/shared';
+import { avaliarLeitura } from '@aquascan/shared';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
 import { hashToken } from '../src/lib/token';
