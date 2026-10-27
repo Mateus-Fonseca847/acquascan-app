@@ -1,7 +1,7 @@
 # Planejamento do AcquaScan
 
 Esta pasta é o plano de trabalho compartilhado entre quem cuida do **backend, dados e roteamento** e quem
-cuida do **app**. Cada lado tem o seu Claude Code, e os dois seguem o mesmo `CLAUDE.md`.
+cuida do **frontend**. Cada lado tem o seu Claude Code, e os dois seguem o mesmo `CLAUDE.md`.
 
 ## Ordem de leitura
 
@@ -9,8 +9,8 @@ cuida do **app**. Cada lado tem o seu Claude Code, e os dois seguem o mesmo `CLA
 | --- | -------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | 1   | [contexto-e-decisoes.md](contexto-e-decisoes.md)   | O produto, o estado atual e as decisões vigentes (inclui onde o PDF do Figma não vale) |
 | 2   | [trabalho-em-paralelo.md](trabalho-em-paralelo.md) | Dono de cada pasta, branches, PRs, arquivos que dão conflito                           |
-| 3   | [contratos-api.md](contratos-api.md)               | Endpoints e campos planejados, para o app e a API andarem em paralelo                  |
-| 4   | [tarefas-app.md](tarefas-app.md)                   | Cartões do app (`APP-xx`)                                                              |
+| 3   | [contratos-api.md](contratos-api.md)               | Endpoints e campos planejados, para o frontend e a API andarem em paralelo             |
+| 4   | [tarefas-frontend.md](tarefas-frontend.md)         | Cartões do frontend (`FE-xx`)                                                          |
 | 5   | [tarefas-backend.md](tarefas-backend.md)           | Cartões do backend, dados e roteamento (`BE-xx`, `RT-xx`)                              |
 | 6   | [quadro.md](quadro.md)                             | Status de cada cartão                                                                  |
 
@@ -18,13 +18,14 @@ cuida do **app**. Cada lado tem o seu Claude Code, e os dois seguem o mesmo `CLA
 
 | ID              | Significa                                                                                          |
 | --------------- | -------------------------------------------------------------------------------------------------- |
-| `APP-xx`        | Tarefa do app (`apps/mobile`)                                                                      |
+| `FE-xx`         | Tarefa do frontend (`apps/mobile`)                                                                 |
 | `BE-xx`         | Tarefa do backend (`apps/api`, `packages/shared`, banco, CI)                                       |
 | `RT-xx`         | Tarefa de roteamento, dados geográficos e desvio de rios                                           |
-| Contrato        | Descrição de endpoint ou campo que o app e a API combinam antes de implementar                     |
+| Contrato        | Descrição de endpoint ou campo que o frontend e a API combinam antes de implementar                |
 | Flag de recurso | Chave em `apps/mobile/src/config/recursos.ts` que liga uma tela quando a API correspondente existe |
+| Frontend        | `apps/mobile` (o aplicativo móvel)                                                                 |
 
-Nomes antigos que aparecem em commits e no CHANGELOG: `F1..F10` (fases do app), `B1..B8` (blocos de
+Nomes antigos que aparecem em commits e no CHANGELOG: `F1..F10` (fases do frontend), `B1..B8` (blocos de
 backend) e `R1..R8` (etapas do roteamento). O mapeamento está em [quadro.md](quadro.md).
 
 ## Como pegar uma tarefa

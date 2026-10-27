@@ -1,7 +1,7 @@
 # Tarefas do backend, dados e roteamento (`BE-xx`, `RT-xx`)
 
 Dono: Backend (Mateus). Pastas: `apps/api`, `packages/*`, `tools/*`, `docs/` (exceto `docs/design`).
-O app consome o que sai daqui, então **contratos e migrações avisam o outro lado** (campo "Impacto para o
+O frontend consome o que sai daqui, então **contratos e migrações avisam o outro lado** (campo "Impacto para o
 outro lado" do PR). Detalhes dos formatos: [contratos-api.md](contratos-api.md).
 
 ## Ordem recomendada
@@ -19,11 +19,11 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 
 ### BE-00 · Contratos publicados
 
-- **Branch:** `feat/be-00-contratos` · **Destrava:** todas as flags do app.
+- **Branch:** `feat/be-00-contratos` · **Destrava:** todas as flags do frontend.
 - Tipos dos contratos C1 a C7 em `packages/shared` (`tipos.ts`, `esquemas.ts`) e a seção "Planejados" em
   `docs/api.md`, **sem implementar nenhum endpoint**. Atualize o status em [contratos-api.md](contratos-api.md)
   para **Publicado**.
-- **Pronto quando:** `pnpm typecheck` passa nos dois lados e o dev do app consegue importar os tipos.
+- **Pronto quando:** `pnpm typecheck` passa nos dois lados e o dev frontend consegue importar os tipos.
 
 ### BE-07 · CI com banco de verdade
 
@@ -35,16 +35,16 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 
 ### BE-01 · Estação "sem dados" e seed realista
 
-- **Branch:** `feat/be-01-sem-dados` · **Contrato:** C1 · **Destrava:** APP-04, APP-05.
+- **Branch:** `feat/be-01-sem-dados` · **Contrato:** C1 · **Destrava:** FE-04, FE-05.
 - `semDados` e `idadeLeituraMin` em `GET /estacoes` e `/estacoes/:id`; limite `ESTACAO_SEM_DADOS_MIN` (padrão
   20). Seed com 4 estações (Piabanha 01 Centro, Piabanha 03 Trecho norte, Quitandinha 02, Bingen 04 sem
-  comunicação) para o app ver os quatro estados.
+  comunicação) para o frontend ver os quatro estados.
 - **Pronto quando:** o simulador desligado faz a estação virar `semDados` após o limite e voltar ao enviar
   leituras.
 
 ### BE-02 · Perfil editável, trocar senha, exportar dados
 
-- **Branch:** `feat/be-02-perfil` · **Contrato:** C2 · **Destrava:** APP-13.
+- **Branch:** `feat/be-02-perfil` · **Contrato:** C2 · **Destrava:** FE-13.
 - `PATCH /usuarios/me`, `PATCH /usuarios/me/senha`, `GET /usuarios/me/dados`. Invalidação de sessões antigas
   (por exemplo, `sessaoValidaApos` em `usuarios`, comparada com o `iat` do JWT no plugin de autenticação).
   Limite de tentativas na troca de senha.
@@ -52,7 +52,7 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 
 ### BE-03 · Seguir estações, nível de alerta e alívio
 
-- **Branch:** `feat/be-03-seguir-estacoes` · **Contrato:** C3 · **Destrava:** APP-12, APP-07, APP-16.
+- **Branch:** `feat/be-03-seguir-estacoes` · **Contrato:** C3 · **Destrava:** FE-12, FE-07, FE-16.
 - Tabela de estações seguidas; `nivelAlerta` no usuário; seguir todas as estações da cidade ao cadastrar;
   alertas de alívio (saída do crítico) com `tipo`; push filtrado por estações seguidas e nível; regra do
   alívio (só se o crítico teve push; cooldown próprio); texto das notificações com o nível em %.
@@ -61,13 +61,13 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 
 ### BE-04 · Previsão com temperatura atual e condição
 
-- **Branch:** `feat/be-04-previsao` · **Contrato:** C4 · **Destrava:** APP-08.
+- **Branch:** `feat/be-04-previsao` · **Contrato:** C4 · **Destrava:** FE-08.
 - Pedir mais campos à Open-Meteo (temperatura atual, sensação, código do tempo) e mapear para `CondicaoTempo`.
 - **Pronto quando:** o formato antigo continua igual e o endpoint ainda responde se a previsão externa falhar.
 
 ### BE-05 · Pontos de apoio reais
 
-- **Branch:** `feat/be-05-apoios` · **Contrato:** C5 · **Destrava:** APP-09.
+- **Branch:** `feat/be-05-apoios` · **Contrato:** C5 · **Destrava:** FE-09.
 - Capacidade opcional, `bairro`, `confianca`; importação a partir da lista da Prefeitura
   (`docs/dados/pontos_de_apoio_petropolis_coordenadas.pdf`, 68 pontos): Alta e Média, guardando a confiança.
   Validação contra o grafo de ruas (apoio a mais de 150 m da rua mais próxima fica sinalizado). Dados oficiais da
@@ -76,7 +76,7 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 
 ### BE-06 · Pesquisa por rua
 
-- **Branch:** `feat/be-06-busca-rua` · **Contrato:** C6 · **Destrava:** APP-15.
+- **Branch:** `feat/be-06-busca-rua` · **Contrato:** C6 · **Destrava:** FE-15.
 - Importar ruas do OpenStreetMap para o PostGIS (geometria com índice espacial), busca sem acento e tolerante a
   erro (`unaccent`, `pg_trgm`), ligação rua → estação mais próxima do mesmo rio.
 - **Pronto quando:** "rua imperador", "Rua do Imperador" e um erro de digitação acham a mesma rua.
@@ -90,7 +90,7 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 
 ### BE-08 · Recuperar senha
 
-- **Branch:** `feat/be-08-recuperar-senha` · **Contrato:** C7 · **Destrava:** APP-14 · **Depende de:** domínio e
+- **Branch:** `feat/be-08-recuperar-senha` · **Contrato:** C7 · **Destrava:** FE-14 · **Depende de:** domínio e
   provedor de e-mail.
 - Endpoints, código de 6 dígitos guardado só como hash, validade, tentativas, limites, envio de e-mail e
   invalidação das sessões antigas.
@@ -103,7 +103,7 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 - Encerramento limpo no `SIGTERM`, CORS, cabeçalhos de segurança, idempotência das leituras (reenvio do ESP32),
   `Dockerfile`, build sem `tsx`, `db:deploy`, HTTPS (confirmar se o firmware fala HTTPS), `TRUST_PROXY`, backup e
   retenção de leituras.
-- **Pronto quando:** a API está publicada, o app aponta para ela e há um roteiro de implantação em `docs/`.
+- **Pronto quando:** a API está publicada, o frontend aponta para ela e há um roteiro de implantação em `docs/`.
 
 ### BE-11 · Manutenção
 
@@ -128,10 +128,10 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 
 ### RT-02 · Base da tela de rota
 
-- **Branch:** `feat/rt-02-base-rota` · **Destrava:** APP-18 · **Depende de:** decisão do mapa.
+- **Branch:** `feat/rt-02-base-rota` · **Destrava:** FE-18 · **Depende de:** decisão do mapa.
 - Em `apps/mobile/src/roteamento/`: pré-carga dos dados em segundo plano depois da abertura do app (a carga
   congela a interface por cerca de 1 s), um hook `useRota` (calcular, acompanhar, recalcular fora do caminho),
-  as duas rotas (recomendada e mais curta) e o estado "sem rota segura". O App cuida do visual.
+  as duas rotas (recomendada e mais curta) e o estado "sem rota segura". O Frontend cuida do visual.
 
 ### RT-03 · Dados embutidos no app
 
