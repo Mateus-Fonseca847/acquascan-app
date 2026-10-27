@@ -1,4 +1,4 @@
-import type { Perfil } from '@acquascan/shared';
+import type { Perfil } from '@aquascan/shared';
 import { ErroHttp } from '../../lib/erros';
 import { prisma } from '../../lib/prisma';
 

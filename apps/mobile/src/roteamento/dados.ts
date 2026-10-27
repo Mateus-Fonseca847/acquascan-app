@@ -11,13 +11,8 @@
  * português, quando alguém tenta carregar. Caminho escolhido: `require` de JSON (veja o README do
  * app para o porquê e para a alternativa com expo-asset, se o tempo de carga for um problema).
  */
-import {
-  criarDesvio,
-  type Desvio,
-  type EstacaoCadastro,
-  type RiosGeoJson,
-} from '@acquascan/desvio';
-import { criarRoteador, type GrafoBruto, type Roteador } from '@acquascan/roteamento';
+import { criarDesvio, type Desvio, type EstacaoCadastro, type RiosGeoJson } from '@aquascan/desvio';
+import { criarRoteador, type GrafoBruto, type Roteador } from '@aquascan/roteamento';
 
 export interface TemposDeCarga {
   /** Ler e interpretar os três arquivos (o `require` dos JSON), em ms. */

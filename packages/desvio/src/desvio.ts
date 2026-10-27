@@ -16,8 +16,8 @@
  *
  * Tudo aqui é lógica pura (sem relógio, sem rede, sem tela). A hora vem de quem chama.
  */
-import type { Roteador } from '@acquascan/roteamento';
-import { normalizarNome } from '@acquascan/shared';
+import type { Roteador } from '@aquascan/roteamento';
+import { normalizarNome } from '@aquascan/shared';
 import { calcularEstadoEfetivo } from './estados';
 import { distPontoSegmento, haversineM, ProjecaoLocal } from './geo';
 import { resolverPolitica, type Politica, type PoliticaParcial } from './politica';

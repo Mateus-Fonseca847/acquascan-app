@@ -184,7 +184,7 @@ importers:
 
   apps/api:
     dependencies:
-      '@acquascan/shared':
+      '@aquascan/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@fastify/jwt':
@@ -227,13 +227,13 @@ importers:
 
   apps/mobile:
     dependencies:
-      '@acquascan/desvio':
+      '@aquascan/desvio':
         specifier: workspace:*
         version: link:../../packages/desvio
-      '@acquascan/roteamento':
+      '@aquascan/roteamento':
         specifier: workspace:*
         version: link:../../packages/roteamento
-      '@acquascan/shared':
+      '@aquascan/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@expo/vector-icons':
@@ -297,10 +297,10 @@ importers:
 
   packages/desvio:
     dependencies:
-      '@acquascan/roteamento':
+      '@aquascan/roteamento':
         specifier: workspace:*
         version: link:../roteamento
-      '@acquascan/shared':
+      '@aquascan/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
@@ -341,7 +341,7 @@ importers:
 
   tools/grafo:
     dependencies:
-      '@acquascan/shared':
+      '@aquascan/shared':
         specifier: workspace:*
         version: link:../../packages/shared
     devDependencies:
@@ -360,7 +360,7 @@ importers:
 
   tools/simulador:
     dependencies:
-      '@acquascan/shared':
+      '@aquascan/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       dotenv:

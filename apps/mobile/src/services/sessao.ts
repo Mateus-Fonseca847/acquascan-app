@@ -3,13 +3,13 @@
  * Nenhum erro do SecureStore derruba o app: leitura que falha vale como "sem sessão".
  * Nada aqui escreve token, e-mail ou senha em log.
  */
-import type { Perfil } from '@acquascan/shared';
+import type { Perfil } from '@aquascan/shared';
 import * as SecureStore from 'expo-secure-store';
 import { ehPerfil } from './regras';
 
-const CHAVE_TOKEN = 'acquascan.token';
-const CHAVE_BOAS_VINDAS = 'acquascan.boas-vindas-vistas';
-const CHAVE_PERFIL = 'acquascan.perfil';
+const CHAVE_TOKEN = 'aquascan.token';
+const CHAVE_BOAS_VINDAS = 'aquascan.boas-vindas-vistas';
+const CHAVE_PERFIL = 'aquascan.perfil';
 
 async function ler(chave: string): Promise<string | null> {
   try {

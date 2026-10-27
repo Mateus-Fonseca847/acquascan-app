@@ -1,5 +1,5 @@
-/** Converte registros do banco para o formato de resposta da API (@acquascan/shared). */
-import type { EstacaoResumo, LeituraResumo } from '@acquascan/shared';
+/** Converte registros do banco para o formato de resposta da API (@aquascan/shared). */
+import type { EstacaoResumo, LeituraResumo } from '@aquascan/shared';
 import type { Estacao, Leitura, Rio } from '../../generated/prisma/client';
 
 export function paraLeituraResumo(leitura: Leitura): LeituraResumo {

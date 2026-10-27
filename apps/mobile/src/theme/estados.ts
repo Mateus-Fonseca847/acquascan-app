@@ -2,7 +2,7 @@
  * Como cada estado do rio e cada risco de chuva aparecem na tela.
  * Regra de acessibilidade: nunca só a cor. Sempre cor + ícone + texto.
  */
-import type { Estado, RiscoChuva } from '@acquascan/shared';
+import type { Estado, RiscoChuva } from '@aquascan/shared';
 
 interface Aparencia {
   cor: string;

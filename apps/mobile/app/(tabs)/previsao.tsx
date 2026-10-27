@@ -1,4 +1,4 @@
-import type { PrevisaoDia } from '@acquascan/shared';
+import type { PrevisaoDia } from '@aquascan/shared';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Mensagem } from '@/components/Mensagem';
 import { usePrevisao } from '@/hooks/consultas';

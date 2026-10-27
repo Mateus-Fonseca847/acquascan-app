@@ -33,7 +33,7 @@ pnpm dev:api                  pnpm dev:mobile -- --clear
 pnpm typecheck                pnpm test    pnpm format:check
 pnpm dados:app                (copia grafo, rios e exposição para o frontend)
 pnpm grafo:construir | grafo:rios | grafo:exposicao   (rodar sempre rios e exposição juntos)
-pnpm --filter @acquascan/api db:generate               (após mudar o schema)
+pnpm --filter @aquascan/api db:generate               (após mudar o schema)
 ```
 
 ## Fluxo de trabalho

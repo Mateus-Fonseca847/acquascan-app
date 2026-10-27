@@ -7,7 +7,7 @@
  * Cenários: estavel (nível oscilando), cheia (sobe até transbordar), vazante (desce)
  */
 import 'dotenv/config';
-import { avaliarLeitura, type LeituraEntrada } from '@acquascan/shared';
+import { avaliarLeitura, type LeituraEntrada } from '@aquascan/shared';
 
 const API_URL = process.env['API_URL'] ?? 'http://localhost:3333';
 const TOKEN = process.env['ESTACAO_TOKEN'] ?? 'dev-token-estacao-1';

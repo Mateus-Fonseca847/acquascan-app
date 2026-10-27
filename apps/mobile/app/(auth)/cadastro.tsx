@@ -1,4 +1,4 @@
-import { cadastroEntradaSchema } from '@acquascan/shared';
+import { cadastroEntradaSchema } from '@aquascan/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
@@ -13,7 +13,7 @@ type Erros = Partial<Record<'nome' | 'email' | 'cidadeId' | 'senha' | 'consentim
 
 /**
  * Cadastro (RF01): nome, e-mail, senha e cidade (lista de GET /cidades).
- * A validação usa o mesmo esquema da API (@acquascan/shared).
+ * A validação usa o mesmo esquema da API (@aquascan/shared).
  * Depois de validar, `criarContaEEntrar` cadastra (POST /auth/cadastro) e já entra na conta.
  */
 export default function TelaCadastro() {

@@ -1,24 +1,24 @@
 # Banco de dados para desenvolvimento local.
-# A imagem postgis/postgis já cria a extensão PostGIS no banco "acquascan".
+# A imagem postgis/postgis já cria a extensão PostGIS no banco "aquascan".
 # As credenciais abaixo são só para desenvolvimento: nunca use em produção.
 services:
   db:
     image: postgis/postgis:17-3.5
-    container_name: acquascan-db
+    container_name: aquascan-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: acquascan
-      POSTGRES_PASSWORD: acquascan
-      POSTGRES_DB: acquascan
+      POSTGRES_USER: aquascan
+      POSTGRES_PASSWORD: aquascan
+      POSTGRES_DB: aquascan
     ports:
       - '5432:5432'
     volumes:
-      - acquascan-db:/var/lib/postgresql/data
+      - aquascan-db:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U acquascan -d acquascan']
+      test: ['CMD-SHELL', 'pg_isready -U aquascan -d aquascan']
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  acquascan-db:
+  aquascan-db:

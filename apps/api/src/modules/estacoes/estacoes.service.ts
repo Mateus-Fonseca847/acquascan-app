@@ -1,4 +1,4 @@
-import { estimarMinutosAteTransbordar, type EstacaoDetalhe } from '@acquascan/shared';
+import { estimarMinutosAteTransbordar, type EstacaoDetalhe } from '@aquascan/shared';
 import { prisma } from '../../lib/prisma';
 import { naoEncontrado } from '../../lib/erros';
 import { paraEstacaoResumo, paraLeituraResumo } from './estacoes.mapper';

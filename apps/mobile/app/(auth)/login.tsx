@@ -1,4 +1,4 @@
-import { loginEntradaSchema } from '@acquascan/shared';
+import { loginEntradaSchema } from '@aquascan/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';

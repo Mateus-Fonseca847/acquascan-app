@@ -1,4 +1,4 @@
-import type { Cidade } from '@acquascan/shared';
+import type { Cidade } from '@aquascan/shared';
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '../../lib/prisma';
 

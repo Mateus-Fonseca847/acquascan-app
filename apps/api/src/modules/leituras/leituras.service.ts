@@ -1,4 +1,4 @@
-import { avaliarLeitura, estadoPiorou, type LeituraEntrada } from '@acquascan/shared';
+import { avaliarLeitura, estadoPiorou, type LeituraEntrada } from '@aquascan/shared';
 import type { Estacao } from '../../generated/prisma/client';
 import { prisma } from '../../lib/prisma';
 import { registrarAlerta } from '../alertas/alertas.service';

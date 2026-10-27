@@ -1,4 +1,4 @@
-import { ROTULO_ESTADO, estadoMaisGrave, estadoPiorou, type Estado } from '@acquascan/shared';
+import { ROTULO_ESTADO, estadoMaisGrave, estadoPiorou, type Estado } from '@aquascan/shared';
 import { env } from '../../config/env';
 import { ESPERA_RECIBO_MS, MAX_IDS_POR_CONSULTA, RETENCAO_RECIBO_MS } from '../../config/push';
 import { dormir } from '../../lib/dormir';

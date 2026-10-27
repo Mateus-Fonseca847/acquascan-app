@@ -5,8 +5,8 @@
  *
  * Só `import type`: nada aqui pode puxar código de plataforma.
  */
-import type { EstacaoCadastro, LeituraEstacao, RiosGeoJson } from '@acquascan/desvio';
-import type { LatLng } from '@acquascan/roteamento';
+import type { EstacaoCadastro, LeituraEstacao, RiosGeoJson } from '@aquascan/desvio';
+import type { LatLng } from '@aquascan/roteamento';
 
 /** Gerador pseudoaleatório determinístico (mulberry32): a mesma semente dá a mesma sequência. */
 export function mulberry32(semente: number): () => number {

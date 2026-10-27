@@ -1,5 +1,5 @@
 {
-  "name": "@acquascan/shared",
+  "name": "@aquascan/shared",
   "version": "0.1.0",
   "private": true,
   "description": "Tipos, validações e regras de nível e estado usados pelo app, pela API e pelo simulador",

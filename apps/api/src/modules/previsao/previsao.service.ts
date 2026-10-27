@@ -2,7 +2,7 @@
  * Previsão do tempo dos próximos 7 dias, via Open-Meteo (gratuito, sem chave).
  * https://open-meteo.com/en/docs
  */
-import { classificarChuva, type PrevisaoDia } from '@acquascan/shared';
+import { classificarChuva, type PrevisaoDia } from '@aquascan/shared';
 import { z } from 'zod';
 import { env } from '../../config/env';
 import { ErroHttp } from '../../lib/erros';

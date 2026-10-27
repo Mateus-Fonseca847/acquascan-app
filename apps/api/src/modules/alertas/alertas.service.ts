@@ -1,4 +1,4 @@
-import type { Alerta, Estado } from '@acquascan/shared';
+import type { Alerta, Estado } from '@aquascan/shared';
 import type { Estacao } from '../../generated/prisma/client';
 import { prisma } from '../../lib/prisma';
 import { processarAlertasPendentes } from '../push/push.service';

@@ -1,4 +1,4 @@
-# @acquascan/mobile
+# @aquascan/mobile
 
 App em React Native com Expo (SDK 57) e Expo Router.
 
@@ -54,7 +54,7 @@ O alias `@/` aponta para `src/` (ex.: `import { cores } from '@/theme'`).
 
 ## Roteamento no celular: dados e tela de prova (R7a)
 
-O app usa `@acquascan/roteamento` e `@acquascan/desvio` (workspaces). A prova de viabilidade carrega o grafo, os rios e a exposição **dentro do app**, roda o roteador e o desvio no Hermes e mede os tempos. Não há tela final de rota: o redesenho do app vem depois.
+O app usa `@aquascan/roteamento` e `@aquascan/desvio` (workspaces). A prova de viabilidade carrega o grafo, os rios e a exposição **dentro do app**, roda o roteador e o desvio no Hermes e mede os tempos. Não há tela final de rota: o redesenho do app vem depois.
 
 ### Gerar os dados
 
@@ -71,7 +71,7 @@ O `pnpm dados:app` confere que os três arquivos são da mesma geração (o `sha
 
 `src/roteamento/dados.ts` expõe `carregarRoteamento(estacoes)`, que devolve `{ roteador, desvio, tempos, ... }`. Os `require` dos três JSON ficam **dentro das funções** (nada é lido na abertura do app) e o resultado fica em cache no módulo (`criarRoteador` e `criarDesvio` rodam uma vez). Cada `require` está em um `try/catch`, que o Metro trata como dependência opcional: sem os arquivos, o bundle e o typecheck **não quebram**, e o erro (em português, mandando rodar `pnpm dados:app`) só aparece quando alguém tenta carregar.
 
-**Caminho adotado: `require` de JSON.** É o mais simples, não precisa de dependência nem de `metro.config.js`, e o Metro empacotou sem problemas (`expo export --platform android` compilou o bytecode Hermes: bundle de 3,8 MB sem os dados e 5,1 MB com eles). O que o export **não** mede é o tempo de carga no aparelho. Se a tela de prova mostrar um tempo de "ler e interpretar" alto (ver abaixo), a alternativa é `expo-asset` mais leitura do arquivo (o Expo já instala `expo-asset`, mas ela exigiria o arquivo como asset, isto é, uma extensão que o Metro trate como asset, e `expo-file-system` para ler: dependências diretas que deveriam ser decididas antes). O Metro resolveu `@acquascan/roteamento` e `@acquascan/desvio` sem `metro.config.js`.
+**Caminho adotado: `require` de JSON.** É o mais simples, não precisa de dependência nem de `metro.config.js`, e o Metro empacotou sem problemas (`expo export --platform android` compilou o bytecode Hermes: bundle de 3,8 MB sem os dados e 5,1 MB com eles). O que o export **não** mede é o tempo de carga no aparelho. Se a tela de prova mostrar um tempo de "ler e interpretar" alto (ver abaixo), a alternativa é `expo-asset` mais leitura do arquivo (o Expo já instala `expo-asset`, mas ela exigiria o arquivo como asset, isto é, uma extensão que o Metro trate como asset, e `expo-file-system` para ler: dependências diretas que deveriam ser decididas antes). O Metro resolveu `@aquascan/roteamento` e `@aquascan/desvio` sem `metro.config.js`.
 
 ### Tela de prova
 

@@ -1,6 +1,6 @@
 /**
  * Todas as chamadas à API passam por aqui.
- * Os tipos de resposta vêm de @acquascan/shared, os mesmos usados pela API.
+ * Os tipos de resposta vêm de @aquascan/shared, os mesmos usados pela API.
  */
 import type {
   Alerta,
@@ -15,7 +15,7 @@ import type {
   Perfil,
   PontoApoio,
   PrevisaoDia,
-} from '@acquascan/shared';
+} from '@aquascan/shared';
 import { env } from '@/config/env';
 import { deveExpirarSessao, ErroApi, erroDeResposta } from './regras';
 

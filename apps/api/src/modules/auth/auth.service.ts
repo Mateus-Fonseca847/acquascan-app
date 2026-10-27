@@ -1,4 +1,4 @@
-import type { CadastroEntrada, LoginEntrada } from '@acquascan/shared';
+import type { CadastroEntrada, LoginEntrada } from '@aquascan/shared';
 import { Prisma } from '../../generated/prisma/client';
 import { ErroHttp } from '../../lib/erros';
 import { prisma } from '../../lib/prisma';

@@ -1,4 +1,4 @@
-import type { EstacaoResumo } from '@acquascan/shared';
+import type { EstacaoResumo } from '@aquascan/shared';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BadgeEstado } from '@/components/BadgeEstado';
 import { cores, espaco, fonte, raio } from '@/theme';

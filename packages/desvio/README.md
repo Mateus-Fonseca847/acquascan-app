@@ -1,6 +1,6 @@
-# @acquascan/desvio
+# @aquascan/desvio
 
-Política de **desvio de rios**: junta o roteador ([`@acquascan/roteamento`](../roteamento/README.md)), a **exposição** das ruas aos rios ([`tools/grafo`](../../tools/grafo/README.md), `exposicao-petropolis.json`) e o **estado das estações** para recomendar a rota a pé mais segura.
+Política de **desvio de rios**: junta o roteador ([`@aquascan/roteamento`](../roteamento/README.md)), a **exposição** das ruas aos rios ([`tools/grafo`](../../tools/grafo/README.md), `exposicao-petropolis.json`) e o **estado das estações** para recomendar a rota a pé mais segura.
 
 É **lógica pura**: sem tela, sem API, sem relógio próprio (a hora vem de quem chama), sem rede. Roda no Node e no Hermes (o motor do app); `src/` não usa nada do Node, e um teste garante isso.
 
@@ -13,8 +13,8 @@ Política de **desvio de rios**: junta o roteador ([`@acquascan/roteamento`](../
 ## Uso
 
 ```ts
-import { criarRoteador } from '@acquascan/roteamento';
-import { criarDesvio } from '@acquascan/desvio';
+import { criarRoteador } from '@aquascan/roteamento';
+import { criarDesvio } from '@aquascan/desvio';
 
 const desvio = criarDesvio(
   { roteador: criarRoteador(grafo), exposicao, rios },
@@ -113,8 +113,8 @@ Considera os `limite` apoios mais próximos em linha reta **mais os 2 mais próx
 ## Comandos
 
 ```bash
-pnpm --filter @acquascan/desvio test
-pnpm --filter @acquascan/desvio typecheck
+pnpm --filter @aquascan/desvio test
+pnpm --filter @aquascan/desvio typecheck
 ```
 
 Os testes usam mundos sintéticos pequenos (ruas, rios e estações montados em `test/auxiliares.ts`, com PRNG determinístico) e, se `tools/grafo/saida` existir, um teste com os dados reais de Petrópolis.

@@ -37,7 +37,7 @@ O arquivo `grafo-petropolis.json` é uma **base derivada** do OSM: ele é extra�
 
 ### Uso responsável da Overpass API
 
-O grafo é baixado de uma Overpass API pública, um serviço comunitário. A ferramenta faz **uma consulta por execução, com cache em disco**, identifica-se com o `User-Agent` `acquascan-grafo/1.0 (projeto acadêmico)` e limita as novas tentativas. Não use a API pública para consultas repetidas, em laço ou a pedido do usuário final; para isso, use uma extração local (por exemplo, do Geofabrik) ou o próprio arquivo já gerado.
+O grafo é baixado de uma Overpass API pública, um serviço comunitário. A ferramenta faz **uma consulta por execução, com cache em disco**, identifica-se com o `User-Agent` `aquascan-grafo/1.0 (projeto acadêmico)` e limita as novas tentativas. Não use a API pública para consultas repetidas, em laço ou a pedido do usuário final; para isso, use uma extração local (por exemplo, do Geofabrik) ou o próprio arquivo já gerado.
 
 ## Outras fontes
 

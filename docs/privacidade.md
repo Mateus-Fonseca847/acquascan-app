@@ -47,7 +47,7 @@ Não são apagados os dados que não pertencem ao usuário: a cidade, as estaç�
 
 ## Regras de implementação
 
-- **Consentimento:** o cadastro só é aceito com `consentimento: true` (validado em `@acquascan/shared`) e a data é salva em `consentimento_em`.
+- **Consentimento:** o cadastro só é aceito com `consentimento: true` (validado em `@aquascan/shared`) e a data é salva em `consentimento_em`.
 - **Senhas:** sempre com hash lento (scrypt ou argon2). Nunca em texto, nunca em log.
 - **Exclusão:** `DELETE /auth/conta` apaga a conta do usuário logado (ver abaixo). O app ainda não tem o botão: a exclusão já funciona na API.
 - **Logs:** não registrar e-mail, nome, senha, token de push, IP, query string nem o corpo das requisições nos logs da API (o log traz só método e caminho). Nem o envio de notificações registra tokens ou mensagens: só contagens. O IP e o e-mail usados no limite de tentativas ficam apenas na memória da API, como chave do contador, e somem quando ela reinicia.

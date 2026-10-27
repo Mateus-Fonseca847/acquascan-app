@@ -2,7 +2,7 @@ import {
   cadastroEntradaSchema,
   excluirContaEntradaSchema,
   loginEntradaSchema,
-} from '@acquascan/shared';
+} from '@aquascan/shared';
 import type { FastifyInstance } from 'fastify';
 import { limites } from '../../config/limites';
 import { autenticarUsuario } from '../../plugins/autenticar-usuario';

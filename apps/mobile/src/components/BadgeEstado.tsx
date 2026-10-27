@@ -1,4 +1,4 @@
-import type { Estado } from '@acquascan/shared';
+import type { Estado } from '@aquascan/shared';
 import { StyleSheet, Text, View } from 'react-native';
 import { aparenciaEstado, aparenciaSemDados, cores, espaco, fonte, raio } from '@/theme';
 

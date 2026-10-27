@@ -1,4 +1,4 @@
-# @acquascan/api
+# @aquascan/api
 
 A API é o centro do sistema AquaScan. Ela recebe as medições das estações, calcula o estado de cada rio, guarda tudo no banco de dados e entrega essas informações para o app.
 
@@ -88,7 +88,7 @@ Cada pasta em `src/modules/` cuida de um assunto.
 
 **Endpoint:** `POST /leituras` (usado pelo ESP32 e pelo simulador)
 
-É o único endpoint que grava dados vindos de fora, por isso é o único que exige autenticação. A estação envia a distância do sensor até a água. O service usa a função `avaliarLeitura` de `@acquascan/shared` para converter essa distância em nível (cm), percentual e estado, com os parâmetros daquela estação: altura de instalação, nível de transbordamento e limites.
+É o único endpoint que grava dados vindos de fora, por isso é o único que exige autenticação. A estação envia a distância do sensor até a água. O service usa a função `avaliarLeitura` de `@aquascan/shared` para converter essa distância em nível (cm), percentual e estado, com os parâmetros daquela estação: altura de instalação, nível de transbordamento e limites.
 
 Antes de salvar, o service busca o estado da leitura anterior. Se o novo estado for mais grave (de estável para atenção, por exemplo), chama o módulo `alertas`.
 
@@ -102,7 +102,7 @@ A leitura guarda a distância bruta e também os valores calculados. Assim, se o
 - `GET /estacoes/:id` traz uma estação com os limites e a **estimativa de minutos até transbordar**. A estimativa usa as leituras dos últimos 30 minutos para calcular a velocidade de subida e supõe que esse ritmo continue. Se o rio não está subindo, ela vem `null`.
 - `GET /estacoes/:id/leituras?horas=24` traz o histórico, de 1 a 168 horas (uma semana), com no máximo 2.000 leituras.
 
-O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que o app espera, definido em `@acquascan/shared`. Por exemplo, transforma datas em texto ISO. Os módulos `rios` e `alertas` também o usam.
+O arquivo `estacoes.mapper.ts` converte os registros do banco para o formato que o app espera, definido em `@aquascan/shared`. Por exemplo, transforma datas em texto ISO. Os módulos `rios` e `alertas` também o usam.
 
 ### `alertas`: registra quando o rio piora
 
@@ -128,7 +128,7 @@ Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notifi
 - **Limite de 10 por usuário:** passou disso, saem os mais antigos por `atualizadoEm`. O `upsert` e a limpeza acontecem na mesma transação.
 - **Corrida:** se dois pedidos registrarem o mesmo token ao mesmo tempo, um deles leva `P2002` (token único). A API tenta de novo uma vez, já como atualização, em vez de devolver erro.
 - **Remover:** apaga só se o token for do usuário da sessão (`deleteMany` com `usuarioId` + `token`). Token inexistente ou de outro usuário também responde 204, sem revelar nada.
-- **Formato:** `pushTokenEntradaSchema` (de `@acquascan/shared`) exige `ExponentPushToken[...]` ou `ExpoPushToken[...]`, sem espaços, até 200 caracteres. Corpo inválido responde 400; sem sessão, 401.
+- **Formato:** `pushTokenEntradaSchema` (de `@aquascan/shared`) exige `ExponentPushToken[...]` ou `ExpoPushToken[...]`, sem espaços, até 200 caracteres. Corpo inválido responde 400; sem sessão, 401.
 
 **Privacidade:** o token identifica o aparelho e **nunca** vai para log, resposta ou mensagem de erro (um teste captura a saída do logger para garantir). Erros inesperados do banco viram uma mensagem genérica.
 
@@ -146,7 +146,7 @@ Esta é a primeira etapa do RF08: a API só **guarda** os tokens. Nenhuma notifi
 
 1. Pega os alertas com `enviadoEm` e `pushSuprimidoEm` vazios criados na **última 1 hora**, do mais antigo para o mais novo. Os mais velhos são ignorados (avisar tarde de uma cheia confunde), e só a contagem vai para o log.
 2. Busca os tokens de push dos usuários da cidade. Sem tokens, marca `enviadoEm` e segue.
-3. Monta uma mensagem por token, em português, com o rio, a estação e o novo estado (rótulos de `ROTULO_ESTADO`, em `@acquascan/shared`). `data` leva só `alertaId`, `estacaoId` e `estado`; `priority: 'high'`, `ttl: 1800`, `sound: 'default'`. **Nada de dado pessoal na mensagem.**
+3. Monta uma mensagem por token, em português, com o rio, a estação e o novo estado (rótulos de `ROTULO_ESTADO`, em `@aquascan/shared`). `data` leva só `alertaId`, `estacaoId` e `estado`; `priority: 'high'`, `ttl: 1800`, `sound: 'default'`. **Nada de dado pessoal na mensagem.**
 4. Envia ao Expo em **lotes de 100**, um de cada vez, com `fetch` e tempo limite de 10 s. Em 429, 5xx ou falha de rede, até 3 tentativas com espera crescente (1 s, 2 s; usa o `Retry-After` se vier, com teto de 30 s). Depois, desiste do lote. Outro 4xx não é tentado de novo.
 5. Ticket com erro `DeviceNotRegistered`: apaga aquele token do banco. Outros erros de ticket só são contados, e só o código vai para o log.
 6. Preenche `enviadoEm` **somente** se todos os lotes foram aceitos pelo Expo (agora ou em rodadas anteriores).
@@ -180,7 +180,7 @@ Um rio que oscila em volta de um limite gera vários alertas em sequência (aten
 A regra roda em `processarAlertasPendentes`, antes de montar as mensagens, para cada alerta pendente em ordem de `criadoEm`:
 
 1. Olha os alertas da **mesma estação** com `enviadoEm` preenchido nos últimos `PUSH_COOLDOWN_MIN` minutos (inclusive os enviados nesta mesma rodada). Sem nenhum, envia normalmente.
-2. Se há, compara o `estadoNovo` do alerta com o **mais grave** entre eles (`ESTAVEL` < `ATENCAO` < `CRITICO`, com `estadoMaisGrave` de `@acquascan/shared`). Se for **mais grave** (uma escalada, como atenção para crítico), envia normalmente.
+2. Se há, compara o `estadoNovo` do alerta com o **mais grave** entre eles (`ESTAVEL` < `ATENCAO` < `CRITICO`, com `estadoMaisGrave` de `@aquascan/shared`). Se for **mais grave** (uma escalada, como atenção para crítico), envia normalmente.
 3. Se for **igual ou menos grave**, **não envia**: preenche `pushSuprimidoEm`, deixa `enviadoEm` nulo, limpa o progresso em memória do alerta e registra só a contagem no log. A consulta de pendentes ignora alertas com `pushSuprimidoEm`, então ele não é reprocessado.
 
 **Por que uma coluna própria (`pushSuprimidoEm`) em vez de usar `enviadoEm`:** `enviadoEm` significa "uma notificação saiu para este alerta" e é a base do próprio cooldown e dos tickets. Marcá-lo num alerta suprimido faria o cooldown se renovar sozinho a cada alerta suprimido (a estação ficaria calada para sempre enquanto oscilasse) e misturaria "enviado" com "decidimos não enviar". Com a coluna separada, cada situação é distinguível no banco.
@@ -235,7 +235,7 @@ O segundo caso usa uma consulta SQL escrita à mão (`$queryRaw`), porque o Pris
 
 **Endpoint:** `GET /previsao`
 
-O app não fala com a Open-Meteo diretamente: pede à nossa API, que busca os dados lá, classifica o risco de chuva de cada dia com `classificarChuva` (de `@acquascan/shared`) e devolve o resultado.
+O app não fala com a Open-Meteo diretamente: pede à nossa API, que busca os dados lá, classifica o risco de chuva de cada dia com `classificarChuva` (de `@aquascan/shared`) e devolve o resultado.
 
 A resposta fica guardada por **30 minutos** na memória da API (cache). Isso evita consultar a Open-Meteo toda vez que alguém abre a tela. O cache some quando a API reinicia. Se a Open-Meteo estiver fora do ar ou faltar internet, a API responde 502 com uma mensagem clara, em vez de travar.
 
@@ -255,7 +255,7 @@ A regra fica em `auth.service.ts`; `auth.routes.ts` só cuida do HTTP.
 
 **Cadastro** (`cadastrarUsuario`) segue estes passos:
 
-1. A rota valida o corpo com `cadastroEntradaSchema`, de `@acquascan/shared`.
+1. A rota valida o corpo com `cadastroEntradaSchema`, de `@aquascan/shared`.
 2. O e-mail é normalizado (sem espaços nas pontas, em minúsculas).
 3. Se o e-mail já existe, responde **409** `E-mail já cadastrado`.
 4. Confere se a cidade (`cidadeId`) existe; se não, responde **400** `Cidade inválida`. Não há chamada de rede.
@@ -398,7 +398,7 @@ pnpm test
 
 ## Comandos
 
-Rode da raiz do repositório com `pnpm --filter @acquascan/api <comando>`, ou de dentro desta pasta com `pnpm <comando>`.
+Rode da raiz do repositório com `pnpm --filter @aquascan/api <comando>`, ou de dentro desta pasta com `pnpm <comando>`.
 
 | Comando       | O que faz                                               |
 | ------------- | ------------------------------------------------------- |

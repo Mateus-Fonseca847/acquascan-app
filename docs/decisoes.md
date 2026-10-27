@@ -14,7 +14,7 @@ O app precisa mostrar o caminho a pé até um ponto de apoio e, no futuro, **des
 
 ### Decisão
 
-Calcular a rota **no próprio celular**, com um **A\* escrito no projeto** (`@acquascan/roteamento`) sobre um grafo de ruas gerado a partir do OpenStreetMap. O estado dos rios entra como **multiplicadores de custo por aresta** (`>= 1`, `Infinity` bloqueia): o roteador soma `comprimento × multiplicador`, devolve o multiplicador usado em cada trecho e **não decide política de segurança**; quem chama calcula a exposição.
+Calcular a rota **no próprio celular**, com um **A\* escrito no projeto** (`@aquascan/roteamento`) sobre um grafo de ruas gerado a partir do OpenStreetMap. O estado dos rios entra como **multiplicadores de custo por aresta** (`>= 1`, `Infinity` bloqueia): o roteador soma `comprimento × multiplicador`, devolve o multiplicador usado em cada trecho e **não decide política de segurança**; quem chama calcula a exposição.
 
 ### Alternativas consideradas
 
@@ -46,7 +46,7 @@ O roteador não decide segurança: só soma `comprimento × multiplicador`. Falt
 
 ### Decisão
 
-Um pacote de lógica pura, `@acquascan/desvio`. **Princípio: o que o mapa mostra em vermelho é exatamente o que a rota evita**, então há uma única função, `estadoDosSegmentos`, para colorir o mapa e montar os multiplicadores. Cada trecho de rio é governado pela estação mais próxima do mesmo rio dentro de `distanciaTrechoM`; sem estação por perto, o trecho é "sem monitoramento" e não recebe desvio. Estado ruim antigo é mantido por **falha segura**. O desvio usa duas passadas: a estrita bloqueia as travessias de rio crítico; se não houver rota, a de reserva as permite com penalidade (`menos_exposta`).
+Um pacote de lógica pura, `@aquascan/desvio`. **Princípio: o que o mapa mostra em vermelho é exatamente o que a rota evita**, então há uma única função, `estadoDosSegmentos`, para colorir o mapa e montar os multiplicadores. Cada trecho de rio é governado pela estação mais próxima do mesmo rio dentro de `distanciaTrechoM`; sem estação por perto, o trecho é "sem monitoramento" e não recebe desvio. Estado ruim antigo é mantido por **falha segura**. O desvio usa duas passadas: a estrita bloqueia as travessias de rio crítico; se não houver rota, a de reserva as permite com penalidade (`menos_exposta`).
 
 | Constante                    | Valor                                  |
 | ---------------------------- | -------------------------------------- |

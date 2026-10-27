@@ -24,7 +24,7 @@ New-NetFirewallRule -DisplayName "AquaScan API 3333" -Direction Inbound -Protoco
 
 ## `Cannot find module '../generated/prisma/client'`
 
-O Prisma Client não foi gerado. Rode `pnpm --filter @acquascan/api db:generate`.
+O Prisma Client não foi gerado. Rode `pnpm --filter @aquascan/api db:generate`.
 
 ## `Variáveis de ambiente inválidas` ao iniciar a API
 
