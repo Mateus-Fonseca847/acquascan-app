@@ -119,7 +119,8 @@ Cartões `FE-04` a `FE-11` podem trocar de ordem entre si depois do `FE-02`.
 - Temperatura atual, sensação térmica, condição e as ilustrações do hipopótamo dependem do contrato C4
   (`PREVISAO_ATUAL`); deixe o layout preparado e peça as ilustrações ao designer.
 - **Atenção (C4):** quando o BE-04 for ao ar, `GET /previsao` deixa de ser um array e vira `{ atual, dias }`. Antes
-  disso, faça `buscarPrevisao` aceitar as duas formas (`Array.isArray`), para o app não quebrar na troca.
+  disso, `buscarPrevisao` já aceita as duas formas por meio de `lerPrevisao` (`packages/shared`), então o app não quebra na troca. A tela
+  ainda não mostra a temperatura atual (`data.atual`): o layout é deste cartão.
 - **Pronto quando:** funciona com a API e com a API fora do ar (mostra o último dado ou o erro).
 
 ### FE-09 · Aba Apoio

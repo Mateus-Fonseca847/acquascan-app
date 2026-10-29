@@ -38,6 +38,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - `packages/shared/src/esquemas.ts`: validações de entrada `atualizarPerfilEntradaSchema`, `trocarSenhaEntradaSchema` (C2), `buscaRuaEntradaSchema` (C6), `esqueciSenhaEntradaSchema` e `redefinirSenhaEntradaSchema` (C7). Dois tetos que o contrato não definia: `q` da busca de rua com até 100 caracteres e `estacoesSeguidas` com até 100 ids
 - `docs/api.md`: seção "Endpoints planejados"; `docs/planejamento/contratos-api.md`: status dos contratos e duas decisões: `AlertaComTipo` ganha `rio` e `GET /previsao` passa de array para `{ atual, dias }` (mudança que quebra o frontend atual, a combinar entre BE-04 e FE-08)
 - Testes de contrato e de esquemas em `packages/shared`
+- `lerPrevisao` (`packages/shared/src/previsao.ts`): lê a resposta de `GET /previsao` tanto na forma de hoje (lista de dias) quanto na do C4 (`{ atual, dias }`) e devolve sempre `{ atual, dias }`. Sem temperatura atual (ou malformada), `atual` é `null`; condição desconhecida é `null`; um dia malformado gera `ErroFormatoPrevisao`, com mensagem em português. Com ela o app não quebra quando o BE-04 trocar o formato
+- `apps/mobile`: `buscarPrevisao` usa `lerPrevisao` e a aba Previsão lê `data.dias`. O visual não mudou
 
 **Prova de viabilidade do roteamento no celular (R7a)** (`apps/mobile` e `tools/grafo`; sem mudar API, banco, `packages/roteamento` nem `packages/desvio`)
 

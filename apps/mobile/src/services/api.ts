@@ -14,8 +14,8 @@ import type {
   LoginResposta,
   Perfil,
   PontoApoio,
-  PrevisaoDia,
 } from '@aquascan/shared';
+import { lerPrevisao } from '@aquascan/shared';
 import { env } from '@/config/env';
 import { deveExpirarSessao, ErroApi, erroDeResposta } from './regras';
 
@@ -101,7 +101,11 @@ export const api = {
     requisitar<PontoApoio[]>(
       coords ? `/pontos-apoio?lat=${coords.lat}&lng=${coords.lng}` : '/pontos-apoio',
     ),
-  buscarPrevisao: () => requisitar<PrevisaoDia[]>('/previsao'),
+  /**
+   * Aceita as duas formas da resposta (lista de dias de hoje e `{ atual, dias }` do C4): ver `lerPrevisao`.
+   * Formato desconhecido vira erro em português, que a tela mostra com "Tentar de novo".
+   */
+  buscarPrevisao: async () => lerPrevisao(await requisitar<unknown>('/previsao')),
   cadastrar: (dados: CadastroEntrada) =>
     requisitar<CadastroResposta>('/auth/cadastro', { metodo: 'POST', corpo: dados }),
   entrar: (dados: LoginEntrada) =>

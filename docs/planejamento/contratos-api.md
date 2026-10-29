@@ -102,8 +102,9 @@ interface Perfil {
 > **Decisão (29/10/2026): a forma da resposta muda.** Hoje `GET /previsao` devolve um **array** de dias, e um array
 > não comporta o campo `atual`. Depois do C4 a resposta é um **objeto** `{ atual, dias }`. **É uma mudança que
 > quebra:** o frontend atual (`buscarPrevisao`, que espera `PrevisaoDia[]`) para de funcionar assim que o BE-04 for
-> para o ar. Por isso o BE-04 e o FE-08 se combinam antes: o frontend passa a aceitar as duas formas
-> (`Array.isArray`) **antes** do BE-04 ser mergeado, e depois do merge remove a forma antiga.
+> para o ar. Por isso o frontend passa a aceitar as duas formas **antes** do BE-04 ser mergeado: a função
+> `lerPrevisao` (`packages/shared/src/previsao.ts`), usada por `buscarPrevisao`, lê a lista de hoje e o pacote
+> `{ atual, dias }` e devolve sempre o mesmo formato. Depois do BE-04 no ar, o ramo da lista pode ser removido.
 
 `GET /previsao` passa a responder:
 

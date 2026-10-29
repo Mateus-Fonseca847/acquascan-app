@@ -64,7 +64,7 @@ verificação manual com o banco real, apagando o que for criado para o teste.
 - **Branch:** `feat/be-04-previsao` · **Contrato:** C4 · **Destrava:** FE-08.
 - Pedir mais campos à Open-Meteo (temperatura atual, sensação, código do tempo) e mapear para `CondicaoTempo`.
 - **Atenção:** a resposta passa de array para `{ atual, dias }` (mudança que quebra). Só faça o merge depois que o
-  frontend (FE-08) aceitar as duas formas; avise o outro lado no PR.
+  PR com `lerPrevisao` (frontend aceita as duas formas) estiver na `main`; avise o outro lado no PR.
 - **Pronto quando:** a resposta tem o formato `PrevisaoResposta` e o endpoint ainda responde se a previsão externa falhar.
 
 ### BE-05 · Pontos de apoio reais
