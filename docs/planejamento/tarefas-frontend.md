@@ -108,6 +108,10 @@ Cartões `FE-04` a `FE-11` podem trocar de ordem entre si depois do `FE-02`.
   "Estes alertas não substituem a Defesa Civil." Vazio: "Nenhum alerta nas últimas 24 h".
 - O tipo `ALIVIO` do contrato C3 ("saiu do estado crítico") entra quando `SEGUIR_ESTACOES` ligar; deixe o
   componente preparado.
+- **Atenção (C3, decisão de 29/10/2026):** o item de alerta do contrato (`AlertaComTipo`, em `@aquascan/shared`) tem os
+  campos novos `tipo` e `rio`. **Hoje a API ainda não devolve `rio`** (o BE-03 é quem passa a devolver). Até lá, pegue o
+  rio da lista de estações, casando o `estacaoId` do alerta com `EstacaoResumo.rio`, ou mostre só a estação.
+  **Nunca invente o nome do rio.**
 - **Pronto quando:** com o simulador em cheia, os alertas aparecem na tela ao atualizar.
 
 ### FE-08 · Aba Tempo (previsão)

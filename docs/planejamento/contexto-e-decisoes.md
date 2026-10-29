@@ -29,6 +29,10 @@ cooldown, limite de tentativas; sessão no frontend (login, cadastro, visitante)
 A\*, instruções de curva e política de desvio; prova de viabilidade medida num Galaxy A17 no Expo Go (carga
 de 1,2 s e p95 do `rotear` de 45 ms com os dois rios críticos).
 
+**Combinado, ainda sem endpoint:** os contratos C1 a C7 estão publicados como tipos em
+`packages/shared/src/contratos.ts` (BE-00), e o app já lê a previsão nas duas formas, a de hoje e a do C4
+(`lerPrevisao`). Nenhum endpoint novo existe até os cartões BE-01 a BE-08 serem implementados.
+
 **Conhecido e em aberto:**
 
 - A aba Rios do app fica em "Carregando" quando o celular não alcança a API (`FE-00` investiga).
@@ -62,6 +66,8 @@ de 1,2 s e p95 do `rotear` de 45 ms com os dois rios críticos).
 | Offline                   | Grafo, rios e exposição embutidos no app (cerca de 2 MB). Últimos dados em cache. "Rota salva". Download de mapa offline **não está decidido**                                                                                                                                                                |
 | Pontos de apoio           | Lista da Prefeitura (68 pontos). Importar confiança Alta (43) e Média (17), guardando a confiança; Baixa (3) e não encontrados (5) ficam fora. Capacidade opcional. Contato padrão 199. As coordenadas vêm do Google Places: **provisórias**, a confirmar em campo ou com a Defesa Civil                      |
 | Previsão                  | Open-Meteo, com cache. Classificação de risco provisória                                                                                                                                                                                                                                                      |
+| Alerta (campos)           | O alerta da API passa a ter `tipo` (`PIORA` ou `ALIVIO`) e `rio` (nome do rio da estação), para o app mostrar estação e rio em cada item. Decidido em 29/10/2026, contrato C3                                                                                                                                 |
+| Previsão (formato)        | `GET /previsao` deixa de devolver um array de dias e passa a devolver `{ atual, dias }`, com a temperatura atual e a condição do tempo. **Mudança que quebra:** o app já lê as duas formas (`lerPrevisao`) antes do BE-04 ir ao ar. Decidido em 29/10/2026, contrato C4                                       |
 | Logs                      | Só método e caminho. Sem IP, query nem corpo                                                                                                                                                                                                                                                                  |
 | Dados do OpenStreetMap    | Atribuição visível no app. Os arquivos gerados ficam fora do Git por enquanto                                                                                                                                                                                                                                 |
 
