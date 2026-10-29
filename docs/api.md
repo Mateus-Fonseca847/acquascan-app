@@ -160,6 +160,25 @@ curl -X POST http://localhost:3333/usuarios/me/push-token \
 - O app deve chamar o `POST` só depois de o usuário permitir as notificações, e o `DELETE` ao sair da conta. **O token só é gerado em aparelho físico com development build, e não no Expo Go.**
 - Nesta etapa a API só guarda os tokens; ainda não envia notificações.
 
+## Endpoints planejados
+
+**Ainda não existem na API.** Estão aqui para o frontend e o backend andarem em paralelo: os tipos já estão em [`packages/shared/src/contratos.ts`](../packages/shared/src/contratos.ts) e os esquemas de entrada em [`esquemas.ts`](../packages/shared/src/esquemas.ts). A descrição completa, as regras e os pontos em aberto de cada contrato estão em [planejamento/contratos-api.md](planejamento/contratos-api.md). Até o endpoint ser implementado, a linha da tabela de "Endpoints" acima é a que vale.
+
+| Contrato | Rota                                 | Mudança                                                                                               | Tipos / esquemas                                                               | Cartão |
+| -------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------ |
+| C1       | `GET /estacoes`, `GET /estacoes/:id` | Campos `semDados` e `idadeLeituraMin`                                                                 | `EstacaoResumoComStatus`, `EstacaoDetalheComStatus`                            | BE-01  |
+| C2       | `GET /usuarios/me`                   | Campos `nivelAlerta` e `estacoesSeguidas`                                                             | `PerfilCompleto`                                                               | BE-02  |
+| C2       | `PATCH /usuarios/me`                 | Edita nome, cidade, nível de alerta e estações seguidas                                               | `atualizarPerfilEntradaSchema`, `PerfilCompleto`                               | BE-02  |
+| C2       | `PATCH /usuarios/me/senha`           | Troca a senha e devolve um token novo; os antigos deixam de valer                                     | `trocarSenhaEntradaSchema`, `TrocaSenhaResposta`                               | BE-02  |
+| C2       | `GET /usuarios/me/dados`             | Exportação dos dados do usuário (LGPD)                                                                | `DadosExportados`                                                              | BE-02  |
+| C3       | `GET /alertas`                       | Campos `tipo` (`PIORA` ou `ALIVIO`) e `rio`; filtro `seguidas=true`                                   | `AlertaComTipo`, `TIPOS_ALERTA`                                                | BE-03  |
+| C3       | Notificação push                     | `data: { alertaId, estacaoId, estado }`                                                               | `PushDadosAlerta`                                                              | BE-03  |
+| C4       | `GET /previsao`                      | Passa de array para `{ atual, dias }` (**quebra o frontend atual**), com temperatura atual e condição | `PrevisaoResposta`, `CondicaoTempo`, `PrevisaoAtual`, `PrevisaoDiaComCondicao` | BE-04  |
+| C5       | `GET /pontos-apoio`                  | `bairro`, `confianca`; `capacidade` e `contato` podem ser `null`                                      | `PontoApoioReal`, `ConfiancaApoio`                                             | BE-05  |
+| C6       | `GET /ruas/busca?q=&limite=`         | Pesquisa por rua (hoje responde 501)                                                                  | `buscaRuaEntradaSchema`, `ResultadoRua`                                        | BE-06  |
+| C7       | `POST /auth/esqueci-senha`           | Pede o código por e-mail; sempre responde 202, exista ou não o e-mail                                 | `esqueciSenhaEntradaSchema`, `EsqueciSenhaResposta`                            | BE-08  |
+| C7       | `POST /auth/redefinir-senha`         | Redefine com o código de 6 dígitos (204)                                                              | `redefinirSenhaEntradaSchema`                                                  | BE-08  |
+
 ## Erros
 
 Todos os erros seguem o formato `{ "erro": "mensagem", "detalhes": ... }`.

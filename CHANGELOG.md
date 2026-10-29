@@ -32,6 +32,13 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Adicionado
 
+**Contratos planejados publicados (BE-00)** (`packages/shared` e documentação; nenhum endpoint, banco ou migração mudou)
+
+- `packages/shared/src/contratos.ts` (novo): tipos dos contratos C1, C2, C3, C5, C6 e C7 e do C4 (`CondicaoTempo`, `PrevisaoAtual`, `PrevisaoDiaComCondicao`, `PrevisaoResposta`). Os tipos novos estendem os de `tipos.ts` (`EstacaoResumoComStatus`, `AlertaComTipo`, `PerfilCompleto`, `PontoApoioReal`...) em vez de alterá-los, então API e app atuais seguem compilando. Valores fixos exportados: `NIVEIS_ALERTA` (duas opções), `TIPOS_ALERTA`, `CONDICOES_TEMPO`, `CONFIANCAS_APOIO`
+- `packages/shared/src/esquemas.ts`: validações de entrada `atualizarPerfilEntradaSchema`, `trocarSenhaEntradaSchema` (C2), `buscaRuaEntradaSchema` (C6), `esqueciSenhaEntradaSchema` e `redefinirSenhaEntradaSchema` (C7). Dois tetos que o contrato não definia: `q` da busca de rua com até 100 caracteres e `estacoesSeguidas` com até 100 ids
+- `docs/api.md`: seção "Endpoints planejados"; `docs/planejamento/contratos-api.md`: status dos contratos e duas decisões: `AlertaComTipo` ganha `rio` e `GET /previsao` passa de array para `{ atual, dias }` (mudança que quebra o frontend atual, a combinar entre BE-04 e FE-08)
+- Testes de contrato e de esquemas em `packages/shared`
+
 **Prova de viabilidade do roteamento no celular (R7a)** (`apps/mobile` e `tools/grafo`; sem mudar API, banco, `packages/roteamento` nem `packages/desvio`)
 
 - Comando `pnpm dados:app`: confere que grafo, rios e exposição são da mesma geração (`sha256` do grafo e dos rios registrados na exposição, e número de arestas) e os copia para `apps/mobile/assets/roteamento/` (ignorado pelo git por enquanto: derivados do OSM, licença ODbL), com `versao.json` (três hashes e data)

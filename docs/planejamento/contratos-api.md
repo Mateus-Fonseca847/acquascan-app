@@ -7,20 +7,21 @@ os dois lados andarem em paralelo: o frontend constrói a tela atrás de uma fla
 - A API **real** está em [docs/api.md](../api.md). Este arquivo só descreve o que ainda não existe.
 - Todo erro tem o formato `{ "erro": "mensagem em português" }`. Códigos usuais: 400 dados inválidos, 401 sem
   sessão ou sessão expirada, 403 senha incorreta, 404 não encontrado, 409 conflito, 429 muitas tentativas.
-- Os tipos oficiais ficam em `packages/shared` (só o Backend edita). Se o texto daqui discordar do código, vale o
+- Os tipos oficiais ficam em `packages/shared` (só o Backend edita); os planejados estão em
+  `packages/shared/src/contratos.ts`. Se o texto daqui discordar do código, vale o
   código, e o Backend corrige este arquivo.
 - Status: **Rascunho** (combinado, sem tipos) → **Publicado** (tipos em `shared` e `docs/api.md`) →
   **Implementado** (endpoint no ar). O frontend só liga a flag quando estiver **Implementado**.
 
-| #   | Contrato                                      | Cartão do Backend | Destrava no frontend | Flag                         | Status   |
-| --- | --------------------------------------------- | ----------------- | -------------------- | ---------------------------- | -------- |
-| C1  | Estação "sem dados" e idade da leitura        | BE-01             | FE-04, FE-05         | `SEM_DADOS_SERVIDOR`         | Rascunho |
-| C2  | Perfil editável, trocar senha, exportar dados | BE-02             | FE-13                | `PERFIL_EDICAO`              | Rascunho |
-| C3  | Seguir estações, nível de alerta, alívio      | BE-03             | FE-12, FE-07         | `SEGUIR_ESTACOES`            | Rascunho |
-| C4  | Previsão com temperatura atual e condição     | BE-04             | FE-08                | `PREVISAO_ATUAL`             | Rascunho |
-| C5  | Pontos de apoio reais                         | BE-05             | FE-09                | (sem flag: campos opcionais) | Rascunho |
-| C6  | Pesquisa por rua                              | BE-06             | FE-15                | `BUSCA_RUA`                  | Rascunho |
-| C7  | Recuperar senha                               | BE-08             | FE-14                | `RECUPERAR_SENHA`            | Rascunho |
+| #   | Contrato                                      | Cartão do Backend | Destrava no frontend | Flag                         | Status    |
+| --- | --------------------------------------------- | ----------------- | -------------------- | ---------------------------- | --------- |
+| C1  | Estação "sem dados" e idade da leitura        | BE-01             | FE-04, FE-05         | `SEM_DADOS_SERVIDOR`         | Publicado |
+| C2  | Perfil editável, trocar senha, exportar dados | BE-02             | FE-13                | `PERFIL_EDICAO`              | Publicado |
+| C3  | Seguir estações, nível de alerta, alívio      | BE-03             | FE-12, FE-07         | `SEGUIR_ESTACOES`            | Publicado |
+| C4  | Previsão com temperatura atual e condição     | BE-04             | FE-08                | `PREVISAO_ATUAL`             | Publicado |
+| C5  | Pontos de apoio reais                         | BE-05             | FE-09                | (sem flag: campos opcionais) | Publicado |
+| C6  | Pesquisa por rua                              | BE-06             | FE-15                | `BUSCA_RUA`                  | Publicado |
+| C7  | Recuperar senha                               | BE-08             | FE-14                | `RECUPERAR_SENHA`            | Publicado |
 
 ## C1. Estação sem dados (BE-01)
 
@@ -87,33 +88,41 @@ interface Perfil {
   Há **duas** opções de propósito (ver `contexto-e-decisoes.md`, seção 5).
 - **Alívio:** quando uma estação sai do crítico, quem a segue recebe "saiu do estado crítico", em **qualquer**
   nível, e só se o crítico daquela estação teve push enviado.
-- `GET /alertas` ganha o campo `tipo` em cada item e o filtro opcional `seguidas=true` (exige sessão):
+- `GET /alertas` ganha os campos `tipo` e `rio` em cada item e o filtro opcional `seguidas=true` (exige sessão):
   ```ts
   tipo: 'PIORA' | 'ALIVIO'; // ALIVIO: estadoAnterior = CRITICO e estadoNovo = ATENCAO ou ESTAVEL
+  rio: string; // nome do rio da estação (decisão de 29/10/2026: o FE-07 mostra estação e rio)
   ```
-  Os campos atuais (`estadoAnterior`, `estadoNovo`, `criadoEm`, estação e rio) não mudam.
+  Os campos atuais (`id`, `estacaoId`, `estacao`, `estadoAnterior`, `estadoNovo`, `criadoEm`) não mudam.
 - Para o frontend, "seguir" e "nível" são parte do `Perfil` e se alteram com `PATCH /usuarios/me` (C2).
 - A mensagem de push traz `data: { alertaId, estacaoId, estado }`. O frontend usa isso para abrir o detalhe.
 
 ## C4. Previsão com temperatura atual e condição (BE-04)
 
-Campos **novos** em `GET /previsao`; a forma atual não muda:
+> **Decisão (29/10/2026): a forma da resposta muda.** Hoje `GET /previsao` devolve um **array** de dias, e um array
+> não comporta o campo `atual`. Depois do C4 a resposta é um **objeto** `{ atual, dias }`. **É uma mudança que
+> quebra:** o frontend atual (`buscarPrevisao`, que espera `PrevisaoDia[]`) para de funcionar assim que o BE-04 for
+> para o ar. Por isso o BE-04 e o FE-08 se combinam antes: o frontend passa a aceitar as duas formas
+> (`Array.isArray`) **antes** do BE-04 ser mergeado, e depois do merge remove a forma antiga.
+
+`GET /previsao` passa a responder:
 
 ```ts
 type CondicaoTempo = 'ENSOLARADO' | 'NUBLADO' | 'CHUVOSO' | 'INSTAVEL' | 'TEMPESTUOSO';
-atual: {
-  temperaturaC: number;
-  sensacaoC: number;
-  condicao: CondicaoTempo;
+interface PrevisaoResposta {
+  atual: { temperaturaC: number; sensacaoC: number; condicao: CondicaoTempo };
+  dias: PrevisaoDia[]; // os mesmos campos de hoje, mais `condicao: CondicaoTempo` em cada dia
 }
-// e, em cada dia da previsão:
-condicao: CondicaoTempo;
 ```
 
 O enum é fixo (as cinco ilustrações do design). O mapeamento do código meteorológico para o enum é do
-Backend. Se a previsão externa falhar, o endpoint mantém o comportamento atual.
+Backend. Se a previsão externa falhar, o endpoint mantém o comportamento atual (a regra para `atual` ausente nesse caso
+fica para o BE-04 decidir).
 
 ## C5. Pontos de apoio reais (BE-05)
+
+Hoje `PontoApoio.capacidade` é `number` (obrigatória). No contrato ela passa a `number | null`; por isso o tipo
+novo é `PontoApoioReal` e não estende o atual. O BE-05 faz a troca.
 
 Campos de cada ponto em `GET /pontos-apoio` (`distanciaM` só quando a consulta envia `lat` e `lng`):
 
@@ -170,6 +179,8 @@ token já existem; o envio depende de development build).
 
 ## Histórico de mudanças de contrato
 
-| Data        | Contrato | Mudança | Quem |
-| ----------- | -------- | ------- | ---- |
-| (preencher) |          |         |      |
+| Data       | Contrato | Mudança                                                                                                                  | Quem    |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------ | ------- |
+| 2026-10-29 | C1 a C7  | Tipos publicados em `packages/shared` (BE-00); status Rascunho → Publicado                                               | Backend |
+| 2026-10-29 | C3       | `AlertaComTipo` ganha `rio` (decisão de 29/10/2026)                                                                      | Backend |
+| 2026-10-29 | C4       | `GET /previsao` passa de array para `{ atual, dias }` (decisão de 29/10/2026; quebra o frontend atual); status Publicado | Backend |

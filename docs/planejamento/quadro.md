@@ -33,7 +33,7 @@ arquivo é o espelho versionado.
 
 | ID    | Título                                        | Status                 | PR  |
 | ----- | --------------------------------------------- | ---------------------- | --- |
-| BE-00 | Contratos publicados                          | A fazer                |     |
+| BE-00 | Contratos publicados                          | Em revisão             |     |
 | BE-07 | CI com banco de verdade                       | A fazer                |     |
 | BE-01 | Estação "sem dados" e seed realista           | A fazer                |     |
 | BE-02 | Perfil editável, trocar senha, exportar dados | A fazer                |     |
