@@ -33,7 +33,7 @@ arquivo é o espelho versionado.
 
 | ID    | Título                                        | Status                 | PR  |
 | ----- | --------------------------------------------- | ---------------------- | --- |
-| BE-00 | Contratos publicados                          | A fazer                |     |
+| BE-00 | Contratos publicados                          | Em revisão             |     |
 | BE-07 | CI com banco de verdade                       | A fazer                |     |
 | BE-01 | Estação "sem dados" e seed realista           | A fazer                |     |
 | BE-02 | Perfil editável, trocar senha, exportar dados | A fazer                |     |
@@ -57,6 +57,53 @@ arquivo é o espelho versionado.
 | RT-04 | Validação com a Defesa Civil    | Bloqueado (contato externo) |     |
 | RT-05 | Área do grafo                   | A fazer                     |     |
 | RT-06 | Correções no OpenStreetMap      | A fazer                     |     |
+
+## Avisos entre os lados
+
+Leia antes de pegar o próximo cartão. Cada aviso diz o que mudou e o que cada lado precisa fazer.
+
+### 29/10/2026 · Contratos publicados (BE-00) e leitura da previsão
+
+**O que mudou, em poucas palavras**
+
+- Os contratos C1 a C7 viraram **tipos** em `packages/shared/src/contratos.ts`. **Nenhum endpoint novo existe ainda:**
+  "Publicado" quer dizer que o formato está combinado, não que o servidor já responde assim. Só o BE-01 a BE-08
+  fazem o servidor responder.
+- Duas decisões novas: (1) o alerta ganha o campo `rio` (C3); (2) `GET /previsao` vai deixar de ser uma lista e
+  passar a ser `{ atual, dias }` (C4).
+- A decisão (2) **quebra o app atual** se o servidor trocar de formato sozinho. Por isso o app já foi preparado: a
+  função `lerPrevisao` (`packages/shared/src/previsao.ts`) lê as duas formas, e a aba Previsão continua igual.
+
+**Frontend: o que fazer, em ordem**
+
+1. Atualize a `main`, rode `pnpm install`, `pnpm typecheck` e `pnpm test`. Tudo deve passar.
+2. Ao montar uma tela atrás de flag, importe o tipo de `@aquascan/shared` e tipe as fixtures com ele:
+
+   | Cartão       | Tipos para usar                                                                                |
+   | ------------ | ---------------------------------------------------------------------------------------------- |
+   | FE-04, FE-05 | `EstacaoResumoComStatus`, `EstacaoDetalheComStatus` (campos `semDados` e `idadeLeituraMin`)    |
+   | FE-07, FE-12 | `AlertaComTipo` (`tipo` e `rio`), `PerfilCompleto`, `NivelAlerta`                              |
+   | FE-08        | `PrevisaoResposta`, `PrevisaoAtual`, `CondicaoTempo`                                           |
+   | FE-09        | `PontoApoioReal` (`capacidade` e `contato` podem ser `null`)                                   |
+   | FE-13        | `PerfilCompleto`, `DadosExportados`, `TrocaSenhaResposta`                                      |
+   | FE-14        | `EsqueciSenhaResposta`; validações `esqueciSenhaEntradaSchema` e `redefinirSenhaEntradaSchema` |
+   | FE-15        | `ResultadoRua`                                                                                 |
+
+3. **Não ligue nenhuma flag** só porque o contrato está Publicado. A flag só liga quando o contrato estiver
+   **Implementado** (endpoint no ar), como já diz `contratos-api.md` e como o passo 4 da seção 3 de `trabalho-em-paralelo.md` descreve.
+4. **FE-08 (previsão):** não apague a leitura da lista de hoje (`lerPrevisao`) até o BE-04 estar no ar. Depois que a
+   tela quiser mostrar a temperatura atual, use `data.atual`: quando for `null`, esconda a linha. Nunca invente a
+   temperatura.
+5. **FE-07 (alertas):** hoje a API não devolve `rio`; veja a nota no cartão.
+
+**Backend: o que fazer, em ordem**
+
+1. **BE-04:** só faça o merge depois que o PR com `lerPrevisao` estiver na `main`, e avise o frontend no PR. Decida
+   também o que vai em `atual` quando a previsão externa falhar (o contrato deixa em aberto).
+2. **BE-03:** além de `tipo`, passe a devolver `rio` em cada item de `GET /alertas`.
+3. **BE-05:** `capacidade` passa a aceitar `null`; mova o tipo `PontoApoioReal` para `tipos.ts` quando implementar.
+4. Em todo cartão BE-01 a BE-08: ao implementar, mova o tipo de `contratos.ts` para `tipos.ts`, remova o duplicado,
+   atualize `docs/api.md` e mude o status do contrato para **Implementado**.
 
 ## Já concluído antes deste plano
 

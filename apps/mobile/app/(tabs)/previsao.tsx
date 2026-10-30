@@ -43,7 +43,7 @@ export default function TelaPrevisao() {
   return (
     <FlatList
       contentContainerStyle={styles.lista}
-      data={data}
+      data={data?.dias}
       keyExtractor={(d) => d.data}
       renderItem={({ item }) => <DiaPrevisao dia={item} />}
       refreshing={isRefetching}
